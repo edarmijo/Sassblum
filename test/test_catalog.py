@@ -1,4 +1,3 @@
-"""Tests del catálogo: existencia, disponibilidad y detección de premium."""
 
 from gym_app import catalog
 

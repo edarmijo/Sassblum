@@ -1,6 +1,4 @@
-"""Catálogo de planes de membresía y características adicionales.
 
-"""
 
 MEMBERSHIP_PLANS = {
     "basic": {
