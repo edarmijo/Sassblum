@@ -37,8 +37,11 @@ class SocketClient {
   private open(): void {
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return
 
-    const url = `${WS_BASE}/ws/notifications/?token=${encodeURIComponent(this.token ?? '')}`
-    this.socket = new WebSocket(url)
+    const urlObj = new URL('/ws/notifications/', WS_BASE)
+    if (this.token) {
+      urlObj.searchParams.set('token', this.token)
+    }
+    this.socket = new WebSocket(urlObj.toString())
 
     this.socket.onopen = () => {
       this.backoff = 1_000 // reset backoff on a successful connection

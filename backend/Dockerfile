@@ -31,8 +31,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /root/.local
 
-# Copy application code
-COPY . .
+# Copy application code explicitly to avoid copying sensitive data
+COPY apps/ apps/
+COPY core/ core/
+COPY config/ config/
+COPY manage.py .
 
 # Ensure /root/.local/bin is in PATH for daphne
 ENV PATH=/root/.local/bin:$PATH \
