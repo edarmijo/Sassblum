@@ -24,7 +24,7 @@ export function AdminUserPage() {
     setUsers(await userAdminService.listUsers(filters))
   }, [roleFilter, estadoFilter])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { load().catch(console.error) }, [load])
 
   const create = async (e: FormEvent) => {
     e.preventDefault()
@@ -125,7 +125,7 @@ export function AdminUserPage() {
                 <td className="text-right pr-4">
                   <button
                     type="button"
-                    onClick={() => void toggleBlock(u)}
+                    onClick={() => toggleBlock(u).catch(console.error)}
                     className="text-xs text-brand-cyan-dark font-medium hover:underline cursor-pointer"
                   >
                     {u.estado === 'bloqueado' ? 'Desbloquear' : 'Bloquear'}

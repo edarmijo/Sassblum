@@ -49,7 +49,7 @@ class ApiClient {
           const refreshed = await this.tryRefresh()
           if (refreshed) {
             original.headers = original.headers ?? {}
-            ;(original.headers as Record<string, string>).Authorization = `Bearer ${this.accessToken}`
+              ; (original.headers as Record<string, string>).Authorization = `Bearer ${this.accessToken}`
             return this.http(original)
           }
           this.forceLogout()

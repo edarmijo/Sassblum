@@ -48,7 +48,7 @@ export function useCatalog(): UseCatalogResult {
     }
   }, [service, filtersKey])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { load().catch(console.error) }, [load])
 
   return { services, isLoading, error, setFilters }
 }

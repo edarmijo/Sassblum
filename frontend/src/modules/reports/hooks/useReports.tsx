@@ -39,7 +39,7 @@ export function useReports(filters?: ReportFilters) {
     }
   }, [service, filtersKey])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { load().catch(console.error) }, [load])
 
   const exportReport = useCallback(
     (formato: ReportFormat) => service.exportReport(formato, filters),

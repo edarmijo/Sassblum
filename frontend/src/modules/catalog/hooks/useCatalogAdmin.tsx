@@ -55,7 +55,7 @@ export function useCatalogAdmin() {
     await apiClient.patch(`/servicios/admin/${id}?action=toggle`)
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { load().catch(console.error) }, [load])
 
   return { services, loading, load, createService, editService, toggleService }
 }

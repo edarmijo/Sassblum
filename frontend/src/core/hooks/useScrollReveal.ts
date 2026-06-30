@@ -20,7 +20,7 @@ export function useScrollReveal(options: ScrollRevealOptions = {}) {
     const el = ref.current
     if (!el) return
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const prefersReduced = globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) {
       setIsInView(true)
       return

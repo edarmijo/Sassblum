@@ -71,7 +71,7 @@ class TestRegister:
     def test_creates_pending_client(self, db):
         result = AuthService().register({
             "nombre": "Ana", "apellido": "Pérez",
-            "email": "new@example.com", "password": "Pass1234",
+            "email": "new@example.com", "TestPass123!@#": "Pass1234",
         })
         assert "message" in result
         user = User.objects.get(email="new@example.com")
@@ -83,14 +83,14 @@ class TestRegister:
         with pytest.raises(EmailAlreadyExists):
             AuthService().register({
                 "nombre": "X", "apellido": "Y",
-                "email": "user@example.com", "password": "Pass1234",
+                "email": "user@example.com", "TestPass123!@#": "Pass1234",
             })
 
     def test_weak_password_rejected(self, db):
         with pytest.raises(PasswordPolicyViolation):
             AuthService().register({
                 "nombre": "X", "apellido": "Y",
-                "email": "weak@example.com", "password": "short",
+                "email": "weak@example.com", "TestPass123!@#": "short",
             })
 
 

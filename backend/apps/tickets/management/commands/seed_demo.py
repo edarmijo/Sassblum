@@ -1,3 +1,5 @@
+TAG_DOMOTICA = "Domótica"
+MSG_CREATED = MSG_CREATED
 """
 seed_demo — carga datos de prueba para la demo/aceptación (idempotente).
 
@@ -58,8 +60,8 @@ SERVICES = [
         "imagen_url": _IMG.format(id="photo-1557597774-9d273605dfa9"),
     },
     {
-        "nombre": "Domótica",
-        "categoria": "Domótica",
+        "nombre": TAG_DOMOTICA,
+        "categoria": TAG_DOMOTICA,
         "descripcion": "Automatización inteligente: controla tu oficina u hogar desde el "
         "computador o el smartphone.",
         "imagen_url": _IMG.format(id="photo-1558002038-1055907df827"),
@@ -155,7 +157,7 @@ class Command(BaseCommand):
                 "descripcion": "El servidor de correo dejó de responder esta mañana y nadie puede enviar mensajes.",
                 "servicio": "Infraestructura IT", "prioridad": Ticket.Prioridad.ALTA,
                 "estado": E.NUEVO, "asignado": None,
-                "events": [("creacion", cliente, "", "", "Ticket creado por el cliente.")],
+                "events": [("creacion", cliente, "", "", MSG_CREATED)],
             },
             {
                 "numero": "T-2026-9002", "asunto": "Cámara de seguridad sin señal",
@@ -163,7 +165,7 @@ class Command(BaseCommand):
                 "servicio": "Sistema de Vigilancia CCTV", "prioridad": Ticket.Prioridad.MEDIA,
                 "estado": E.EN_PROCESO, "asignado": w1,
                 "events": [
-                    ("creacion", cliente, "", "", "Ticket creado por el cliente."),
+                    ("creacion", cliente, "", "", MSG_CREATED),
                     ("asignacion", admin, "", "", "Asignado a Carlos Técnico."),
                     ("cambio_estado", w1, E.NUEVO, E.EN_PROCESO, "En sitio revisando el cableado de la cámara."),
                 ],
@@ -174,7 +176,7 @@ class Command(BaseCommand):
                 "servicio": "Cableado Estructurado", "prioridad": Ticket.Prioridad.MEDIA,
                 "estado": E.EN_ESPERA, "asignado": w1,
                 "events": [
-                    ("creacion", cliente, "", "", "Ticket creado por el cliente."),
+                    ("creacion", cliente, "", "", MSG_CREATED),
                     ("asignacion", admin, "", "", "Asignado a Carlos Técnico."),
                     ("cambio_estado", w1, E.NUEVO, E.EN_PROCESO, "Levantamiento de requerimientos en sitio."),
                     ("cambio_estado", w1, E.EN_PROCESO, E.EN_ESPERA, "A la espera de que el cliente confirme la distribución de puestos."),
@@ -183,10 +185,10 @@ class Command(BaseCommand):
             {
                 "numero": "T-2026-9004", "asunto": "Configurar domótica en sala de reuniones",
                 "descripcion": "Queremos controlar luces y proyector de la sala desde el celular.",
-                "servicio": "Domótica", "prioridad": Ticket.Prioridad.BAJA,
+                "servicio": TAG_DOMOTICA, "prioridad": Ticket.Prioridad.BAJA,
                 "estado": E.RESUELTO, "asignado": w2,
                 "events": [
-                    ("creacion", cliente, "", "", "Ticket creado por el cliente."),
+                    ("creacion", cliente, "", "", MSG_CREATED),
                     ("asignacion", admin, "", "", "Asignado a Ana Soporte."),
                     ("cambio_estado", w2, E.NUEVO, E.EN_PROCESO, "Instalación de módulos de control."),
                     ("cambio_estado", w2, E.EN_PROCESO, E.RESUELTO, "Domótica configurada y probada con el cliente."),
@@ -198,7 +200,7 @@ class Command(BaseCommand):
                 "servicio": "Venta de Servidores", "prioridad": Ticket.Prioridad.MEDIA,
                 "estado": E.CERRADO, "asignado": w2,
                 "events": [
-                    ("creacion", cliente, "", "", "Ticket creado por el cliente."),
+                    ("creacion", cliente, "", "", MSG_CREATED),
                     ("asignacion", admin, "", "", "Asignado a Ana Soporte."),
                     ("cambio_estado", w2, E.NUEVO, E.EN_PROCESO, "Ejecutando rutina de mantenimiento."),
                     ("cambio_estado", w2, E.EN_PROCESO, E.RESUELTO, "Mantenimiento completado sin incidencias."),

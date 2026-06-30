@@ -82,37 +82,41 @@ class NotificationService(INotificationService):
 
     def dispatch(self, event: dict) -> None:
         """Fan out a TicketEvent notification across all relevant recipients/channels."""
-        from apps.notifications.factory import NotificationFactory  # noqa: PLC0415
-
         recipients = _resolve_recipients(event)
         if not recipients:
             logger.debug("dispatch: no recipients for tipo_evento=%s", event.get("tipo_evento"))
             return
 
+        message = self._format_message(event)
         for recipient in recipients:
-            prefs = self.get_preferences(recipient)
-            context = self._build_context(event, recipient)
-            message = self._format_message(event)
+            self._deliver_to_channels(event, recipient, message)
 
-            for channel, active in [
-                ("email",  prefs.get("email_activo",  True)),
-                ("in_app", prefs.get("in_app_activo", True)),
-                ("ws",     prefs.get("ws_activo",     True)),
-            ]:
-                if not active:
-                    continue
-                try:
-                    repo = self._repo if channel == "in_app" else None
-                    strategy = NotificationFactory.build(channel, notification_repository=repo)
-                    if strategy.validate(recipient):
-                        strategy.send(recipient, message, context)
-                    else:
-                        strategy.log("skipped", f"{channel} invalid for user {recipient.id}")
-                except Exception as exc:  # noqa: BLE001
-                    logger.error(
-                        "Notification delivery failed: channel=%s user=%s error=%s",
-                        channel, recipient.id, exc,
-                    )
+    def _deliver_to_channels(self, event: dict, recipient, message: str) -> None:
+        from apps.notifications.factory import NotificationFactory  # noqa: PLC0415
+        prefs = self.get_preferences(recipient)
+        context = self._build_context(event, recipient)
+
+        channels = [
+            ("email",  prefs.get("email_activo",  True)),
+            ("in_app", prefs.get("in_app_activo", True)),
+            ("ws",     prefs.get("ws_activo",     True)),
+        ]
+
+        for channel, active in channels:
+            if not active:
+                continue
+            try:
+                repo = self._repo if channel == "in_app" else None
+                strategy = NotificationFactory.build(channel, notification_repository=repo)
+                if strategy.validate(recipient):
+                    strategy.send(recipient, message, context)
+                else:
+                    strategy.log("skipped", f"{channel} invalid for user {recipient.id}")
+            except Exception as exc:  # noqa: BLE001
+                logger.exception(
+                    "Notification delivery failed: channel=%s user=%s error=%s",
+                    channel, recipient.id, exc,
+                )
 
     # ── Query methods (serialized dicts for the API layer) ─────────────────────
 

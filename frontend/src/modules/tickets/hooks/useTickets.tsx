@@ -67,12 +67,12 @@ export function useTicketsList(filters?: TicketFilterOptions): UseTicketsListRes
     }
   }, [service, filtersKey])
 
-  useEffect(() => { void fetchTickets() }, [fetchTickets])
+  useEffect(() => { fetchTickets().catch(console.error) }, [fetchTickets])
 
   const createTicket = useCallback(
     async (payload: TicketCreatePayload): Promise<TicketDetail> => {
       const newTicket = await service.createTicket(payload)
-      void fetchTickets()
+      fetchTickets().catch(console.error)
       return newTicket
     },
     [service, fetchTickets],
@@ -113,7 +113,7 @@ export function useTicketDetail(ticketId: string): UseTicketDetailResult {
       }
     }
 
-    void load()
+    load().catch(console.error)
     return () => { cancelled = true }
   }, [service, ticketId])
 

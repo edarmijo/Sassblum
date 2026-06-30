@@ -95,19 +95,23 @@ export function Home() {
     if (!hero) return;
     const speeds = [0.03, 0.05, 0.04];
     let raf = 0;
+    const updateCards = (mx: number, my: number) => {
+      cardRefs.forEach((ref, i) => {
+        if (!ref.current) return;
+        const s = speeds[i];
+        const x = mx * s * 200;
+        const y = my * s * 200;
+        const rot = mx * s * 15;
+        ref.current.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+      });
+    };
+
     const onMove = (e: PointerEvent) => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const mx = (e.clientX / window.innerWidth - 0.5) * 2;
         const my = (e.clientY / window.innerHeight - 0.5) * 2;
-        cardRefs.forEach((ref, i) => {
-          if (!ref.current) return;
-          const s = speeds[i];
-          const x = mx * s * 200;
-          const y = my * s * 200;
-          const rot = mx * s * 15;
-          ref.current.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
-        });
+        updateCards(mx, my);
       });
     };
     hero.addEventListener('pointermove', onMove, { passive: true });

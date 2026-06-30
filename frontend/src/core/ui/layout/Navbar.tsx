@@ -115,6 +115,124 @@ function AuthedActions() {
   )
 }
 
+/* ─── MobileMenu ────────────────────────────────────────────────────── */
+
+function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, navigate }: {
+  mobileOpen: boolean;
+  closeMobile: () => void;
+  items: NavItem[];
+  isActive: (to: string) => boolean;
+  user: any;
+  logout: () => void;
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 999,
+          backgroundColor: '#06060a',
+          pointerEvents: mobileOpen ? 'auto' : 'none',
+          opacity: mobileOpen ? 1 : 0,
+          transition: `opacity 400ms ${EASE_OUT}`,
+        }}
+        aria-hidden={!mobileOpen}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: '#06060a',
+            transformOrigin: 'right center',
+            transform: mobileOpen ? 'scaleX(1)' : 'scaleX(0)',
+            transition: `transform 500ms ${EASE_OUT}`,
+          }}
+        />
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            height: '100%',
+            padding: '100px 32px 48px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {items.map((item, i) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={closeMobile}
+                style={{
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 16,
+                  padding: '12px 0',
+                  opacity: mobileOpen ? 1 : 0,
+                  transform: mobileOpen ? 'translateY(0)' : 'translateY(24px)',
+                  transition: `opacity 500ms ${EASE_OUT} ${i * 80}ms, transform 500ms ${EASE_OUT} ${i * 80}ms`,
+                }}
+              >
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', fontWeight: 400, minWidth: 24 }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: isActive(item.to) ? '#00c4e0' : '#fff', transition: `color 200ms ${EASE_OUT}` }}>
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+
+            {user && (
+              <Link
+                to="/notificaciones"
+                onClick={closeMobile}
+                style={{
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 16,
+                  padding: '12px 0',
+                  opacity: mobileOpen ? 1 : 0,
+                  transform: mobileOpen ? 'translateY(0)' : 'translateY(24px)',
+                  transition: `opacity 500ms ${EASE_OUT} ${items.length * 80}ms, transform 500ms ${EASE_OUT} ${items.length * 80}ms`,
+                }}
+              >
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', fontWeight: 400, minWidth: 24 }}>
+                  {String(items.length + 1).padStart(2, '0')}
+                </span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#fff' }}>
+                  NOTIFICACIONES
+                </span>
+              </Link>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: mobileOpen ? 1 : 0, transform: mobileOpen ? 'translateY(0)' : 'translateY(16px)', transition: `opacity 500ms ${EASE_OUT} 400ms, transform 500ms ${EASE_OUT} 400ms` }}>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Contacto</span>
+            <a href="mailto:info@sassblum.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>info@sassblum.com</a>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>Ciudad de México, México</span>
+            <a href="tel:+525512345678" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>+52 55 1234 5678</a>
+
+            {user && (
+              <button
+                onClick={() => { closeMobile(); setTimeout(() => { void logout(); navigate('/') }, 300) }}
+                style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 16px', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', transition: `border-color 200ms ${EASE_OUT}, color 200ms ${EASE_OUT}` }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+              >
+                <LogOut size={14} /> Cerrar sesión
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+  )
+}
+
 /* ─── Navbar ────────────────────────────────────────────────────────── */
 
 export function Navbar() {
@@ -318,216 +436,15 @@ export function Navbar() {
       </nav>
 
       {/* ── Mobile overlay ─────────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 999,
-          backgroundColor: '#06060a',
-          pointerEvents: mobileOpen ? 'auto' : 'none',
-          opacity: mobileOpen ? 1 : 0,
-          transition: `opacity 400ms ${EASE_OUT}`,
-        }}
-        aria-hidden={!mobileOpen}
-      >
-        {/* Background slide-in panel */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: '#06060a',
-            transformOrigin: 'right center',
-            transform: mobileOpen ? 'scaleX(1)' : 'scaleX(0)',
-            transition: `transform 500ms ${EASE_OUT}`,
-          }}
-        />
-
-        {/* Content */}
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            height: '100%',
-            padding: '100px 32px 48px',
-          }}
-        >
-          {/* Links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {items.map((item, i) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={closeMobile}
-                style={{
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 16,
-                  padding: '12px 0',
-                  opacity: mobileOpen ? 1 : 0,
-                  transform: mobileOpen ? 'translateY(0)' : 'translateY(24px)',
-                  transition: `opacity 500ms ${EASE_OUT} ${i * 80}ms, transform 500ms ${EASE_OUT} ${i * 80}ms`,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '0.75rem',
-                    color: 'rgba(255,255,255,0.25)',
-                    fontWeight: 400,
-                    minWidth: 24,
-                  }}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    color: isActive(item.to) ? '#00c4e0' : '#fff',
-                    transition: `color 200ms ${EASE_OUT}`,
-                  }}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-
-            {/* Auth links inside mobile menu */}
-            {user && (
-              <Link
-                to="/notificaciones"
-                onClick={closeMobile}
-                style={{
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 16,
-                  padding: '12px 0',
-                  opacity: mobileOpen ? 1 : 0,
-                  transform: mobileOpen ? 'translateY(0)' : 'translateY(24px)',
-                  transition: `opacity 500ms ${EASE_OUT} ${items.length * 80}ms, transform 500ms ${EASE_OUT} ${items.length * 80}ms`,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '0.75rem',
-                    color: 'rgba(255,255,255,0.25)',
-                    fontWeight: 400,
-                    minWidth: 24,
-                  }}
-                >
-                  {String(items.length + 1).padStart(2, '0')}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    color: '#fff',
-                  }}
-                >
-                  NOTIFICACIONES
-                </span>
-              </Link>
-            )}
-          </div>
-
-          {/* Bottom info */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              opacity: mobileOpen ? 1 : 0,
-              transform: mobileOpen ? 'translateY(0)' : 'translateY(16px)',
-              transition: `opacity 500ms ${EASE_OUT} 400ms, transform 500ms ${EASE_OUT} 400ms`,
-            }}
-          >
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Contacto
-            </span>
-            <a
-              href="mailto:info@sassblum.com"
-              style={{
-                color: 'rgba(255,255,255,0.6)',
-                textDecoration: 'none',
-                fontSize: '0.875rem',
-                transition: `color 200ms ${EASE_OUT}`,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
-            >
-              info@sassblum.com
-            </a>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
-              Ciudad de México, México
-            </span>
-            <a
-              href="tel:+525512345678"
-              style={{
-                color: 'rgba(255,255,255,0.6)',
-                textDecoration: 'none',
-                fontSize: '0.875rem',
-                transition: `color 200ms ${EASE_OUT}`,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
-            >
-              +52 55 1234 5678
-            </a>
-
-            {/* Mobile auth actions */}
-            {user && (
-              <button
-                onClick={() => {
-                  closeMobile()
-                  setTimeout(() => {
-                    void logout()
-                    navigate('/')
-                  }, 300)
-                }}
-                style={{
-                  marginTop: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'none',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 8,
-                  padding: '10px 16px',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontSize: '0.8rem',
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  transition: `border-color 200ms ${EASE_OUT}, color 200ms ${EASE_OUT}`,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'
-                  e.currentTarget.style.color = '#fff'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.5)'
-                }}
-              >
-                <LogOut size={14} />
-                Cerrar sesión
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <MobileMenu
+        mobileOpen={mobileOpen}
+        closeMobile={closeMobile}
+        items={items}
+        isActive={isActive}
+        user={user}
+        logout={logout}
+        navigate={navigate}
+      />
 
       {/* Hover underline animation (CSS-only enhancement for desktop links) */}
       <style>{`

@@ -21,20 +21,20 @@ export function useMousePosition(): MousePosition {
   })
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const prefersReduced = globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReduced) return
 
     const handler = (e: MouseEvent) => {
       setPosition({
         x: e.clientX,
         y: e.clientY,
-        normalizedX: (e.clientX / window.innerWidth) * 2 - 1,
-        normalizedY: (e.clientY / window.innerHeight) * 2 - 1,
+        normalizedX: (e.clientX / globalThis.window.innerWidth) * 2 - 1,
+        normalizedY: (e.clientY / globalThis.window.innerHeight) * 2 - 1,
       })
     }
 
-    window.addEventListener('mousemove', handler, { passive: true })
-    return () => window.removeEventListener('mousemove', handler)
+    globalThis.window.addEventListener('mousemove', handler, { passive: true })
+    return () => globalThis.window.removeEventListener('mousemove', handler)
   }, [])
 
   return position

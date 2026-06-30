@@ -86,7 +86,7 @@ export function useNotifications(): UseNotificationsResult {
     }
   }, [service])
 
-  useEffect(() => { void refresh() }, [refresh])
+  useEffect(() => { refresh().catch(console.error) }, [refresh])
 
   // Observer (FE): react to live 'notification_new' frames from the WS singleton.
   useEffect(() => {

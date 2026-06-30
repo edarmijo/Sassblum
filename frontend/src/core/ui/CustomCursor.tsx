@@ -23,7 +23,7 @@ export default function CustomCursor() {
   const isHovering = useRef(false);
   const rafId = useRef<number>(0);
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isMobile = typeof window !== 'undefined' && globalThis.window.innerWidth < 768;
 
   useEffect(() => {
     if (isMobile) return;
@@ -92,13 +92,13 @@ export default function CustomCursor() {
       }
     };
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    globalThis.window.addEventListener('mousemove', onMouseMove, { passive: true });
     document.addEventListener('mouseover', onMouseOver, { passive: true });
     document.addEventListener('mouseout', onMouseOut, { passive: true });
     rafId.current = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
+      globalThis.window.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseover', onMouseOver);
       document.removeEventListener('mouseout', onMouseOut);
       cancelAnimationFrame(rafId.current);

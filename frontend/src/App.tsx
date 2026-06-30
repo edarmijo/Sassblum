@@ -108,7 +108,7 @@ function SiteLayout() {
   ) : tree
 }
 
-function AuthCard({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer?: ReactNode }) {
+function AuthCard({ title, subtitle, children, footer }: Readonly<{ title: string; subtitle: string; children: ReactNode; footer?: ReactNode }>) {
   return (
     <AuthServiceProvider service={authService}>
       <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 overflow-hidden">

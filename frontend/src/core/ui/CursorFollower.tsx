@@ -18,13 +18,13 @@ export function CursorFollower() {
   const reduce = useReducedMotion()
 
   useEffect(() => {
-    if (reduce || window.innerWidth < 768) return
+    if (reduce || globalThis.window.innerWidth < 768) return
     const dot = dotRef.current
     const ring = ringRef.current
     const trail = trailRef.current
     if (!dot || !ring || !trail) return
 
-    const m = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const m = { x: globalThis.window.innerWidth / 2, y: globalThis.window.innerHeight / 2 }
     let cx = m.x, cy = m.y, fx = m.x, fy = m.y, tx = m.x, ty = m.y
     let raf = 0
 
@@ -77,7 +77,7 @@ export function CursorFollower() {
     }
   }, [reduce])
 
-  if (reduce || (typeof window !== 'undefined' && window.innerWidth < 768)) return null
+  if (reduce || (typeof window !== 'undefined' && globalThis.window.innerWidth < 768)) return null
 
   return (
     <>

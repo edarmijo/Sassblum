@@ -60,7 +60,7 @@ export function useGalleryAdmin() {
     await apiClient.patch(`/proyectos/admin/${id}?action=toggle`)
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { load().catch(console.error) }, [load])
 
   return { projects, loading, load, createProject, editProject, toggleProject }
 }

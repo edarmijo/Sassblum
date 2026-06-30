@@ -9,6 +9,18 @@
 
 import { AxiosError } from 'axios'
 
+function parseErrorObject(obj: Record<string, unknown>): string | null {
+  if (typeof obj.detail === 'string') return obj.detail
+  // Serializer field errors: take the first field's first message
+  for (const value of Object.values(obj)) {
+    if (Array.isArray(value) && value.length && typeof value[0] === 'string') {
+      return value[0]
+    }
+    if (typeof value === 'string') return value
+  }
+  return null
+}
+
 export function apiError(err: unknown, fallback = 'Ocurrió un error.'): string {
   if (err instanceof AxiosError) {
     // No response → network error, CORS block, or server not running
@@ -17,15 +29,8 @@ export function apiError(err: unknown, fallback = 'Ocurrió un error.'): string 
     }
     const data = err.response.data as unknown
     if (data && typeof data === 'object') {
-      const obj = data as Record<string, unknown>
-      if (typeof obj.detail === 'string') return obj.detail
-      // Serializer field errors: take the first field's first message
-      for (const value of Object.values(obj)) {
-        if (Array.isArray(value) && value.length && typeof value[0] === 'string') {
-          return value[0]
-        }
-        if (typeof value === 'string') return value
-      }
+      const parsed = parseErrorObject(data as Record<string, unknown>)
+      if (parsed) return parsed
     }
     return `Error ${err.response.status}: ${fallback}`
   }

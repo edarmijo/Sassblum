@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.db import connection
 
 
-def health_check(request):
+def health_check(*args, **kwargs):
     checks = {}
     try:
         with connection.cursor() as cursor:

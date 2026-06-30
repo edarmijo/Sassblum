@@ -22,7 +22,7 @@ class IsClient(BasePermission):
         User = _get_user_model()
         return (
             request.user.is_authenticated
-            and request.user.role == User.Role.CLIENT
+            and request.user.role == user_model.Role.CLIENT
             and request.user.estado == User.Estado.ACTIVE
         )
 
@@ -34,7 +34,7 @@ class IsWorker(BasePermission):
         User = _get_user_model()
         return (
             request.user.is_authenticated
-            and request.user.role == User.Role.WORKER
+            and request.user.role == user_model.Role.WORKER
             and request.user.estado == User.Estado.ACTIVE
         )
 
@@ -46,6 +46,6 @@ class IsAdmin(BasePermission):
         User = _get_user_model()
         return (
             request.user.is_authenticated
-            and request.user.role == User.Role.ADMIN
+            and request.user.role == user_model.Role.ADMIN
             and request.user.estado == User.Estado.ACTIVE
         )

@@ -59,7 +59,7 @@ export function NotificationPreferences() {
           <Switch
             checked={prefs[key]}
             disabled={saving}
-            onCheckedChange={() => void toggle(key)}
+            onCheckedChange={() => toggle(key).catch(console.error)}
             aria-label={label}
           />
         </label>

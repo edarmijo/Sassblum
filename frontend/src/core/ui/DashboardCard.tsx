@@ -26,7 +26,7 @@ interface DashboardCardProps extends React.ComponentProps<'div'> {
  * teal border, heavy blur, deep shadow) so that the Three.js particle
  * background shows through.
  */
-export function DashboardCard({ className, glassStyle, style, children, ...props }: DashboardCardProps) {
+export function DashboardCard({ className, glassStyle, style, children, ...props }: Readonly<DashboardCardProps>) {
   return (
     <div
       className={cn('flex flex-col gap-6 rounded-xl text-[#eef4f8]', className)}
@@ -39,7 +39,7 @@ export function DashboardCard({ className, glassStyle, style, children, ...props
 }
 
 /** Header inside a DashboardCard. */
-export function DashboardCardHeader({ className, ...props }: React.ComponentProps<'div'>) {
+export function DashboardCardHeader({ className, ...props }: Readonly<React.ComponentProps<'div'>>) {
   return (
     <div
       className={cn(
@@ -52,16 +52,16 @@ export function DashboardCardHeader({ className, ...props }: React.ComponentProp
 }
 
 /** Title inside a DashboardCard header. */
-export function DashboardCardTitle({ className, ...props }: React.ComponentProps<'h4'>) {
-  return <h4 className={cn('leading-none font-semibold text-[#eef4f8]', className)} {...props} />
+export function DashboardCardTitle({ className, ...props }: Readonly<React.ComponentProps<'h3'>>) {
+  return <h3 className={cn('leading-none font-semibold text-[#eef4f8]', className)} {...props} />
 }
 
 /** Description inside a DashboardCard header. */
-export function DashboardCardDescription({ className, ...props }: React.ComponentProps<'p'>) {
+export function DashboardCardDescription({ className, ...props }: Readonly<React.ComponentProps<'p'>>) {
   return <p className={cn('text-[#5c7a94]', className)} {...props} />
 }
 
 /** Content area inside a DashboardCard. */
-export function DashboardCardContent({ className, ...props }: React.ComponentProps<'div'>) {
+export function DashboardCardContent({ className, ...props }: Readonly<React.ComponentProps<'div'>>) {
   return <div className={cn('px-6 [&:last-child]:pb-6', className)} {...props} />
 }

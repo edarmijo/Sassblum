@@ -39,11 +39,9 @@ ENV PATH=/root/.local/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Create staticfiles directory
-RUN mkdir -p staticfiles
-
-# Collect static files (CSS, admin, etc.)
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
+# Create staticfiles directory and collect static files
+RUN mkdir -p staticfiles && \
+    python manage.py collectstatic --noinput 2>/dev/null || true
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
@@ -57,6 +55,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ASGI port (Render inyecta PORT; localmente usa 8000)
 EXPOSE 8000
 
-# Migrate al arrancar (patrón PaaS) y luego Daphne (HTTP + WebSocket).
-# Shell form para que ${PORT} se expanda en runtime.
-CMD python manage.py migrate --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application
+# Run migrations and start Daphne using exec form via sh
+CMD ["sh", "-c", "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]

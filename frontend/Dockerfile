@@ -21,7 +21,7 @@ RUN npm run build
 # ─────────────────────────────────────────────
 # Stage 2: Serve with nginx
 # ─────────────────────────────────────────────
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
@@ -32,16 +32,17 @@ COPY nginx.conf /etc/nginx/conf.d/
 # Copy built React app from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Non-root user not strictly needed for nginx (runs as nginx user by default),
-# but good practice for consistency
+# Switch to root temporarily to adjust permissions if needed
+USER root
 RUN chown -R nginx:nginx /usr/share/nginx/html
+# Switch back to non-root
+USER nginx
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:8080/ || exit 1
 
 # Expose HTTP port
-EXPOSE 80
+EXPOSE 8080
 
 # Run nginx
 CMD ["nginx", "-g", "daemon off;"]

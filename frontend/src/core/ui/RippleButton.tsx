@@ -18,7 +18,11 @@ export function RippleButton({ children, className, ...props }: RippleButtonProp
     const id = Date.now()
 
     setRipples((prev) => [...prev, { x, y, id }])
-    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 600)
+    
+    const removeRipple = () => {
+      setRipples((prev) => prev.filter((r) => r.id !== id))
+    }
+    setTimeout(removeRipple, 600)
 
     // Call original onClick if provided
     if (props.onClick) {

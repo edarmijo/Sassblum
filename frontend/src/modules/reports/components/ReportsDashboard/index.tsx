@@ -171,7 +171,7 @@ export function ReportsDashboard() {
           </div>
 
           <div className="flex gap-2 pt-1">
-            <Button size="sm" onClick={() => void refresh()} className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy">
+            <Button size="sm" onClick={() => refresh().catch(console.error)} className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy">
               Aplicar filtros
             </Button>
           </div>

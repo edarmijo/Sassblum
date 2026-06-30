@@ -12,15 +12,18 @@ export function PageLoader({ onComplete }: PageLoaderProps) {
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
+    const finishLoader = () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setTimeout(() => {
+        setFadeOut(true);
+        setTimeout(() => onCompleteRef.current(), 500);
+      }, 200);
+    };
+
     const tick = () => {
       setProgress((prev) => {
         if (prev >= 100) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          // Small delay before fade-out
-          setTimeout(() => {
-            setFadeOut(true);
-            setTimeout(() => onCompleteRef.current(), 500);
-          }, 200);
+          finishLoader();
           return 100;
         }
         // Random increment between 2 and 8
