@@ -1,0 +1,19 @@
+{% extends "email/base_email.html" %}
+
+{% block subject %}Ticket asignado{% endblock %}
+
+{% block titulo %}Tu ticket ha sido asignado{% endblock %}
+
+{% block contenido %}
+  <p>El ticket <strong>{{ ticket_numero }}</strong> ha sido asignado a un trabajador y comenzará a ser atendido.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;border-collapse:collapse;">
+    <tr>
+      <td style="padding:8px 0;font-size:13px;color:#6f6e68;width:140px;">Número</td>
+      <td style="padding:8px 0;font-size:13px;font-weight:600;color:#1d1c1a;">{{ ticket_numero }}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;font-size:13px;color:#6f6e68;border-top:0.5px solid #e7e5de;">Asunto</td>
+      <td style="padding:8px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ ticket_asunto }}</td>
+    </tr>
+  </table>
+{% endblock %}

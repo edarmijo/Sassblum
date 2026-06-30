@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env.local
+node_modules
+dist
+build
+coverage
+.vscode
+.DS_Store
+*.log
+.eslintcache

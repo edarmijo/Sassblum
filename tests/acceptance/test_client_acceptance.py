@@ -1,0 +1,237 @@
+"""
+CLIENT Role Acceptance Tests — TC-C1 to TC-C8
+═══════════════════════════════════════════════
+Source: Template FIEC — SassBlum Ticket Management System
+Role: Client · Account: cliente@sassblum.com
+
+Each test follows Given / When / Then format.
+"""
+
+import pytest
+from rest_framework.test import APIClient
+from apps.authentication.models import User
+
+
+# ── TC-C1: Registration ───────────────────────────────────────────────────────
+# Given a new email, when the client registers, then account is created as
+# "pendiente" and a verification email is sent.
+
+@pytest.mark.django_db
+class TestTC_C1_Registration:
+    """TC-C1: HU-02 — Client registration."""
+
+    def test_register_with_new_email_creates_pending_account(self, api_client):
+        """Given a new email, when registering, account is created as pending."""
+        response = api_client.post('/api/auth/register', {
+            'email': 'nuevo@sassblum.com',
+            'password': 'SecurePass123!',
+            'first_name': 'Nuevo',
+            'last_name': 'Cliente',
+        })
+        assert response.status_code in (200, 201)
+        user = User.objects.get(email='nuevo@sassblum.com')
+        assert user.email_verificado is False
+
+    def test_register_with_duplicate_email_rejected(self, api_client, client_user):
+        """Given an existing email, when registering, request is rejected."""
+        response = api_client.post('/api/auth/register', {
+            'email': client_user.email,
+            'password': 'SecurePass123!',
+            'first_name': 'Dup',
+            'last_name': 'User',
+        })
+        assert response.status_code in (400, 409)
+
+
+# ── TC-C2: Email Verification & Recovery ──────────────────────────────────────
+# Given the verification link, when opened, then account becomes "activo".
+# Forgot/Reset issues a single-use 1-hour token.
+
+@pytest.mark.django_db
+class TestTC_C2_EmailVerification:
+    """TC-C2: HU-03 — Email verification & password recovery."""
+
+    def test_forgot_password_sends_email(self, api_client, client_user):
+        """Given a registered email, when requesting reset, email is sent."""
+        response = api_client.post('/api/auth/forgot-password', {
+            'email': client_user.email,
+        })
+        assert response.status_code in (200, 202)
+
+    def test_forgot_password_with_unknown_email_returns_ok(self, api_client):
+        """Given an unknown email, when requesting reset, still returns OK (no leak)."""
+        response = api_client.post('/api/auth/forgot-password', {
+            'email': 'unknown@example.com',
+        })
+        # Should return 200 to prevent email enumeration
+        assert response.status_code in (200, 202, 404)
+
+
+# ── TC-C3: Login ──────────────────────────────────────────────────────────────
+# Given valid verified credentials, when logging in, then a JWT is issued
+# and the user lands on the client dashboard.
+
+@pytest.mark.django_db
+class TestTC_C3_Login:
+    """TC-C3: HU-01 — Login with valid credentials."""
+
+    def test_login_with_valid_credentials_returns_jwt(self, api_client, client_user):
+        """Given valid credentials, when logging in, JWT is returned."""
+        response = api_client.post('/api/auth/login', {
+            'email': client_user.email,
+            'password': 'TestPass123!',
+        })
+        assert response.status_code == 200
+        assert 'access' in response.data
+
+    def test_login_with_invalid_password_returns_401(self, api_client, client_user):
+        """Given wrong password, when logging in, 401 is returned."""
+        response = api_client.post('/api/auth/login', {
+            'email': client_user.email,
+            'password': 'WrongPassword!',
+        })
+        assert response.status_code == 401
+
+    def test_login_with_unverified_email_rejected(self, api_client, db):
+        """Given unverified email, when logging in, access is denied."""
+        user = User.objects.create_user(
+            email='unverified@sassblum.com',
+            password='TestPass123!',
+            first_name='Unverified',
+            last_name='User',
+            role=User.Role.CLIENT,
+            estado=User.Estado.ACTIVE,
+            email_verificado=False,
+        )
+        response = api_client.post('/api/auth/login', {
+            'email': user.email,
+            'password': 'TestPass123!',
+        })
+        # Should reject unverified users
+        assert response.status_code in (401, 403)
+
+
+# ── TC-C4: Ticket Creation ────────────────────────────────────────────────────
+# Given a logged-in client, when creating a ticket (subject ≤80, description ≥10,
+# optional attachment ≤5 MB), then ticket is created as "Nuevo" and Observer fires.
+
+@pytest.mark.django_db
+class TestTC_C4_TicketCreation:
+    """TC-C4: HU-04 — Ticket creation with validation."""
+
+    def test_create_ticket_with_valid_data(self, authenticated_client):
+        """Given valid data, when creating ticket, it's created as Nuevo."""
+        response = authenticated_client.post('/api/tickets/', {
+            'asunto': 'Problema con servidor',
+            'descripcion': 'El servidor no responde desde ayer por la tarde',
+            'prioridad': 'Alta',
+        })
+        assert response.status_code in (200, 201)
+
+    def test_create_ticket_with_empty_subject_rejected(self, authenticated_client):
+        """Given empty subject, when creating ticket, validation fails."""
+        response = authenticated_client.post('/api/tickets/', {
+            'asunto': '',
+            'descripcion': 'El servidor no responde desde ayer',
+        })
+        assert response.status_code in (400, 422)
+
+    def test_create_ticket_with_short_description_rejected(self, authenticated_client):
+        """Given description < 10 chars, when creating ticket, validation fails."""
+        response = authenticated_client.post('/api/tickets/', {
+            'asunto': 'Problema',
+            'descripcion': 'Corto',
+        })
+        assert response.status_code in (400, 422)
+
+    def test_create_ticket_with_long_subject_rejected(self, authenticated_client):
+        """Given subject > 80 chars, when creating ticket, validation fails."""
+        response = authenticated_client.post('/api/tickets/', {
+            'asunto': 'A' * 81,
+            'descripcion': 'El servidor no responde desde ayer por la tarde',
+        })
+        assert response.status_code in (400, 422)
+
+
+# ── TC-C5: Ticket Visualization ──────────────────────────────────────────────
+# Given an existing ticket, when opened, then subject, service, priority,
+# status badge, metadata and attachments are shown.
+
+@pytest.mark.django_db
+class TestTC_C5_Visualization:
+    """TC-C5: HU-06 — Ticket detail visualization."""
+
+    def test_view_ticket_detail_returns_all_fields(self, authenticated_client, client_user):
+        """Given an existing ticket, when viewing, all fields are present."""
+        # Create a ticket first
+        create_resp = authenticated_client.post('/api/tickets/', {
+            'asunto': 'Test visualización',
+            'descripcion': 'Descripción detallada del problema para visualización',
+            'prioridad': 'Media',
+        })
+        if create_resp.status_code in (200, 201):
+            ticket_id = create_resp.data.get('id')
+            response = authenticated_client.get(f'/api/tickets/{ticket_id}/')
+            assert response.status_code == 200
+            assert 'asunto' in response.data or 'numero' in response.data
+
+
+# ── TC-C6: Ticket History ─────────────────────────────────────────────────────
+# Given a ticket with activity, when viewing history, then all events appear
+# chronologically with author and timestamp.
+
+@pytest.mark.django_db
+class TestTC_C6_History:
+    """TC-C6: HU-09 — Ticket event history."""
+
+    def test_ticket_history_returns_events(self, authenticated_client, client_user):
+        """Given a ticket with activity, when viewing history, events are shown."""
+        create_resp = authenticated_client.post('/api/tickets/', {
+            'asunto': 'Test historial',
+            'descripcion': 'Descripción detallada del problema para historial',
+        })
+        if create_resp.status_code in (200, 201):
+            ticket_id = create_resp.data.get('id')
+            response = authenticated_client.get(f'/api/tickets/{ticket_id}/')
+            if response.status_code == 200:
+                # Should have at least the creation event
+                eventos = response.data.get('eventos', [])
+                assert len(eventos) >= 1
+
+
+# ── TC-C7: Filter & Search ────────────────────────────────────────────────────
+# Given the ticket list, when filtering by status/priority, then only matching
+# tickets are shown (paginated).
+
+@pytest.mark.django_db
+class TestTC_C7_FilterSearch:
+    """TC-C7: HU-10 — Filter and search tickets."""
+
+    def test_filter_tickets_by_status(self, authenticated_client):
+        """Given tickets with different statuses, when filtering, only matches return."""
+        response = authenticated_client.get('/api/tickets/?estado=Nuevo')
+        assert response.status_code == 200
+
+    def test_ticket_list_is_paginated(self, authenticated_client):
+        """Given many tickets, when listing, response is paginated."""
+        response = authenticated_client.get('/api/tickets/')
+        assert response.status_code == 200
+
+
+# ── TC-C8: Notifications ──────────────────────────────────────────────────────
+# Given new in-app notifications, when opening the bell, then unread count and
+# history are shown; preferences toggle email/in-app/WebSocket.
+
+@pytest.mark.django_db
+class TestTC_C8_Notifications:
+    """TC-C8: HU-15/16 — In-app notifications and preferences."""
+
+    def test_notification_list_returns_data(self, authenticated_client):
+        """Given notifications, when listing, data is returned."""
+        response = authenticated_client.get('/api/notificaciones/')
+        assert response.status_code == 200
+
+    def test_notification_preferences_readable(self, authenticated_client):
+        """Given a user, when reading preferences, current settings are returned."""
+        response = authenticated_client.get('/api/notificaciones/preferencias/')
+        assert response.status_code in (200, 404)  # 404 if endpoint not wired

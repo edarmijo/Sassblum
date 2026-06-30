@@ -1,0 +1,23 @@
+[flake8]
+# Config a nivel de workspace (el IDE lintea desde la raíz). Refleja backend/.flake8.
+max-line-length = 100
+extend-ignore =
+    E221,
+    W503
+exclude =
+    .venv,
+    */.venv/*,
+    */migrations/*,
+    __pycache__,
+    .git,
+    node_modules,
+    frontend
+per-file-ignores =
+    */config/settings.py: E501
+    */commands/seed_demo.py: E501
+    */admin.py: F401
+    */models.py: F401
+    */models/__init__.py: F401
+    */views.py: F401
+    */views/__init__.py: F401
+    */tests.py: F401
