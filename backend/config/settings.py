@@ -71,7 +71,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Content-Security-Policy — OWASP A03:2021 defense-in-depth
-SELF_SRC = SELF_SRC
+SELF_SRC = "'self'"
 CSP_DEFAULT_SRC = (SELF_SRC,)
 CSP_SCRIPT_SRC = (SELF_SRC,)
 CSP_STYLE_SRC = (SELF_SRC, "'unsafe-inline'")
