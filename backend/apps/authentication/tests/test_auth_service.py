@@ -1,3 +1,4 @@
+TEST_PWD = "Pass1234"
 """
 Tests for AuthService (requires DB). authenticate + register + lockout.
 Run: pytest apps/authentication/tests/test_auth_service.py -v
@@ -19,7 +20,7 @@ from apps.authentication.services.auth_service import (
 @pytest.fixture
 def active_user(db):
     u = User.objects.create_user(
-        email="user@example.com", password="Pass1234",
+        email="user@example.com", password=TEST_PWD,
         role=User.Role.CLIENT, estado=User.Estado.ACTIVE, email_verificado=True,
     )
     return u
@@ -48,7 +49,7 @@ class TestAuthenticate:
 
     def test_unverified_email_rejected(self, db):
         User.objects.create_user(
-            email="pending@example.com", password="Pass1234",
+            email="pending@example.com", password=TEST_PWD,
             role=User.Role.CLIENT, estado=User.Estado.ACTIVE, email_verificado=False,
         )
         with pytest.raises(EmailNotVerified):
@@ -100,7 +101,7 @@ class TestVerifyEmail:
         from django.core import signing
         from apps.authentication.services.auth_service import _VERIFY_SALT
         user = User.objects.create_user(
-            email="verify@example.com", password="Pass1234",
+            email="verify@example.com", password=TEST_PWD,
             role=User.Role.CLIENT, estado=User.Estado.PENDING, email_verificado=False,
         )
         token = signing.dumps({"uid": user.id}, salt=_VERIFY_SALT)

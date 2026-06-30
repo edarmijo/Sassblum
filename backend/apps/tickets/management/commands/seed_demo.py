@@ -1,5 +1,5 @@
 TAG_DOMOTICA = "Domótica"
-MSG_CREATED = MSG_CREATED
+MSG_CREATED = "Ticket creado por el cliente."
 """
 seed_demo — carga datos de prueba para la demo/aceptación (idempotente).
 
@@ -97,7 +97,7 @@ class Command(BaseCommand):
         services = self._seed_services()
         accounts = self._seed_accounts()
         self._seed_tickets(services, accounts)
-        self._print_summary(accounts)
+        self._print_summary()
 
     # ── Servicios ────────────────────────────────────────────────────────────────
     def _seed_services(self) -> dict[str, Service]:
@@ -237,7 +237,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Tickets: {created} creados, {len(plan) - created} ya existían."))
 
     # ── Resumen ──────────────────────────────────────────────────────────────────
-    def _print_summary(self, accounts: dict[str, User]):
+    def _print_summary(self):
         self.stdout.write("")
         self.stdout.write(self.style.MIGRATE_HEADING("Cuentas de prueba (contraseña común):"))
         self.stdout.write(f"  Contraseña: {DEMO_PASSWORD}")
