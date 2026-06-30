@@ -1,3 +1,4 @@
+TEST_PASSWORD = 'TestPass123!'
 """
 Acceptance Test Suite — SassBlum Ticket Management System
 ═══════════════════════════════════════════════════════════
@@ -27,7 +28,7 @@ def client_user(db):
     """A verified client user."""
     user = User.objects.create_user(
         email='cliente@sassblum.com',
-        password='TestPass123!',
+        password=TEST_PASSWORD,
         first_name='Cliente',
         last_name='Test',
         role=User.Role.CLIENT,
@@ -42,7 +43,7 @@ def worker_user(db):
     """An active worker user."""
     user = User.objects.create_user(
         email='trabajador1@sassblum.com',
-        password='TestPass123!',
+        password=TEST_PASSWORD,
         first_name='Carlos',
         last_name='Técnico',
         role=User.Role.WORKER,
@@ -57,7 +58,7 @@ def admin_user(db):
     """An admin user."""
     user = User.objects.create_user(
         email='admin@sassblum.com',
-        password='TestPass123!',
+        password=TEST_PASSWORD,
         first_name='Admin',
         last_name='SassBlum',
         role=User.Role.ADMIN,

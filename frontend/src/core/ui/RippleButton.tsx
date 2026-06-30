@@ -9,7 +9,7 @@ type RippleButtonProps = ComponentProps<typeof Button>
  * Usa solo CSS animation para el efecto (GPU-friendly).
  */
 export function RippleButton({ children, className, ...props }: RippleButtonProps) {
-  const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
+  const [ripples, setRipples] = useState<Ripple[]>([])
 
   const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -19,10 +19,7 @@ export function RippleButton({ children, className, ...props }: RippleButtonProp
 
     setRipples((prev) => [...prev, { x, y, id }])
     
-    const removeRipple = () => {
-      setRipples((prev) => prev.filter((r) => r.id !== id))
-    }
-    setTimeout(removeRipple, 600)
+    setTimeout(() => setRipples(filterRipple(id)), 600)
 
     // Call original onClick if provided
     if (props.onClick) {

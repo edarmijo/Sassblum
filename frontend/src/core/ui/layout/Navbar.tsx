@@ -219,7 +219,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
 
             {user && (
               <button
-                onClick={() => { closeMobile(); setTimeout(() => { void logout(); navigate('/') }, 300) }}
+                onClick={() => { closeMobile(); setTimeout(() => { logout().catch(console.error); navigate('/') }, 300) }}
                 style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 16px', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', transition: `border-color 200ms ${EASE_OUT}, color 200ms ${EASE_OUT}` }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff' }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}

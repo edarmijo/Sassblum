@@ -22,9 +22,9 @@ export function NotificationPreferences() {
   useEffect(() => {
     if (!service) return
     let cancelled = false
-    void service.getPreferences().then((p) => {
+    service.getPreferences().then((p) => {
       if (!cancelled) setPrefs(p)
-    })
+    }).catch(console.error)
     return () => { cancelled = true }
   }, [service])
 

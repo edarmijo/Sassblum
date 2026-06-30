@@ -12,12 +12,12 @@ export function PageLoader({ onComplete }: PageLoaderProps) {
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
-    const finishLoader = () => {
+    const finishLoader = async () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      setTimeout(() => {
-        setFadeOut(true);
-        setTimeout(() => onCompleteRef.current(), 500);
-      }, 200);
+      await new Promise(r => setTimeout(r, 200));
+      setFadeOut(true);
+      await new Promise(r => setTimeout(r, 500));
+      onCompleteRef.current();
     };
 
     const tick = () => {

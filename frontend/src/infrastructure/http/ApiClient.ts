@@ -54,7 +54,7 @@ class ApiClient {
           }
           this.forceLogout()
         }
-        return Promise.reject(error)
+        throw error
       },
     )
   }
@@ -111,7 +111,7 @@ class ApiClient {
       let hash = 0
       const str = parts.join('|')
       for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+        hash = Math.trunc(((hash << 5) - hash + str.charCodeAt(i)))
       }
       return `fp-${Math.abs(hash).toString(36)}`
     } catch {

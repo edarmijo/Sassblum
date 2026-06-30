@@ -27,7 +27,7 @@ DATE=$(date +%Y-%m-%d_%H%M)
 FILENAME="sassblum_backup_${DATE}.dump"
 
 # Validate
-if [ -z "$DB_URL" ]; then
+if [[ -z "$DB_URL" ]]; then
     echo "ERROR: DATABASE_URL not set. Pass it as env var or argument."
     exit 1
 fi
@@ -45,7 +45,7 @@ pg_dump "$DB_URL" \
     --file="${BACKUP_DIR}/${FILENAME}" 2>&1
 
 # Verify backup file exists and has size > 0
-if [ ! -s "${BACKUP_DIR}/${FILENAME}" ]; then
+if [[ ! -s "${BACKUP_DIR}/${FILENAME}" ]]; then
     echo "ERROR: Backup file is empty or missing!"
     exit 1
 fi
