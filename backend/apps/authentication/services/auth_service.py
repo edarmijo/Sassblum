@@ -196,10 +196,10 @@ class AuthService(IAuthService):
         frontend = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
         verify_url = f"{frontend}/verify-email?token={token}"
         context = {
-            "tipo": "password_reset",  # reuse a simple template
+            "tipo": "email_verification",
             "titulo": "Verifica tu correo",
             "cuerpo": "Confirma tu cuenta para empezar a usar SassBlum.",
-            "reset_url": verify_url,
+            "verify_url": verify_url,
             "expira_en": "24 horas",
             "recipient_nombre": user.first_name,
         }

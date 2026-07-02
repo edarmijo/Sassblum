@@ -1,0 +1,24 @@
+{% extends "email/base_email.html" %}
+
+{% block subject %}Verifica tu cuenta{% endblock %}
+
+{% block titulo %}Confirma tu cuenta{% endblock %}
+
+{% block contenido %}
+  <p>Hola{% if recipient_nombre %} {{ recipient_nombre }}{% endif %},</p>
+  <p>Gracias por registrarte en SassBlum. Confirma tu correo para activar tu cuenta y empezar a usar la plataforma.</p>
+  <table role="presentation" style="border-collapse: collapse; width: 100%; margin: 20px auto; text-align: center;">
+    <tr>
+      <td style="border-radius:8px;background:#1d1c1a;">
+        <a href="{{ verify_url }}" target="_blank"
+           style="display:inline-block;padding:11px 22px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+          Confirmar cuenta
+        </a>
+      </td>
+    </tr>
+  </table>
+  <p style="font-size:13px;color:#6f6e68;">
+    Este enlace caduca en {{ expira_en|default:"24 horas" }} y solo puede usarse una vez.
+    Si no creaste esta cuenta, puedes ignorar este correo.
+  </p>
+{% endblock %}

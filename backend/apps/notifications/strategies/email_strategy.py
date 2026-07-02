@@ -30,6 +30,7 @@ TEMPLATE_MAP: dict[str, tuple[str, str]] = {
     "comentario":    ("email/status_changed.html",  "Nuevo comentario en tu ticket"),
     "reasignacion":  ("email/ticket_assigned.html", "Ticket reasignado"),
     "password_reset": ("email/password_reset.html", "Recuperación de contraseña"),
+    "email_verification": ("email/email_verification.html", "Verifica tu cuenta"),
 }
 
 
