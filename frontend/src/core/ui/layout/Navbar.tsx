@@ -101,7 +101,7 @@ function AuthedActions() {
           <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
           <DropdownMenuItem
             onClick={() => {
-              void logout()
+              logout().catch(() => {})
               navigate('/')
             }}
             className="text-white/70 focus:text-white focus:bg-white/6"
@@ -123,7 +123,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
   items: NavItem[];
   isActive: (to: string) => boolean;
   user: any;
-  logout: () => void;
+  logout: () => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
 }) {
   return (

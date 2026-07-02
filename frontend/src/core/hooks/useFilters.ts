@@ -7,7 +7,7 @@ import { useState, useMemo, useCallback } from 'react'
 
 export type FiltersState<T> = T & { [key: string]: unknown }
 
-export function useFilters<T extends Record<string, unknown>>(initial: T) {
+export function useFilters<T extends object>(initial: T) {
   const [filters, setFilters] = useState<T>(initial)
 
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters])

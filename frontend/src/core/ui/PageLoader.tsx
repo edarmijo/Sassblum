@@ -4,7 +4,7 @@ interface PageLoaderProps {
   onComplete: () => void;
 }
 
-export function PageLoader({ onComplete }: PageLoaderProps) {
+export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
