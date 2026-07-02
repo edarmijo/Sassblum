@@ -28,8 +28,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+# Copy and install Python dependencies in the runtime image so Django is available
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code explicitly to avoid copying sensitive data
 COPY apps/ apps/
@@ -37,17 +38,15 @@ COPY core/ core/
 COPY config/ config/
 COPY manage.py .
 
-# Ensure /root/.local/bin is in PATH for daphne
-ENV PATH=/root/.local/bin:$PATH \
+# Ensure installed scripts are in PATH
+ENV PATH=/usr/local/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Create staticfiles directory and collect static files
+# Create staticfiles directory, collect static files, and create non-root user
 RUN mkdir -p staticfiles && \
-    python manage.py collectstatic --noinput 2>/dev/null || true
-
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
+    python manage.py collectstatic --noinput 2>/dev/null || true && \
+    useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
