@@ -70,6 +70,11 @@ CORS_ALLOWED_ORIGINS = [
 # CORS preflight cache — reduce OPTIONS requests
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
+# Permitir cualquier subdominio de vercel.app (deploys y previews)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 # Content-Security-Policy — OWASP A03:2021 defense-in-depth
 SELF_SRC = "'self'"
 CSP_DEFAULT_SRC = (SELF_SRC,)

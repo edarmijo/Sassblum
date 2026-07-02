@@ -3,13 +3,17 @@ import { Button } from './button'
 
 type RippleButtonProps = ComponentProps<typeof Button>
 
+type Ripple = { x: number; y: number; id: number }
+
 /**
  * Botón con efecto ripple (onda expansiva) al hacer click.
  * Cada ripple se auto-destruye después de 600ms.
  * Usa solo CSS animation para el efecto (GPU-friendly).
  */
-export function RippleButton({ children, className, ...props }: RippleButtonProps) {
+export function RippleButton({ children, className, ...props }: Readonly<RippleButtonProps>) {
   const [ripples, setRipples] = useState<Ripple[]>([])
+
+  const filterRipple = useCallback((id: number) => (prev: Ripple[]) => prev.filter((r) => r.id !== id), [])
 
   const handleClick = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -25,7 +29,7 @@ export function RippleButton({ children, className, ...props }: RippleButtonProp
     if (props.onClick) {
       props.onClick(e as MouseEvent<HTMLButtonElement> & { nativeEvent: MouseEvent })
     }
-  }, [props.onClick])
+  }, [props.onClick, filterRipple])
 
   return (
     <Button className={`relative overflow-hidden ${className ?? ''}`} onClick={handleClick} {...props}>
