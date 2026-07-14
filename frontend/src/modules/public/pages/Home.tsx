@@ -221,7 +221,7 @@ export function Home() {
           {/* title */}
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(3rem,9vw,7rem)', fontWeight: 700, lineHeight: 0.95, letterSpacing: '-0.03em', marginBottom: '2rem' }}>
             {['Innovación', 'Tecnológica'].map((word, i) => (
-              <div key={i} className="overflow-hidden">
+              <div key={word} className="overflow-hidden">
                 <motion.span
                   className="inline-block"
                   initial={{ opacity: 0, y: '120%' }}
@@ -289,7 +289,7 @@ export function Home() {
             { Icon: Cctv,    label: 'CCTV',       top: undefined, right: '20%', bottom: '15%',    iconColor: C.accent  },
           ] as const).map((c, i) => (
             <motion.div
-              key={i}
+              key={c.label}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 + i * 0.2, duration: 0.9, ease: EASE_APPLE }}
@@ -349,7 +349,7 @@ export function Home() {
           <div className="mb-[clamp(3rem,5vw,5rem)]">
             <motion.div variants={fadeUp} initial="hidden" animate={aboutInView ? 'visible' : 'hidden'} className="inline-flex items-center gap-3 mb-6" style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.accent }}>
               <span style={{ width: 32, height: 1, background: C.accent }} />
-              Sobre Nosotros
+              <span>Sobre Nosotros</span>
             </motion.div>
             <motion.h2
               variants={fadeUp} initial="hidden" animate={aboutInView ? 'visible' : 'hidden'}
@@ -383,7 +383,7 @@ export function Home() {
             <div className="flex flex-col gap-8">
               {STATS.map((s, i) => (
                 <motion.div
-                  key={i}
+                  key={s.label}
                   variants={stagger(i)}
                   initial="hidden"
                   animate={aboutInView ? 'visible' : 'hidden'}

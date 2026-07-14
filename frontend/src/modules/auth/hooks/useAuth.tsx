@@ -13,6 +13,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
 } from 'react'
 import type { ReactNode } from 'react'
 import type {
@@ -41,7 +42,7 @@ interface AuthProviderProps {
   service?: IAuthService
 }
 
-export function AuthProvider({ children, service = defaultAuthService }: AuthProviderProps) {
+export function AuthProvider({ children, service = defaultAuthService }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('auth_user')
     return saved ? JSON.parse(saved) : null
@@ -61,6 +62,7 @@ export function AuthProvider({ children, service = defaultAuthService }: AuthPro
         apiClient.setTokens(tokens.accessToken, tokens.refreshToken)
         socketClient.connect(tokens.accessToken)
       } catch (err) {
+        console.warn('Sesión guardada ilegible; se descarta y se pide login de nuevo.', err)
         localStorage.removeItem('auth_tokens')
         localStorage.removeItem('auth_user')
       }
@@ -111,10 +113,13 @@ export function AuthProvider({ children, service = defaultAuthService }: AuthPro
     setRefreshToken(null)
   }, [service, refreshToken])
 
+  const value = useMemo(
+    () => ({ user, isAuthenticated: user !== null, isLoading, login, register, logout }),
+    [user, isLoading, login, register, logout],
+  )
+
   return (
-    <AuthContext.Provider
-      value={{ user, isAuthenticated: user !== null, isLoading, login, register, logout }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

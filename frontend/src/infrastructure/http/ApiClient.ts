@@ -98,8 +98,8 @@ class ApiClient {
   /** H#4: Generate a simple device fingerprint for token binding. */
   private _getDeviceFingerprint(): string {
     try {
-      const nav = typeof navigator !== 'undefined' ? navigator : null
-      const screen = typeof window !== 'undefined' ? window.screen : null
+      const nav = typeof navigator === 'undefined' ? null : navigator
+      const screen = typeof globalThis.window === 'undefined' ? null : globalThis.window.screen
       const parts = [
         nav?.userAgent ?? '',
         nav?.language ?? '',
@@ -111,7 +111,7 @@ class ApiClient {
       let hash = 0
       const str = parts.join('|')
       for (let i = 0; i < str.length; i++) {
-        hash = Math.trunc(((hash << 5) - hash + str.charCodeAt(i)))
+        hash = Math.trunc(((hash << 5) - hash + (str.codePointAt(i) ?? 0)))
       }
       return `fp-${Math.abs(hash).toString(36)}`
     } catch {

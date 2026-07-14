@@ -49,8 +49,9 @@ class CatalogService implements ICatalogClientView {
     if (filters?.categoria) params.set('categoria', filters.categoria)
     if (filters?.busqueda) params.set('busqueda', filters.busqueda)
     const qs = params.toString()
+    const suffix = qs ? `?${qs}` : ''
     const data = await apiClient.get<{ items: BackendService[]; total: number }>(
-      `/servicios/${qs ? `?${qs}` : ''}`,
+      `/servicios/${suffix}`,
     )
     return data.items.map(mapSummary)
   }

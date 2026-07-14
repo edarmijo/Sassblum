@@ -39,6 +39,9 @@ function iconFor(categoria: string) {
   return CATEGORY_ICON[key] ?? Wrench
 }
 
+// Claves estables para los skeletons (evita usar el índice del array como key)
+const SKELETON_KEYS = Array.from({ length: 8 }, (_, i) => `skeleton-${i}`)
+
 function CategoryIcon({ categoria, className }: { categoria: string; className?: string }) {
   return createElement(iconFor(categoria), { className })
 }
@@ -49,6 +52,20 @@ export function Services() {
   const [selected, setSelected] = useState<(typeof services)[number] | null>(null)
 
   const ctaTo = user ? '/mis-tickets' : '/login'
+
+  // Estado de carga / vacío precalculado — null significa "renderiza la grilla"
+  let catalogFallback: React.ReactNode = null
+  if (isLoading) {
+    catalogFallback = (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+        {SKELETON_KEYS.map((k) => <Skeleton key={k} className="h-56 rounded-xl" />)}
+      </div>
+    )
+  } else if (services.length === 0) {
+    catalogFallback = (
+      <p className="text-center" style={{ color: '#5c7a94' }}>Aún no hay servicios publicados en el catálogo.</p>
+    )
+  }
 
   return (
     <div className="min-h-screen">
@@ -65,13 +82,7 @@ export function Services() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {error && <p className="text-center text-red-400 mb-8">{error}</p>}
 
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-xl" />)}
-            </div>
-          ) : services.length === 0 ? (
-            <p className="text-center" style={{ color: '#5c7a94' }}>Aún no hay servicios publicados en el catálogo.</p>
-          ) : (
+          {catalogFallback ?? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
               {services.map((s, i) => {
                 const img = s.imagenUrl

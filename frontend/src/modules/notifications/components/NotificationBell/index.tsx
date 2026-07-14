@@ -26,13 +26,15 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const unreadSuffix = unreadCount > 0 ? ` (${unreadCount} sin leer)` : ''
+
   return (
     <div className="relative" ref={containerRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="relative p-2 rounded-full hover:bg-accent text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer transition-colors"
-        aria-label={`Notificaciones${unreadCount > 0 ? ` (${unreadCount} sin leer)` : ''}`}
+        aria-label={`Notificaciones${unreadSuffix}`}
         aria-expanded={open}
       >
         <Bell className="h-5 w-5" aria-hidden />

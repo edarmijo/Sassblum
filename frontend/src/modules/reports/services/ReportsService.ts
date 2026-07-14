@@ -26,13 +26,14 @@ function buildFilters(filters?: ReportFilters): Record<string, string> {
 class ReportsService implements IReportsService {
   async getDashboard(filters?: ReportFilters): Promise<ReportSummary> {
     const params = new URLSearchParams(buildFilters(filters)).toString()
+    const suffix = params ? `?${params}` : ''
     const data = await apiClient.get<{
       total: number
       abiertos: number
       cerrados: number
       por_estado: Record<string, number>
       por_prioridad: Record<string, number>
-    }>(`/reportes/tickets${params ? `?${params}` : ''}`)
+    }>(`/reportes/tickets${suffix}`)
     return {
       total: data.total,
       abiertos: data.abiertos,

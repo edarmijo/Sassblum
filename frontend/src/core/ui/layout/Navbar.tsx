@@ -117,7 +117,7 @@ function AuthedActions() {
 
 /* ─── MobileMenu ────────────────────────────────────────────────────── */
 
-function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, navigate }: {
+function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, navigate }: Readonly<{
   mobileOpen: boolean;
   closeMobile: () => void;
   items: NavItem[];
@@ -125,7 +125,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
   user: any;
   logout: () => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
-}) {
+}>) {
   return (
       <div
         style={{
@@ -275,8 +275,8 @@ export function Navbar() {
 
   /* build nav items */
   const items: NavItem[] = [...PUBLIC_ITEMS]
-  if (!user) items.push({ to: '/login', label: 'INGRESAR' })
-  else items.push(DASHBOARD_BY_ROLE[user.rol])
+  if (user) items.push(DASHBOARD_BY_ROLE[user.rol])
+  else items.push({ to: '/login', label: 'INGRESAR' })
 
   const isActive = (to: string) => location.pathname === to
 
@@ -335,7 +335,7 @@ export function Navbar() {
                 color: '#fff',
               }}
             >
-              SASS
+              <span>SASS</span>
               <span style={{ color: '#00c4e0' }}>.</span>
             </span>
           </Link>

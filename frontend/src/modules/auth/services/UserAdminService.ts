@@ -38,7 +38,8 @@ class UserAdminService implements IUserAdminActions {
     if (filters?.role) params.set('role', filters.role)
     if (filters?.estado) params.set('estado', filters.estado)
     const qs = params.toString()
-    const data = await apiClient.get<{ items: BeUser[] }>(`/usuarios/${qs ? `?${qs}` : ''}`)
+    const suffix = qs ? `?${qs}` : ''
+    const data = await apiClient.get<{ items: BeUser[] }>(`/usuarios/${suffix}`)
     return data.items.map(mapUser)
   }
 

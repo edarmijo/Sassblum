@@ -135,7 +135,8 @@ class TicketService implements ITicketClientActions {
     if (filters?.clienteId) params.set('cliente_id', filters.clienteId)
     if (filters?.asignadoId) params.set('asignado_id', filters.asignadoId)
     const qs = params.toString()
-    const data = await apiClient.get<{ items: BeSummary[] }>(`/tickets/${qs ? `?${qs}` : ''}`)
+    const suffix = qs ? `?${qs}` : ''
+    const data = await apiClient.get<{ items: BeSummary[] }>(`/tickets/${suffix}`)
     return data.items.map(mapSummary)
   }
 

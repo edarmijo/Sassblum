@@ -18,22 +18,14 @@ interface TicketCardProps {
  * DIP: depends on TicketSummary type (from ITicketService), not on any concrete service.
  * OCP: new display field → extend TicketSummary + update this template; no structural change.
  */
-export function TicketCard({ ticket, onSelect }: TicketCardProps) {
+export function TicketCard({ ticket, onSelect }: Readonly<TicketCardProps>) {
   const handleClick = () => onSelect?.(ticket.id)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onSelect?.(ticket.id)
-    }
-  }
 
   return (
-    <article
-      className="group bg-card border border-border rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 outline-none"
+    <button
+      type="button"
+      className="group block w-full text-left bg-card border border-border rounded-xl p-4 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 outline-none"
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
       aria-label={`Ticket ${ticket.numero}: ${ticket.asunto}`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -41,9 +33,9 @@ export function TicketCard({ ticket, onSelect }: TicketCardProps) {
           <p className="text-[10px] font-mono text-muted-foreground tracking-wide">
             {ticket.numero}
           </p>
-          <h3 className="text-sm font-semibold text-foreground truncate mt-0.5 leading-snug group-hover:text-brand-cyan-dark transition-colors">
+          <span className="block text-sm font-semibold text-foreground truncate mt-0.5 leading-snug group-hover:text-brand-cyan-dark transition-colors">
             {ticket.asunto}
-          </h3>
+          </span>
           <p className="text-xs text-muted-foreground mt-1 truncate">{ticket.servicioNombre}</p>
         </div>
         <TicketStatusBadge estado={ticket.estado} />
@@ -62,6 +54,6 @@ export function TicketCard({ ticket, onSelect }: TicketCardProps) {
           {ticket.prioridad}
         </span>
       </div>
-    </article>
+    </button>
   )
 }
