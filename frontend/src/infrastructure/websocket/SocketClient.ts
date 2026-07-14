@@ -23,7 +23,7 @@ const MAX_BACKOFF_MS = 30_000
 class SocketClient {
   private socket: WebSocket | null = null
   private token: string | null = null
-  private handlers = new Map<string, Set<EventHandler>>()
+  private readonly handlers = new Map<string, Set<EventHandler>>()
   private backoff = 1_000
   private shouldReconnect = false
 

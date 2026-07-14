@@ -5,6 +5,9 @@ import { GlowCard } from '../../../core/ui/GlowCard'
 import { PageHero } from '../../../core/ui/layout/PageHero'
 import { Reveal, FocusReveal } from '../../../core/ui/motion'
 
+// Claves estables para las 5 estrellas (evita usar el índice del array como key)
+const STAR_KEYS = Array.from({ length: 5 }, (_, i) => `star-${i}`)
+
 const TESTIMONIALS = [
   { name: 'María González', company: 'Distribuidora Andina', text: 'SASS BLUM transformó nuestra infraestructura de red. El soporte es excelente y siempre responden a tiempo.' },
   { name: 'Carlos Mendoza', company: 'Clínica San Rafael', text: 'Instalaron todo nuestro sistema de CCTV y domótica. Profesionalismo de principio a fin.' },
@@ -52,8 +55,8 @@ export function Clients() {
                     <Quote className="h-9 w-9 mb-4" style={{ color: 'rgba(0,196,224,0.3)' }} />
                     <p className="mb-6 leading-relaxed" style={{ color: '#7aa3b8' }}>{t.text}</p>
                     <div className="flex items-center gap-1 mb-3">
-                      {Array.from({ length: 5 }).map((_, s) => (
-                        <Star key={s} className="h-4 w-4 fill-brand-cyan text-brand-cyan" />
+                      {STAR_KEYS.map((k) => (
+                        <Star key={k} className="h-4 w-4 fill-brand-cyan text-brand-cyan" />
                       ))}
                     </div>
                     <p className="font-medium" style={{ color: '#eef4f8' }}>{t.name}</p>

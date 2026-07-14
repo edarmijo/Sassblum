@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
+import { querySuffix } from '../../../core/utils/query'
 import type {
   IReportsService,
   ReportSummary,
@@ -25,14 +26,14 @@ function buildFilters(filters?: ReportFilters): Record<string, string> {
 
 class ReportsService implements IReportsService {
   async getDashboard(filters?: ReportFilters): Promise<ReportSummary> {
-    const params = new URLSearchParams(buildFilters(filters)).toString()
+    const params = new URLSearchParams(buildFilters(filters))
     const data = await apiClient.get<{
       total: number
       abiertos: number
       cerrados: number
       por_estado: Record<string, number>
       por_prioridad: Record<string, number>
-    }>(`/reportes/tickets${params ? `?${params}` : ''}`)
+    }>(`/reportes/tickets${querySuffix(params)}`)
     return {
       total: data.total,
       abiertos: data.abiertos,

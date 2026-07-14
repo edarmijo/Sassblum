@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, ImagePlus, Loader2, X, Power } from 'lucide-react'
+import { Plus, Pencil, ImagePlus, Loader2, X } from 'lucide-react'
 import { useCatalogAdmin, type BeService } from '../hooks/useCatalogAdmin'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
 import { Input } from '../../../core/ui/input'
 import { Label } from '../../../core/ui/label'
 import { Textarea } from '../../../core/ui/textarea'
-import { Badge } from '../../../core/ui/badge'
-import { ImageWithFallback } from '../../../core/ui/ImageWithFallback'
+import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
 
 /**
  * Admin/worker catalog management with create + EDIT + toggle active.
@@ -23,6 +22,7 @@ export function CatalogAdminPanel() {
   const [form, setForm] = useState({ nombre: '', descripcion: '', categoria: '', imagen_url: '' })
   const [imagen, setImagen] = useState<File | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const isEditing = editingId !== null
 
   const resetForm = () => {
     setForm({ nombre: '', descripcion: '', categoria: '', imagen_url: '' })
@@ -44,8 +44,8 @@ export function CatalogAdminPanel() {
     }
     setSubmitting(true)
     try {
-      if (editingId !== null) {
-        await editService(editingId, form, imagen)
+      if (isEditing) {
+        await editService(editingId as number, form, imagen)
         toast.success('Servicio actualizado', { description: form.nombre })
       } else {
         await createService(form, imagen)
@@ -69,6 +69,36 @@ export function CatalogAdminPanel() {
     }
   }
 
+  const imageInputLabel = isEditing ? 'Cambiar imagen…' : 'Seleccionar imagen…'
+  const submitContent = isEditing
+    ? <><Pencil className="h-4 w-4 mr-2" />Actualizar</>
+    : <><Plus className="h-4 w-4 mr-2" />Crear servicio</>
+
+  let servicesList: React.ReactNode
+  if (loading) {
+    servicesList = <p className="text-gray-500">Cargando catálogo…</p>
+  } else if (services.length === 0) {
+    servicesList = <p className="text-gray-500">Aún no hay servicios.</p>
+  } else {
+    servicesList = (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {services.map((s) => (
+          <AdminEntityCard
+            key={s.id}
+            titulo={s.nombre}
+            descripcion={s.descripcion}
+            etiqueta={s.categoria}
+            imagenUrl={s.imagen_url}
+            activo={s.activo}
+            resaltada={editingId === s.id}
+            onEdit={() => startEdit(s)}
+            onToggle={() => void handleToggle(s.id)}
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Form — create or edit mode */}
@@ -76,12 +106,12 @@ export function CatalogAdminPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{editingId !== null ? 'Editar servicio' : 'Nuevo servicio'}</CardTitle>
+              <CardTitle>{isEditing ? 'Editar servicio' : 'Nuevo servicio'}</CardTitle>
               <CardDescription>
-                {editingId !== null ? 'Modifica los datos del servicio' : 'Publica un servicio con su foto en el catálogo'}
+                {isEditing ? 'Modifica los datos del servicio' : 'Publica un servicio con su foto en el catálogo'}
               </CardDescription>
             </div>
-            {editingId !== null && (
+            {isEditing && (
               <Button type="button" variant="ghost" size="icon" onClick={resetForm} aria-label="Cancelar edición">
                 <X className="h-4 w-4" />
               </Button>
@@ -107,18 +137,18 @@ export function CatalogAdminPanel() {
               <Input id="s-url" value={form.imagen_url} onChange={(e) => setForm((f) => ({ ...f, imagen_url: e.target.value }))} placeholder="https://…" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="s-img">{editingId !== null ? '…o sube una nueva foto' : '…o sube una foto'}</Label>
+              <Label htmlFor="s-img">{isEditing ? '…o sube una nueva foto' : '…o sube una foto'}</Label>
               <label htmlFor="s-img" className="flex items-center gap-2 cursor-pointer rounded-lg border border-dashed border-gray-300 px-3 py-3 text-sm text-gray-600 hover:border-brand-cyan">
                 <ImagePlus className="h-4 w-4 text-brand-cyan" />
-                {imagen ? imagen.name : editingId !== null ? 'Cambiar imagen…' : 'Seleccionar imagen…'}
+                {imagen ? imagen.name : imageInputLabel}
               </label>
               <input id="s-img" type="file" accept="image/*" className="hidden" onChange={(e) => setImagen(e.target.files?.[0] ?? null)} />
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={submitting} className="flex-1 bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId !== null ? <><Pencil className="h-4 w-4 mr-2" />Actualizar</> : <><Plus className="h-4 w-4 mr-2" />Crear servicio</>}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : submitContent}
               </Button>
-              {editingId !== null && (
+              {isEditing && (
                 <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
               )}
             </div>
@@ -128,55 +158,7 @@ export function CatalogAdminPanel() {
 
       {/* List with edit + toggle buttons */}
       <div className="lg:col-span-2">
-        {loading ? (
-          <p className="text-gray-500">Cargando catálogo…</p>
-        ) : services.length === 0 ? (
-          <p className="text-gray-500">Aún no hay servicios.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {services.map((s) => (
-              <Card key={s.id} className={`overflow-hidden transition-opacity ${editingId === s.id ? 'ring-2 ring-brand-cyan' : ''}`}>
-                <div className="h-32 overflow-hidden bg-brand-navy/5">
-                  <ImageWithFallback src={s.imagen_url} alt={s.nombre} className="w-full h-full object-cover" />
-                </div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base">{s.nombre}</CardTitle>
-                    <Badge className={s.activo ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}>{s.activo ? 'Activo' : 'Inactivo'}</Badge>
-                  </div>
-                  <CardDescription className="line-clamp-2">{s.descripcion}</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-widest text-brand-cyan">{s.categoria}</span>
-                    <div className="flex gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => startEdit(s)}
-                        aria-label={`Editar ${s.nombre}`}
-                      >
-                        <Pencil className="h-3 w-3 mr-1" />Editar
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className={`h-7 px-2 text-xs ${s.activo ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
-                        onClick={() => void handleToggle(s.id)}
-                        aria-label={s.activo ? `Desactivar ${s.nombre}` : `Activar ${s.nombre}`}
-                      >
-                        <Power className="h-3 w-3 mr-1" />{s.activo ? 'Off' : 'On'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        {servicesList}
       </div>
     </div>
   )

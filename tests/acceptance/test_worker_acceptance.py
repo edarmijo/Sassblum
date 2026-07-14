@@ -9,23 +9,25 @@ State machine: [Nuevo] → [EnProceso] → [EnEspera] → [EnProceso] → [Resue
 
 import pytest
 
+from helpers import TEST_PASSWORD
+
 
 # ── TC-W1: Worker Login ───────────────────────────────────────────────────────
 # Given worker credentials, when logging in, then the worker dashboard lists
 # tickets assigned to them.
 
 @pytest.mark.django_db
-class TestTC_W1_WorkerLogin:
+class TestTCW1WorkerLogin:
     """TC-W1: HU-01 — Worker login and dashboard."""
 
     def test_worker_login_returns_jwt(self, api_client, worker_user):
         """Given worker credentials, when logging in, JWT is issued."""
         response = api_client.post('/api/auth/login', {
             'email': worker_user.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
         assert response.status_code == 200
-        assert 'access' in response.data
+        assert 'access' in response.data.get('tokens', response.data)
 
     def test_worker_can_list_assigned_tickets(self, authenticated_worker):
         """Given an authenticated worker, when listing tickets, assigned ones appear."""
@@ -39,7 +41,7 @@ class TestTC_W1_WorkerLogin:
 # notified; an empty comment is rejected.
 
 @pytest.mark.django_db
-class TestTC_W2_StatusUpdate:
+class TestTCW2StatusUpdate:
     """TC-W2: HU-07 — Status update with mandatory comment."""
 
     def test_update_status_with_valid_comment_accepted(self, authenticated_worker):
@@ -68,7 +70,7 @@ class TestTC_W2_StatusUpdate:
 # history.
 
 @pytest.mark.django_db
-class TestTC_W3_Comments:
+class TestTCW3Comments:
     """TC-W3: HU-11 — Add comments to ticket."""
 
     def test_add_comment_endpoint_exists(self, authenticated_worker):
@@ -84,7 +86,7 @@ class TestTC_W3_Comments:
 # Resuelto, then only valid transitions are allowed (invalid ones return HTTP 422).
 
 @pytest.mark.django_db
-class TestTC_W4_StateMachine:
+class TestTCW4StateMachine:
     """TC-W4: HU-07 — State machine valid/invalid transitions."""
 
     def test_invalid_transition_returns_error(self, authenticated_worker):
@@ -112,7 +114,7 @@ class TestTC_W4_StateMachine:
 # "Cerrado" state and can no longer transition.
 
 @pytest.mark.django_db
-class TestTC_W5_Closure:
+class TestTCW5Closure:
     """TC-W5: HU-12 — Ticket closure (terminal state)."""
 
     def test_closing_resolved_ticket_succeeds(self, authenticated_worker):
@@ -138,7 +140,7 @@ class TestTC_W5_Closure:
 # updates live via WebSocket (no page refresh).
 
 @pytest.mark.django_db
-class TestTC_W6_RealTime:
+class TestTCW6RealTime:
     """TC-W6: HU-13 — Real-time WebSocket updates."""
 
     def test_websocket_endpoint_exists(self, api_client):

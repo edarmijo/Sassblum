@@ -1,10 +1,14 @@
-TEST_PWD = "Pass1234"
 """
 End-to-end ticket lifecycle through TicketService (requires DB).
 create → assign → update_status → close. Run: pytest apps/tickets/tests/test_ticket_lifecycle.py -v
 """
 
+from core.testing import random_credential
+
 import pytest
+
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 from apps.authentication.models import User
 from apps.catalog.models import Service
@@ -20,19 +24,19 @@ def service(db):
 
 @pytest.fixture
 def cliente(db):
-    return User.objects.create_user(email="c@x.com", password=TEST_PWD, role=User.Role.CLIENT,
+    return User.objects.create_user(email="c@x.com", password=TEST_PASSWORD, role=User.Role.CLIENT,
                                     estado=User.Estado.ACTIVE, email_verificado=True)
 
 
 @pytest.fixture
 def worker(db):
-    return User.objects.create_user(email="w@x.com", password=TEST_PWD, role=User.Role.WORKER,
+    return User.objects.create_user(email="w@x.com", password=TEST_PASSWORD, role=User.Role.WORKER,
                                     estado=User.Estado.ACTIVE, email_verificado=True)
 
 
 @pytest.fixture
 def admin(db):
-    return User.objects.create_user(email="a@x.com", password=TEST_PWD, role=User.Role.ADMIN,
+    return User.objects.create_user(email="a@x.com", password=TEST_PASSWORD, role=User.Role.ADMIN,
                                     estado=User.Estado.ACTIVE, email_verificado=True)
 
 

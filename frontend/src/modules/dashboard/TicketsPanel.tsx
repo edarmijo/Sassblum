@@ -61,7 +61,10 @@ interface TicketsPanelProps {
   showCreate?: boolean
 }
 
-export function TicketsPanel({ title, subtitle, showCreate = false }: TicketsPanelProps) {
+// Claves estables para los skeletons de las stat cards (sin índice como key)
+const STAT_SKELETON_KEYS = Array.from({ length: 4 }, (_, i) => `stat-skeleton-${i}`)
+
+export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<TicketsPanelProps>) {
   const [ticketFilters, setTicketFilters] = useState<TicketFilterOptions>({})
   const { tickets, isLoading, error } = useTicketsList(ticketFilters)
   const navigate = useNavigate()
@@ -82,7 +85,7 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: TicketsPan
         {/* Stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-21 rounded-xl" style={{ background: 'rgba(8,22,36,0.5)' }} />)
+            STAT_SKELETON_KEYS.map((k) => <Skeleton key={k} className="h-21 rounded-xl" style={{ background: 'rgba(8,22,36,0.5)' }} />)
           ) : (
             <>
               <FocusReveal delay={0}><StatCard label="Total de Tickets" value={stats.total} icon={TicketIcon} chip="bg-brand-navy/20 text-brand-cyan" /></FocusReveal>

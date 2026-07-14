@@ -29,7 +29,7 @@ export function useFilters<T extends object>(initial: T) {
 
   const hasFilters = useMemo(() => {
     return Object.values(filters).some(Boolean)
-  }, [filtersKey])
+  }, [filters])
 
   return { filters, filtersKey, updateFilter, clearFilters, hasFilters }
 }

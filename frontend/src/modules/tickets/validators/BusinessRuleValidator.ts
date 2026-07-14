@@ -32,7 +32,7 @@ export class BusinessRuleValidator extends BaseValidator {
     return day !== 0 && day !== 6 && hour >= 7 && hour < 20
   }
 
-  validate(_data: unknown): ValidationResult {
+  validate(): ValidationResult {
     // Always valid — business hours are informational, not blocking
     return { isValid: true, field: '', errors: [] }
   }

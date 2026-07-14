@@ -23,7 +23,7 @@ interface TicketStatusBadgeProps {
  *      can be cross-referenced here in Sprint 4 without modifying this component.
  * OCP: new state → new entry in STATUS_CONFIG; component unchanged.
  */
-export function TicketStatusBadge({ estado }: TicketStatusBadgeProps) {
+export function TicketStatusBadge({ estado }: Readonly<TicketStatusBadgeProps>) {
   const config = STATUS_CONFIG[estado] ?? {
     label: estado,
     className: 'bg-slate-100 text-slate-600 border-slate-200',

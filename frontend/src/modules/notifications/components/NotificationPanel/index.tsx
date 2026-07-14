@@ -9,14 +9,14 @@ interface NotificationPanelProps {
  * SRP: renders the dropdown list of notifications.
  * DIP: consumes useNotifications (INotificationService via Context) — no service import.
  */
-export function NotificationPanel({ onClose }: NotificationPanelProps) {
+export function NotificationPanel({ onClose }: Readonly<NotificationPanelProps>) {
   const { notifications, unreadCount, isLoading, error, markAsRead, markAllAsRead } =
     useNotifications()
 
   return (
-    <div
-      className="absolute right-0 mt-2 w-80 max-h-[28rem] bg-popover rounded-xl shadow-xl border border-border overflow-hidden z-50 flex flex-col"
-      role="dialog"
+    <dialog
+      open
+      className="absolute right-0 left-auto m-0 mt-2 p-0 w-80 max-h-[28rem] bg-popover text-foreground rounded-xl shadow-xl border border-border overflow-hidden z-50 flex flex-col"
       aria-label="Notificaciones"
     >
       {/* Header */}
@@ -76,6 +76,6 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
           Cerrar
         </button>
       )}
-    </div>
+    </dialog>
   )
 }

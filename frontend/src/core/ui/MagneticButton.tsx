@@ -1,6 +1,5 @@
-import { useRef, useCallback, type ReactNode } from 'react'
+import { useRef, useCallback, type ReactNode, type MouseEvent } from 'react'
 import { motion, useMotionValue, useReducedMotion } from 'framer-motion'
-import type { MouseEvent } from 'react'
 
 interface MagneticButtonProps {
   children: ReactNode
@@ -13,7 +12,7 @@ interface MagneticButtonProps {
  * al cursor cuando está dentro del bounding box y regresa con un spring suave.
  * Solo activo en desktop; se desactiva con prefers-reduced-motion.
  */
-export function MagneticButton({ children, className, strength = 0.3 }: MagneticButtonProps) {
+export function MagneticButton({ children, className, strength = 0.3 }: Readonly<MagneticButtonProps>) {
   const ref = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)

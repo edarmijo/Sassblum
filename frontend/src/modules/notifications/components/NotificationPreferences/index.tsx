@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { useContext } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { NotificationServiceContext } from '../../hooks/useNotifications'
 import type { NotificationPreferences as Prefs } from '../../interfaces/types'
 import { Switch } from '../../../../core/ui/switch'

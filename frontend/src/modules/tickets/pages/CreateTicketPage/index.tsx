@@ -10,7 +10,7 @@ interface CreateTicketPageProps {
  * DIP: services loaded via useCatalog (ICatalogClientView); creation via the form's
  * useTicketsList (ITicketClientActions). Must render inside both providers.
  */
-export function CreateTicketPage({ onCreated }: CreateTicketPageProps) {
+export function CreateTicketPage({ onCreated }: Readonly<CreateTicketPageProps>) {
   const { services, isLoading } = useCatalog()
 
   if (isLoading) {

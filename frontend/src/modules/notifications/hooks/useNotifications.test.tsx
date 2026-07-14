@@ -1,7 +1,8 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { vi } from 'vitest'
-import { useNotifications, NotificationProvider } from './useNotifications'
+import { useNotifications } from './useNotifications'
+import { NotificationProvider } from './NotificationProvider'
 import type { INotificationService } from '../interfaces/INotificationService'
 import type { PaginatedNotifications } from '../interfaces/types'
 

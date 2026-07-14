@@ -5,12 +5,12 @@ import {
   useContext,
   createContext,
 } from 'react'
-import type { ReactNode } from 'react'
 import type { INotificationService } from '../interfaces/INotificationService'
 import type { Notification } from '../interfaces/types'
 import { socketClient } from '../../../infrastructure/websocket/SocketClient'
 
 // ── DIP: service delivered via Context, never imported directly ───────────────
+// El componente NotificationProvider vive en NotificationProvider.tsx (Fast Refresh).
 
 export const NotificationServiceContext = createContext<INotificationService | null>(null)
 
@@ -23,19 +23,6 @@ function useNotificationService(): INotificationService {
     )
   }
   return service
-}
-
-interface NotificationProviderProps {
-  service: INotificationService
-  children: ReactNode
-}
-
-export function NotificationProvider({ service, children }: NotificationProviderProps) {
-  return (
-    <NotificationServiceContext.Provider value={service}>
-      {children}
-    </NotificationServiceContext.Provider>
-  )
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -56,6 +43,13 @@ let _lastFetchMs = 0
 let _cachedNotifications: Notification[] = []
 let _cachedUnreadCount = 0
 const STALE_MS = 30_000 // 30 seconds — data is fresh enough to skip re-fetch
+
+/** Vacía el caché módulo-level (logout y aislamiento entre tests). */
+export function resetNotificationsCache(): void {
+  _lastFetchMs = 0
+  _cachedNotifications = []
+  _cachedUnreadCount = 0
+}
 
 export function useNotifications(): UseNotificationsResult {
   const service = useNotificationService()

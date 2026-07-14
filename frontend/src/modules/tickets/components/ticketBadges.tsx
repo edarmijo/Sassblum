@@ -18,12 +18,12 @@ const PRIORIDAD: Record<TicketPrioridad, { label: string; cls: string }> = {
   Critica: { label: 'Crítica', cls: 'bg-red-50 text-red-700 border-red-200' },
 }
 
-export function StatusBadge({ estado }: { estado: TicketEstado }) {
+export function StatusBadge({ estado }: Readonly<{ estado: TicketEstado }>) {
   const c = ESTADO[estado] ?? { label: estado, cls: 'bg-slate-100 text-slate-600 border-slate-200' }
   return <Badge className={`${SOFT} ${c.cls}`}>{c.label}</Badge>
 }
 
-export function PriorityBadge({ prioridad }: { prioridad: TicketPrioridad }) {
+export function PriorityBadge({ prioridad }: Readonly<{ prioridad: TicketPrioridad }>) {
   const c = PRIORIDAD[prioridad] ?? { label: prioridad, cls: 'bg-slate-100 text-slate-600 border-slate-200' }
   return <Badge className={`${SOFT} ${c.cls}`}>{c.label}</Badge>
 }

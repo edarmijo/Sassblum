@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
+import type { AuthUser, UserRole } from '../../../modules/auth/interfaces/IAuthService'
 import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
-import type { UserRole } from '../../../modules/auth/interfaces/IAuthService'
 
 /* ─── constants ─────────────────────────────────────────────────────── */
 
@@ -117,15 +117,15 @@ function AuthedActions() {
 
 /* ─── MobileMenu ────────────────────────────────────────────────────── */
 
-function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, navigate }: {
+function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, navigate }: Readonly<{
   mobileOpen: boolean;
   closeMobile: () => void;
   items: NavItem[];
   isActive: (to: string) => boolean;
-  user: any;
+  user: AuthUser | null;
   logout: () => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
-}) {
+}>) {
   return (
       <div
         style={{
@@ -266,17 +266,20 @@ export function Navbar() {
     }
   }, [mobileOpen])
 
-  /* close mobile menu on route change */
-  useEffect(() => {
+  /* close mobile menu on route change — ajuste durante el render (patrón React),
+     evita setState síncrono dentro de un efecto */
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname)
     setMobileOpen(false)
-  }, [location.pathname])
+  }
 
   const closeMobile = useCallback(() => setMobileOpen(false), [])
 
   /* build nav items */
   const items: NavItem[] = [...PUBLIC_ITEMS]
-  if (!user) items.push({ to: '/login', label: 'INGRESAR' })
-  else items.push(DASHBOARD_BY_ROLE[user.rol])
+  if (user) items.push(DASHBOARD_BY_ROLE[user.rol])
+  else items.push({ to: '/login', label: 'INGRESAR' })
 
   const isActive = (to: string) => location.pathname === to
 
@@ -335,7 +338,7 @@ export function Navbar() {
                 color: '#fff',
               }}
             >
-              SASS
+              <span>SASS</span>
               <span style={{ color: '#00c4e0' }}>.</span>
             </span>
           </Link>

@@ -14,7 +14,7 @@ interface LoginFormProps {
 /**
  * SRP: captures credentials and submits via useAuth (DIP — never AuthService directly).
  */
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({ onSuccess }: Readonly<LoginFormProps>) {
   const { login, isLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

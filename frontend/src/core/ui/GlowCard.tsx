@@ -20,7 +20,7 @@ export function GlowCard({
   glowColor = 'rgba(0, 212, 255, 0.15)',
   maxTilt = 12,
   style,
-}: GlowCardProps) {
+}: Readonly<GlowCardProps>) {
   const cardRef = useRef<HTMLDivElement>(null)
   const glareRef = useRef<HTMLDivElement>(null)
 

@@ -10,7 +10,7 @@ interface FileUploadProps {
  * SRP: file selection UI only. Validation (size/MIME) is delegated to FileValidator (S13)
  * inside the form's validator chain; storage is handled by the backend StorageService.
  */
-export function FileUpload({ files, onChange, maxSizeMb = 5 }: FileUploadProps) {
+export function FileUpload({ files, onChange, maxSizeMb = 5 }: Readonly<FileUploadProps>) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ export function FileUpload({ files, onChange, maxSizeMb = 5 }: FileUploadProps) 
       {files.length > 0 && (
         <ul className="mt-2 space-y-1">
           {files.map((file, i) => (
-            <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+            <li key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-2 text-xs text-gray-600">
               <span>📎 {file.name}</span>
               <span className="text-gray-400">({(file.size / 1024).toFixed(0)} KB)</span>
               <button type="button" onClick={() => remove(i)} className="text-red-500 hover:text-red-700 ml-auto">✕</button>

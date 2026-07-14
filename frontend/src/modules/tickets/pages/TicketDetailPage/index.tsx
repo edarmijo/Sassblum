@@ -21,7 +21,7 @@ interface TicketDetailPageProps {
  * H#3 (cliente): Includes StatusChangeForm for workers/admins to change
  * ticket status with mandatory observations for audit trail.
  */
-export function TicketDetailPage({ ticketId, onBack }: TicketDetailPageProps) {
+export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPageProps>) {
   const { user } = useAuth()
   const { ticket } = useTicketDetail(ticketId)
   const [refreshKey, setRefreshKey] = useState(0)

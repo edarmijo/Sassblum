@@ -13,21 +13,17 @@ interface VerifyEmailPageProps {
  * SRP: confirms an email using the token from the verification link (?token=...).
  * DIP: calls IAuthService.verifyEmail via useAuthService. Runs once on mount.
  */
-export function VerifyEmailPage({ token }: VerifyEmailPageProps) {
+export function VerifyEmailPage({ token }: Readonly<VerifyEmailPageProps>) {
   const auth = useAuthService()
-  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading')
-  const [message, setMessage] = useState('')
+  // Sin token el error se conoce desde el primer render (estado inicial, no setState en efecto).
+  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>(token ? 'loading' : 'error')
+  const [message, setMessage] = useState(token ? '' : 'Falta el token de verificación en el enlace.')
   const ran = useRef(false)
 
   useEffect(() => {
-    if (ran.current) return
+    if (ran.current || !token) return
     ran.current = true
 
-    if (!token) {
-      setStatus('error')
-      setMessage('Falta el token de verificación en el enlace.')
-      return
-    }
     void auth
       .verifyEmail(token)
       .then((res) => { setStatus('ok'); setMessage(res.message) })

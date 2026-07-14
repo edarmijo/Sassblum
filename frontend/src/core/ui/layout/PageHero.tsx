@@ -31,7 +31,7 @@ export function PageHero({
   subtitle,
   accent = 'cyan',
   orbPosition = 'top-right',
-}: PageHeroProps) {
+}: Readonly<PageHeroProps>) {
   const { primary, secondary } = ORB_POSITION[orbPosition]
   const orbColor = ORB_COLOR[accent]
   const secondaryColor = accent === 'cyan' ? '#6366f1' : '#00d4ff'

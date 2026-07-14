@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import type {
   IReportsService,
   ReportSummary,
@@ -7,16 +6,13 @@ import type {
   ReportFormat,
 } from '../interfaces/IReportsService'
 
-const ReportsServiceContext = createContext<IReportsService | null>(null)
+// El componente ReportsProvider vive en ReportsProvider.tsx (Fast Refresh).
+export const ReportsServiceContext = createContext<IReportsService | null>(null)
 
 function useReportsService(): IReportsService {
   const s = useContext(ReportsServiceContext)
   if (!s) throw new Error('useReports must be used inside <ReportsProvider>.')
   return s
-}
-
-export function ReportsProvider({ service, children }: { service: IReportsService; children: ReactNode }) {
-  return <ReportsServiceContext.Provider value={service}>{children}</ReportsServiceContext.Provider>
 }
 
 export function useReports(filters?: ReportFilters) {
@@ -31,7 +27,9 @@ export function useReports(filters?: ReportFilters) {
     setIsLoading(true)
     setError(null)
     try {
-      setSummary(await service.getDashboard(filters))
+      // Deps exactas: se reconstruye desde la clave serializada (exhaustive-deps).
+      const parsed: ReportFilters = JSON.parse(filtersKey)
+      setSummary(await service.getDashboard(parsed))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar el reporte')
     } finally {

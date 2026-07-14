@@ -22,7 +22,7 @@ interface AssignModalProps {
  * DIP: ITicketAdminActions (assign) + IUserAdminActions (worker list).
  * H#8 (audit): Uses Radix Dialog for automatic focus trap + keyboard handling.
  */
-export function AssignModal({ ticketId, onClose, onAssigned }: AssignModalProps) {
+export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignModalProps>) {
   const [workers, setWorkers] = useState<AdminUser[]>([])
   const [workerId, setWorkerId] = useState('')
   const [busy, setBusy] = useState(false)

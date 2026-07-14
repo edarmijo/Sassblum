@@ -11,19 +11,15 @@ const SESSION_KEY = 'sassblum:loaded'
  */
 export function Loader() {
   const reduce = useReducedMotion()
-  const alreadyLoaded = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1'
+  const alreadyLoaded = globalThis.window !== undefined && sessionStorage.getItem(SESSION_KEY) === '1'
   const [visible, setVisible] = useState(!alreadyLoaded && !reduce)
   const [hidden, setHidden] = useState(false)
   const [pct, setPct] = useState(0)
   const ringRef = useRef<SVGCircleElement>(null)
 
   useEffect(() => {
-    if (!visible) return
-    if (reduce) {
-      sessionStorage.setItem(SESSION_KEY, '1')
-      setVisible(false)
-      return
-    }
+    // El estado inicial ya contempla reduced-motion (visible nace false en ese caso).
+    if (!visible || reduce) return
     let raf = 0
     const duration = 1200
     const start = performance.now()
@@ -38,7 +34,7 @@ export function Loader() {
       } else {
         sessionStorage.setItem(SESSION_KEY, '1')
         setHidden(true) // dispara fade-out
-        window.setTimeout(() => setVisible(false), 700)
+        globalThis.setTimeout(() => setVisible(false), 700)
       }
     }
     raf = requestAnimationFrame(tick)
@@ -48,9 +44,8 @@ export function Loader() {
   if (!visible) return null
 
   return (
-    <div
+    <output
       aria-hidden={hidden}
-      role="status"
       aria-label="Cargando SassBlum"
       className="fixed inset-0 z-10001 flex items-center justify-center bg-brand-navy-deep transition-opacity duration-700"
       style={{ opacity: hidden ? 0 : 1, pointerEvents: hidden ? 'none' : 'auto' }}
@@ -78,6 +73,6 @@ export function Loader() {
         </div>
         <p className="font-display text-sm tracking-widest text-gray-500 tabular-nums">{pct}%</p>
       </div>
-    </div>
+    </output>
   )
 }

@@ -19,11 +19,11 @@ class IsClient(BasePermission):
     """Grants access only to authenticated users with role == 'client'."""
 
     def has_permission(self, request, view) -> bool:
-        User = _get_user_model()
+        user_model = _get_user_model()
         return (
             request.user.is_authenticated
             and request.user.role == user_model.Role.CLIENT
-            and request.user.estado == User.Estado.ACTIVE
+            and request.user.estado == user_model.Estado.ACTIVE
         )
 
 
@@ -31,11 +31,11 @@ class IsWorker(BasePermission):
     """Grants access only to authenticated users with role == 'worker'."""
 
     def has_permission(self, request, view) -> bool:
-        User = _get_user_model()
+        user_model = _get_user_model()
         return (
             request.user.is_authenticated
             and request.user.role == user_model.Role.WORKER
-            and request.user.estado == User.Estado.ACTIVE
+            and request.user.estado == user_model.Estado.ACTIVE
         )
 
 
@@ -43,9 +43,9 @@ class IsAdmin(BasePermission):
     """Grants access only to authenticated users with role == 'admin'."""
 
     def has_permission(self, request, view) -> bool:
-        User = _get_user_model()
+        user_model = _get_user_model()
         return (
             request.user.is_authenticated
             and request.user.role == user_model.Role.ADMIN
-            and request.user.estado == User.Estado.ACTIVE
+            and request.user.estado == user_model.Estado.ACTIVE
         )

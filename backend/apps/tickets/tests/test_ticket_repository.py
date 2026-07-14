@@ -3,12 +3,17 @@ Tests for TicketRepository — role-scoped listing, history ACL, duplicate detec
 Requires the database. Run: pytest apps/tickets/tests/test_ticket_repository.py -v
 """
 
+from core.testing import random_credential
+
 import pytest
 
 from apps.authentication.models import User
 from apps.catalog.models import Service
 from apps.tickets.models import Ticket
 from apps.tickets.repositories import TicketRepository
+
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 
 @pytest.fixture
@@ -18,17 +23,17 @@ def service(db):
 
 @pytest.fixture
 def cliente(db):
-    return User.objects.create_user(email="c@x.com", password="p", role=User.Role.CLIENT)
+    return User.objects.create_user(email="c@x.com", password=TEST_PASSWORD, role=User.Role.CLIENT)
 
 
 @pytest.fixture
 def worker(db):
-    return User.objects.create_user(email="w@x.com", password="p", role=User.Role.WORKER)
+    return User.objects.create_user(email="w@x.com", password=TEST_PASSWORD, role=User.Role.WORKER)
 
 
 @pytest.fixture
 def admin(db):
-    return User.objects.create_user(email="a@x.com", password="p", role=User.Role.ADMIN)
+    return User.objects.create_user(email="a@x.com", password=TEST_PASSWORD, role=User.Role.ADMIN)
 
 
 def make_ticket(numero, servicio, cliente, asignado=None, estado="Nuevo", asunto="Asunto X"):
@@ -41,7 +46,7 @@ def make_ticket(numero, servicio, cliente, asignado=None, estado="Nuevo", asunto
 @pytest.mark.django_db
 class TestRoleScopedListing:
     def test_client_sees_only_own(self, service, cliente, worker, admin):
-        otro = User.objects.create_user(email="o@x.com", password="p", role=User.Role.CLIENT)
+        otro = User.objects.create_user(email="o@x.com", password=TEST_PASSWORD, role=User.Role.CLIENT)
         make_ticket("T-2026-0001", service, cliente)
         make_ticket("T-2026-0002", service, otro)
 
@@ -87,7 +92,7 @@ class TestDuplicateDetection:
 @pytest.mark.django_db
 class TestHistoryAccessControl:
     def test_other_client_cannot_see_history(self, service, cliente):
-        otro = User.objects.create_user(email="z@x.com", password="p", role=User.Role.CLIENT)
+        otro = User.objects.create_user(email="z@x.com", password=TEST_PASSWORD, role=User.Role.CLIENT)
         ticket = make_ticket("T-2026-0011", service, cliente)
         assert TicketRepository().get_history(ticket.id, otro) is None
 

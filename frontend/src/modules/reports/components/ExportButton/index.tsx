@@ -14,7 +14,7 @@ const FORMATS: { value: ReportFormat; label: string }[] = [
 ]
 
 /** SRP: triggers a report export in the chosen format. */
-export function ExportButton({ onExport }: ExportButtonProps) {
+export function ExportButton({ onExport }: Readonly<ExportButtonProps>) {
   const [busy, setBusy] = useState<ReportFormat | null>(null)
 
   const handle = async (fmt: ReportFormat) => {

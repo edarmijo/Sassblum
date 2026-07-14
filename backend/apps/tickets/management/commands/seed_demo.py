@@ -1,5 +1,3 @@
-TAG_DOMOTICA = "Domótica"
-MSG_CREATED = "Ticket creado por el cliente."
 """
 seed_demo — carga datos de prueba para la demo/aceptación (idempotente).
 
@@ -13,10 +11,14 @@ El envío de correos se desvía a un backend en memoria durante la siembra para 
 mandar emails reales al disparar el Observer.
 
 Uso:
-    python manage.py seed_demo
+    SEED_DEMO_PASSWORD=<contraseña> python manage.py seed_demo
+    (si no se define, se genera una aleatoria y se imprime en el resumen)
 """
 
 from __future__ import annotations
+
+import os
+import secrets
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -26,7 +28,12 @@ from apps.authentication.models import User
 from apps.catalog.models import Service
 from apps.tickets.models import Ticket, TicketEvent
 
-DEMO_PASSWORD = "SassBlum2026"
+TAG_DOMOTICA = "Domótica"
+MSG_CREATED = "Ticket creado por el cliente."
+
+# La contraseña de las cuentas demo viene del entorno; si falta, se genera una
+# aleatoria por corrida (solo aplica a cuentas creadas en esa corrida).
+DEMO_PASSWORD = os.environ.get("SEED_DEMO_PASSWORD") or secrets.token_urlsafe(12)
 
 # ── Servicios reales de sassblum.com ────────────────────────────────────────────
 _IMG = "https://images.unsplash.com/{id}?auto=format&fit=crop&w=1200&q=80"
@@ -240,7 +247,7 @@ class Command(BaseCommand):
     def _print_summary(self):
         self.stdout.write("")
         self.stdout.write(self.style.MIGRATE_HEADING("Cuentas de prueba (contraseña común):"))
-        self.stdout.write(f"  Contraseña: {DEMO_PASSWORD}")
+        self.stdout.write(f"  Contraseña (solo cuentas creadas en esta corrida): {DEMO_PASSWORD}")
         for acc in ACCOUNTS:
             self.stdout.write(f"  [{acc['role']:>6}] {acc['email']}")
         self.stdout.write("")

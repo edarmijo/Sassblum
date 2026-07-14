@@ -7,23 +7,25 @@ Role: Administrator · Account: admin@sassblum.com
 
 import pytest
 
+from helpers import TEST_PASSWORD
+
 
 # ── TC-A1: Admin Login ────────────────────────────────────────────────────────
 # Given admin credentials, when logging in, then the admin dashboard shows
 # all tickets across all clients.
 
 @pytest.mark.django_db
-class TestTC_A1_AdminLogin:
+class TestTCA1AdminLogin:
     """TC-A1: HU-01 — Admin login and full dashboard."""
 
     def test_admin_login_returns_jwt(self, api_client, admin_user):
         """Given admin credentials, when logging in, JWT is issued."""
         response = api_client.post('/api/auth/login', {
             'email': admin_user.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
         assert response.status_code == 200
-        assert 'access' in response.data
+        assert 'access' in response.data.get('tokens', response.data)
 
     def test_admin_can_list_all_tickets(self, authenticated_admin):
         """Given an admin, when listing tickets, all tickets are visible."""
@@ -41,7 +43,7 @@ class TestTC_A1_AdminLogin:
 # to an active worker, then status becomes "EnProceso" and worker is notified.
 
 @pytest.mark.django_db
-class TestTC_A2_Assignment:
+class TestTCA2Assignment:
     """TC-A2: HU-05 — Ticket assignment to worker."""
 
     def test_assign_ticket_to_worker(self, authenticated_admin):
@@ -64,7 +66,7 @@ class TestTC_A2_Assignment:
 # is recorded in history and both workers are notified.
 
 @pytest.mark.django_db
-class TestTC_A3_Reassignment:
+class TestTCA3Reassignment:
     """TC-A3: HU-08 — Ticket reassignment."""
 
     def test_reassign_ticket_to_different_worker(self, authenticated_admin):
@@ -80,7 +82,7 @@ class TestTC_A3_Reassignment:
 # KPIs and charts render.
 
 @pytest.mark.django_db
-class TestTC_A4_Reports:
+class TestTCA4Reports:
     """TC-A4: HU-17 — Report generation with filters."""
 
     def test_report_dashboard_returns_kpis(self, authenticated_admin):
@@ -112,7 +114,7 @@ class TestTC_A4_Reports:
 # correctly.
 
 @pytest.mark.django_db
-class TestTC_A5_Export:
+class TestTCA5Export:
     """TC-A5: HU-18 — Data export (CSV, PDF, Excel)."""
 
     def test_export_csv(self, authenticated_admin):
@@ -142,7 +144,7 @@ class TestTC_A5_Export:
 # the change is persisted; a blocked user cannot log in.
 
 @pytest.mark.django_db
-class TestTC_A6_UserManagement:
+class TestTCA6UserManagement:
     """TC-A6: HU-14 — User management (create, block, unblock)."""
 
     def test_admin_can_list_users(self, authenticated_admin):
@@ -160,15 +162,16 @@ class TestTC_A6_UserManagement:
         from apps.authentication.models import User
         blocked = User.objects.create_user(
             email='blocked@sassblum.com',
-            password='TestPass123!',
+            password=TEST_PASSWORD,
             first_name='Blocked',
             last_name='User',
             role=User.Role.CLIENT,
-            estado=User.Estado.BLOQUEADO,
+            estado=User.Estado.BLOCKED,
             email_verificado=True,
         )
         response = api_client.post('/api/auth/login', {
             'email': blocked.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
-        assert response.status_code in (401, 403)
+        # 423 Locked es la respuesta canónica del AuthService para cuentas bloqueadas
+        assert response.status_code in (401, 403, 423)

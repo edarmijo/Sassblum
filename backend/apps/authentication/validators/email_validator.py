@@ -9,7 +9,9 @@ import re
 
 from core.base.base_validator import BaseValidator, ValidationResult
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Clases de caracteres disjuntas ([^@\s.] nunca matchea el separador '.') →
+# sin backtracking super-lineal (ReDoS) y sin puntos consecutivos en el dominio.
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$")
 
 
 class EmailValidator(BaseValidator):

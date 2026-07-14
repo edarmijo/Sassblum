@@ -11,7 +11,7 @@ export function MouseGradient() {
   const reduce = useReducedMotion()
 
   useEffect(() => {
-    if (reduce || window.innerWidth < 768) return
+    if (reduce || globalThis.window.innerWidth < 768) return
     const el = ref.current
     if (!el) return
     let raf = 0
@@ -22,14 +22,14 @@ export function MouseGradient() {
         el.style.setProperty('--my', `${e.clientY}px`)
       })
     }
-    window.addEventListener('mousemove', onMove, { passive: true })
+    globalThis.addEventListener('mousemove', onMove, { passive: true })
     return () => {
       cancelAnimationFrame(raf)
-      window.removeEventListener('mousemove', onMove)
+      globalThis.removeEventListener('mousemove', onMove)
     }
   }, [reduce])
 
-  if (reduce || (typeof window !== 'undefined' && window.innerWidth < 768)) return null
+  if (reduce || (globalThis.window !== undefined && globalThis.window.innerWidth < 768)) return null
 
   return (
     <div

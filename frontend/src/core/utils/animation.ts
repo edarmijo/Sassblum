@@ -82,7 +82,7 @@ export const hoverLift = {
 }
 
 // Magnetic hover (sigue el cursor ligeramente)
-export const magneticHover = (_strength = 0.3) => ({
+export const magneticHover = () => ({
   whileHover: { scale: 1.02 },
   transition: { type: 'spring', stiffness: 300, damping: 20 },
 })

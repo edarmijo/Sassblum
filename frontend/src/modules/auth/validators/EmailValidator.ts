@@ -5,7 +5,9 @@
 
 import { BaseValidator, type ValidationResult } from '../../../core/base/BaseValidator'
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+// Clases de caracteres disjuntas ([^@\s.] nunca matchea el separador '.') →
+// sin backtracking super-lineal (ReDoS) y sin puntos consecutivos en el dominio.
+const EMAIL_RE = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/
 
 export class EmailValidator extends BaseValidator {
   validate(data: unknown): ValidationResult {

@@ -19,7 +19,7 @@ export function ScrollReveal({
   className,
   delay = 0,
   y = 30,
-}: ScrollRevealProps) {
+}: Readonly<ScrollRevealProps>) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-100px 0px', amount: 0.3 })
 

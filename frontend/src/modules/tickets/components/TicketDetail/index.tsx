@@ -7,7 +7,7 @@ interface TicketDetailProps {
   ticketId: string
 }
 
-function MetaField({ label, children }: { label: string; children: React.ReactNode }) {
+function MetaField({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
   return (
     <div>
       <span className="text-xs font-medium text-[#5c7a94] uppercase tracking-wide">{label}</span>
@@ -21,7 +21,7 @@ function MetaField({ label, children }: { label: string; children: React.ReactNo
  * DIP: loads data via useTicketDetail which depends on ITicketClientActions (Context).
  * OCP: new section (e.g. adjuntos list) → add below the grid without touching other sections.
  */
-export function TicketDetail({ ticketId }: TicketDetailProps) {
+export function TicketDetail({ ticketId }: Readonly<TicketDetailProps>) {
   const { ticket, isLoading, error } = useTicketDetail(ticketId)
 
   if (isLoading) {
