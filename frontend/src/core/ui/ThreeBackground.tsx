@@ -17,8 +17,10 @@ import { secureRandom } from '../utils/random';
  */
 
 /* ───────── constants ───────── */
-const PARTICLE_COUNT_DESKTOP = 1500;
-const PARTICLE_COUNT_MOBILE  = 600;
+// Reducidos de 1500/600: visualmente equivalente y ~la mitad de trabajo por
+// frame en CPU/GPU (drift de partículas + red de líneas escalan con el count).
+const PARTICLE_COUNT_DESKTOP = 800;
+const PARTICLE_COUNT_MOBILE  = 300;
 const MOUSE_LERP       = 0.05;
 const CAMERA_LERP      = 0.02;
 const ORB_LERP         = 0.03;
@@ -303,6 +305,16 @@ export function ThreeBackground() {
 
     animate();   // ← always starts (no prefers-reduced-motion gate)
 
+    /* ── pausa cuando la pestaña no es visible (ahorra CPU/GPU/batería) ── */
+    const onVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+      } else {
+        animate();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     /* ── resize ── */
     const onResize = () => {
       camera.aspect = globalThis.window.innerWidth / globalThis.window.innerHeight;
@@ -314,6 +326,7 @@ export function ThreeBackground() {
     /* ── cleanup ── */
     return () => {
       cancelAnimationFrame(rafId);
+      document.removeEventListener('visibilitychange', onVisibility);
       globalThis.removeEventListener('mousemove', onMouseMove);
       globalThis.removeEventListener('resize',    onResize);
       geo.dispose();       particleMat.dispose();

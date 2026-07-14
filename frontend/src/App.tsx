@@ -206,11 +206,18 @@ function DetailRoute() {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 
+const INTRO_KEY = 'sassblum:intro-shown'
+
 export default function App() {
-  const [loading, setLoading] = useState(true)
+  // El intro se muestra UNA vez por sesión; recargas y navegación entran directo.
+  const [loading, setLoading] = useState(() => sessionStorage.getItem(INTRO_KEY) !== '1')
+  const finishIntro = () => {
+    sessionStorage.setItem(INTRO_KEY, '1')
+    setLoading(false)
+  }
   return (
     <>
-      {loading && <PageLoader onComplete={() => setLoading(false)} />}
+      {loading && <PageLoader onComplete={finishIntro} />}
       <BrowserRouter>
       <ScrollToTop />
       <AuthProvider service={authService}>
