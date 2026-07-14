@@ -3,7 +3,7 @@ Tests for AuthService (requires DB). authenticate + register + lockout.
 Run: pytest apps/authentication/tests/test_auth_service.py -v
 """
 
-import secrets
+from core.testing import random_credential
 
 import pytest
 
@@ -17,8 +17,8 @@ from apps.authentication.services.auth_service import (
     PasswordPolicyViolation,
 )
 
-# Generated at import time: no hard-coded credential, deterministic within a run.
-TEST_PASSWORD = f"Aa1!{secrets.token_urlsafe(12)}"
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 
 @pytest.fixture

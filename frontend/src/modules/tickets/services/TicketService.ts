@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
+import { querySuffix } from '../../../core/utils/query'
 import type { ITicketClientActions } from '../interfaces/ITicketClientActions'
 import type {
   TicketCreatePayload,
@@ -134,9 +135,7 @@ class TicketService implements ITicketClientActions {
     if (filters?.fechaHasta) params.set('fecha_hasta', filters.fechaHasta)
     if (filters?.clienteId) params.set('cliente_id', filters.clienteId)
     if (filters?.asignadoId) params.set('asignado_id', filters.asignadoId)
-    const qs = params.toString()
-    const suffix = qs ? `?${qs}` : ''
-    const data = await apiClient.get<{ items: BeSummary[] }>(`/tickets/${suffix}`)
+    const data = await apiClient.get<{ items: BeSummary[] }>(`/tickets/${querySuffix(params)}`)
     return data.items.map(mapSummary)
   }
 

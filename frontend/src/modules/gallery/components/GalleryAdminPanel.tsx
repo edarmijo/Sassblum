@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, ImagePlus, Loader2, X, Power } from 'lucide-react'
+import { Plus, Pencil, ImagePlus, Loader2, X } from 'lucide-react'
 import { useGalleryAdmin, type BeProject, type ProjectForm } from '../hooks/useGalleryAdmin'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
 import { Input } from '../../../core/ui/input'
 import { Label } from '../../../core/ui/label'
 import { Textarea } from '../../../core/ui/textarea'
-import { Badge } from '../../../core/ui/badge'
-import { ImageWithFallback } from '../../../core/ui/ImageWithFallback'
+import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
 
 const EMPTY: ProjectForm = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
 
@@ -83,38 +82,17 @@ export function GalleryAdminPanel() {
     projectsList = (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {projects.map((p) => (
-          <Card key={p.id} className={`overflow-hidden transition-opacity ${editingId === p.id ? 'ring-2 ring-brand-cyan' : ''}`}>
-            <div className="h-32 overflow-hidden bg-brand-navy/5">
-              <ImageWithFallback src={p.imagen_url} alt={p.titulo} className="w-full h-full object-cover" />
-            </div>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base">{p.titulo}</CardTitle>
-                <Badge className={p.activo ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'}>{p.activo ? 'Activo' : 'Inactivo'}</Badge>
-              </div>
-              <CardDescription className="line-clamp-2">{p.descripcion}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-widest text-brand-cyan">{p.tag}</span>
-                <div className="flex gap-1.5">
-                  <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => startEdit(p)} aria-label={`Editar ${p.titulo}`}>
-                    <Pencil className="h-3 w-3 mr-1" />Editar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={`h-7 px-2 text-xs ${p.activo ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
-                    onClick={() => void handleToggle(p.id)}
-                    aria-label={p.activo ? `Desactivar ${p.titulo}` : `Activar ${p.titulo}`}
-                  >
-                    <Power className="h-3 w-3 mr-1" />{p.activo ? 'Off' : 'On'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AdminEntityCard
+            key={p.id}
+            titulo={p.titulo}
+            descripcion={p.descripcion}
+            etiqueta={p.tag}
+            imagenUrl={p.imagen_url}
+            activo={p.activo}
+            resaltada={editingId === p.id}
+            onEdit={() => startEdit(p)}
+            onToggle={() => void handleToggle(p.id)}
+          />
         ))}
       </div>
     )

@@ -3,7 +3,7 @@ Tests for TicketRepository — role-scoped listing, history ACL, duplicate detec
 Requires the database. Run: pytest apps/tickets/tests/test_ticket_repository.py -v
 """
 
-import secrets
+from core.testing import random_credential
 
 import pytest
 
@@ -12,8 +12,8 @@ from apps.catalog.models import Service
 from apps.tickets.models import Ticket
 from apps.tickets.repositories import TicketRepository
 
-# Generated at import time: no hard-coded credential, deterministic within a run.
-TEST_PASSWORD = f"Aa1!{secrets.token_urlsafe(12)}"
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 
 @pytest.fixture

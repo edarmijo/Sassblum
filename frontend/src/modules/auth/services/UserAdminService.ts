@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
+import { querySuffix } from '../../../core/utils/query'
 import type {
   IUserAdminActions,
   AdminUser,
@@ -37,9 +38,7 @@ class UserAdminService implements IUserAdminActions {
     const params = new URLSearchParams()
     if (filters?.role) params.set('role', filters.role)
     if (filters?.estado) params.set('estado', filters.estado)
-    const qs = params.toString()
-    const suffix = qs ? `?${qs}` : ''
-    const data = await apiClient.get<{ items: BeUser[] }>(`/usuarios/${suffix}`)
+    const data = await apiClient.get<{ items: BeUser[] }>(`/usuarios/${querySuffix(params)}`)
     return data.items.map(mapUser)
   }
 

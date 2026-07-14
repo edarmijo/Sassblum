@@ -3,12 +3,12 @@ End-to-end ticket lifecycle through TicketService (requires DB).
 create → assign → update_status → close. Run: pytest apps/tickets/tests/test_ticket_lifecycle.py -v
 """
 
-import secrets
+from core.testing import random_credential
 
 import pytest
 
-# Generated at import time: no hard-coded credential, deterministic within a run.
-TEST_PASSWORD = f"Aa1!{secrets.token_urlsafe(12)}"
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 from apps.authentication.models import User
 from apps.catalog.models import Service

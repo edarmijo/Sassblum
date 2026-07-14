@@ -5,7 +5,7 @@ Run: pytest apps/authentication/tests/test_password_reset.py -v
 These use @pytest.mark.django_db and run in your environment (Supabase / local PG).
 """
 
-import secrets
+from core.testing import random_credential
 from datetime import timedelta
 
 import pytest
@@ -18,8 +18,8 @@ from apps.authentication.services.token_service import (
     InvalidToken,
 )
 
-# Generated at import time: no hard-coded credential, deterministic within a run.
-TEST_PASSWORD = f"Aa1!{secrets.token_urlsafe(12)}"
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 
 @pytest.fixture

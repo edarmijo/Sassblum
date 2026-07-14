@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
+import { querySuffix } from '../../../core/utils/query'
 import type {
   ICatalogClientView,
 } from '../interfaces/ICatalogClientView'
@@ -48,10 +49,8 @@ class CatalogService implements ICatalogClientView {
     const params = new URLSearchParams()
     if (filters?.categoria) params.set('categoria', filters.categoria)
     if (filters?.busqueda) params.set('busqueda', filters.busqueda)
-    const qs = params.toString()
-    const suffix = qs ? `?${qs}` : ''
     const data = await apiClient.get<{ items: BackendService[]; total: number }>(
-      `/servicios/${suffix}`,
+      `/servicios/${querySuffix(params)}`,
     )
     return data.items.map(mapSummary)
   }
