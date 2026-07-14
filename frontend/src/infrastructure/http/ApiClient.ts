@@ -99,7 +99,7 @@ class ApiClient {
   private _getDeviceFingerprint(): string {
     try {
       const nav = typeof navigator === 'undefined' ? null : navigator
-      const screen = typeof globalThis.window === 'undefined' ? null : globalThis.window.screen
+      const screen = globalThis.window === undefined ? null : globalThis.window.screen
       const parts = [
         nav?.userAgent ?? '',
         nav?.language ?? '',

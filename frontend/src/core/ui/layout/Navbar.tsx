@@ -12,9 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
-import type { AuthUser } from '../../../modules/auth/interfaces/IAuthService'
+import type { AuthUser, UserRole } from '../../../modules/auth/interfaces/IAuthService'
 import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
-import type { UserRole } from '../../../modules/auth/interfaces/IAuthService'
 
 /* ─── constants ─────────────────────────────────────────────────────── */
 

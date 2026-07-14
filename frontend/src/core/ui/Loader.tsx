@@ -11,7 +11,7 @@ const SESSION_KEY = 'sassblum:loaded'
  */
 export function Loader() {
   const reduce = useReducedMotion()
-  const alreadyLoaded = typeof globalThis.window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1'
+  const alreadyLoaded = globalThis.window !== undefined && sessionStorage.getItem(SESSION_KEY) === '1'
   const [visible, setVisible] = useState(!alreadyLoaded && !reduce)
   const [hidden, setHidden] = useState(false)
   const [pct, setPct] = useState(0)
