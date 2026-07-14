@@ -20,29 +20,17 @@ describe('TicketStatusBadge', () => {
     expect(badge).toBeInTheDocument()
   })
 
-  it('renders "Nuevo" with blue styling', () => {
-    const { container } = render(<TicketStatusBadge estado="Nuevo" />)
-    const badge = container.firstChild as HTMLElement
-    expect(badge).toHaveClass('bg-blue-50')
-    expect(badge).toHaveClass('text-blue-700')
-  })
+  const STYLE_CASES: Array<[TicketEstado, string[]]> = [
+    ['Nuevo',     ['bg-blue-50', 'text-blue-700']],
+    ['EnProceso', ['bg-cyan-50']],
+    ['Resuelto',  ['bg-green-50']],
+    ['Cerrado',   ['bg-slate-100']],
+  ]
 
-  it('renders "Cerrado" with slate styling', () => {
-    const { container } = render(<TicketStatusBadge estado="Cerrado" />)
+  it.each(STYLE_CASES)('renders "%s" with its styling classes', (estado, classes) => {
+    const { container } = render(<TicketStatusBadge estado={estado} />)
     const badge = container.firstChild as HTMLElement
-    expect(badge).toHaveClass('bg-slate-100')
-  })
-
-  it('renders "EnProceso" with cyan styling', () => {
-    const { container } = render(<TicketStatusBadge estado="EnProceso" />)
-    const badge = container.firstChild as HTMLElement
-    expect(badge).toHaveClass('bg-cyan-50')
-  })
-
-  it('renders "Resuelto" with green styling', () => {
-    const { container } = render(<TicketStatusBadge estado="Resuelto" />)
-    const badge = container.firstChild as HTMLElement
-    expect(badge).toHaveClass('bg-green-50')
+    for (const cls of classes) expect(badge).toHaveClass(cls)
   })
 
   it('includes aria-label with estado', () => {
