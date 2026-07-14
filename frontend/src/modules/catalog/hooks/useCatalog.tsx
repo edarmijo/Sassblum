@@ -4,20 +4,16 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import type { ICatalogClientView } from '../interfaces/ICatalogClientView'
 import type { ServiceSummary, ServiceFilterOptions } from '../interfaces/ICatalogService'
 
+// El componente CatalogProvider vive en CatalogProvider.tsx (Fast Refresh).
 export const CatalogServiceContext = createContext<ICatalogClientView | null>(null)
 
 function useCatalogService(): ICatalogClientView {
   const service = useContext(CatalogServiceContext)
   if (!service) throw new Error('useCatalog must be used inside <CatalogProvider>.')
   return service
-}
-
-export function CatalogProvider({ service, children }: Readonly<{ service: ICatalogClientView; children: ReactNode }>) {
-  return <CatalogServiceContext.Provider value={service}>{children}</CatalogServiceContext.Provider>
 }
 
 interface UseCatalogResult {
@@ -40,7 +36,9 @@ export function useCatalog(): UseCatalogResult {
     setIsLoading(true)
     setError(null)
     try {
-      setServices(await service.getActiveServices(filters))
+      // Deps exactas: se reconstruye desde la clave serializada (exhaustive-deps).
+      const parsed: ServiceFilterOptions = JSON.parse(filtersKey)
+      setServices(await service.getActiveServices(parsed))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar el catálogo')
     } finally {

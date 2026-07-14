@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
+import type { AuthUser } from '../../../modules/auth/interfaces/IAuthService'
 import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
 import type { UserRole } from '../../../modules/auth/interfaces/IAuthService'
 
@@ -122,7 +123,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
   closeMobile: () => void;
   items: NavItem[];
   isActive: (to: string) => boolean;
-  user: any;
+  user: AuthUser | null;
   logout: () => Promise<void>;
   navigate: ReturnType<typeof useNavigate>;
 }>) {
@@ -266,10 +267,13 @@ export function Navbar() {
     }
   }, [mobileOpen])
 
-  /* close mobile menu on route change */
-  useEffect(() => {
+  /* close mobile menu on route change — ajuste durante el render (patrón React),
+     evita setState síncrono dentro de un efecto */
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname)
     setMobileOpen(false)
-  }, [location.pathname])
+  }
 
   const closeMobile = useCallback(() => setMobileOpen(false), [])
 

@@ -5,12 +5,12 @@ import {
   useContext,
   createContext,
 } from 'react'
-import type { ReactNode } from 'react'
 import type { INotificationService } from '../interfaces/INotificationService'
 import type { Notification } from '../interfaces/types'
 import { socketClient } from '../../../infrastructure/websocket/SocketClient'
 
 // ── DIP: service delivered via Context, never imported directly ───────────────
+// El componente NotificationProvider vive en NotificationProvider.tsx (Fast Refresh).
 
 export const NotificationServiceContext = createContext<INotificationService | null>(null)
 
@@ -23,19 +23,6 @@ function useNotificationService(): INotificationService {
     )
   }
   return service
-}
-
-interface NotificationProviderProps {
-  service: INotificationService
-  children: ReactNode
-}
-
-export function NotificationProvider({ service, children }: Readonly<NotificationProviderProps>) {
-  return (
-    <NotificationServiceContext.Provider value={service}>
-      {children}
-    </NotificationServiceContext.Provider>
-  )
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useContext, createContext, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import type { ITicketClientActions } from '../interfaces/ITicketClientActions'
 import type {
   TicketDetail,
@@ -9,6 +8,7 @@ import type {
 } from '../interfaces/ITicketService'
 
 // ── DIP: service delivered via Context, never imported directly ───────────────
+// El componente TicketClientProvider vive en TicketClientProvider.tsx (Fast Refresh).
 
 export const TicketClientContext = createContext<ITicketClientActions | null>(null)
 
@@ -21,19 +21,6 @@ function useTicketService(): ITicketClientActions {
     )
   }
   return service
-}
-
-interface TicketClientProviderProps {
-  service: ITicketClientActions
-  children: ReactNode
-}
-
-export function TicketClientProvider({ service, children }: Readonly<TicketClientProviderProps>) {
-  return (
-    <TicketClientContext.Provider value={service}>
-      {children}
-    </TicketClientContext.Provider>
-  )
 }
 
 // ── Hook: list + create ───────────────────────────────────────────────────────
@@ -58,7 +45,10 @@ export function useTicketsList(filters?: TicketFilterOptions): UseTicketsListRes
     setIsLoading(true)
     setError(null)
     try {
-      const data = await service.getMyTickets(filters)
+      // Se reconstruye desde la clave serializada: deps exactas sin re-fetch
+      // por identidad de objeto (react-hooks/exhaustive-deps).
+      const parsed: TicketFilterOptions = JSON.parse(filtersKey)
+      const data = await service.getMyTickets(parsed)
       setTickets(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar tickets')

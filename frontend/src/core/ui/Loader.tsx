@@ -18,12 +18,8 @@ export function Loader() {
   const ringRef = useRef<SVGCircleElement>(null)
 
   useEffect(() => {
-    if (!visible) return
-    if (reduce) {
-      sessionStorage.setItem(SESSION_KEY, '1')
-      setVisible(false)
-      return
-    }
+    // El estado inicial ya contempla reduced-motion (visible nace false en ese caso).
+    if (!visible || reduce) return
     let raf = 0
     const duration = 1200
     const start = performance.now()

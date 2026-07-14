@@ -163,7 +163,7 @@ export function Home() {
     };
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── CSS injected globally (keyframes + glow card + carousel) ── */
   const floatKeyframes = `

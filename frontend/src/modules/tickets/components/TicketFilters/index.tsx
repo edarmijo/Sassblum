@@ -34,8 +34,8 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
   const hasFilters = Object.values(filters).some(Boolean)
 
   const update = <K extends keyof TicketFilterOptions>(key: K, value: TicketFilterOptions[K] | string) => {
-    let parsedValue = value;
-    if (value === 'none') parsedValue = undefined as any;
+    let parsedValue: TicketFilterOptions[K] | string | undefined = value
+    if (value === 'none') parsedValue = undefined
     const next = { ...filters, [key]: parsedValue }
     const cleaned = Object.fromEntries(
       Object.entries(next).filter(([, v]) => v !== undefined && v !== null && v !== ''),

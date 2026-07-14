@@ -9,7 +9,7 @@ import type { TicketDetail } from '../../interfaces/ITicketService'
 // Mock the validator chain so tests are time-independent (BusinessRuleValidator checks business hours)
 vi.mock('../../validators/TicketValidatorChain', () => ({
   TicketValidatorChain: class {
-    run(_data: unknown) {
+    run() {
       return { isValid: true, field: '', errors: [] as string[] }
     }
   },

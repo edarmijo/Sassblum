@@ -10,7 +10,7 @@ type Ripple = { x: number; y: number; id: number }
  * Cada ripple se auto-destruye después de 600ms.
  * Usa solo CSS animation para el efecto (GPU-friendly).
  */
-export function RippleButton({ children, className, ...props }: Readonly<RippleButtonProps>) {
+export function RippleButton({ children, className, onClick, ...props }: Readonly<RippleButtonProps>) {
   const [ripples, setRipples] = useState<Ripple[]>([])
 
   const filterRipple = useCallback((id: number) => (prev: Ripple[]) => prev.filter((r) => r.id !== id), [])
@@ -22,14 +22,12 @@ export function RippleButton({ children, className, ...props }: Readonly<RippleB
     const id = Date.now()
 
     setRipples((prev) => [...prev, { x, y, id }])
-    
+
     setTimeout(() => setRipples(filterRipple(id)), 600)
 
     // Call original onClick if provided
-    if (props.onClick) {
-      props.onClick(e as MouseEvent<HTMLButtonElement> & { nativeEvent: MouseEvent })
-    }
-  }, [props.onClick, filterRipple])
+    onClick?.(e as MouseEvent<HTMLButtonElement> & { nativeEvent: MouseEvent })
+  }, [onClick, filterRipple])
 
   return (
     <Button className={`relative overflow-hidden ${className ?? ''}`} onClick={handleClick} {...props}>

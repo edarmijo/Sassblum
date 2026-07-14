@@ -23,11 +23,12 @@ import { ticketService } from './modules/tickets/services/TicketService'
 import { notificationService } from './modules/notifications/services/NotificationService'
 
 // Providers (DIP seams)
-import { AuthProvider, useAuth } from './modules/auth/hooks/useAuth'
-import { AuthServiceProvider } from './modules/auth/hooks/useAuthService'
-import { CatalogProvider } from './modules/catalog/hooks/useCatalog'
-import { TicketClientProvider } from './modules/tickets/hooks/useTickets'
-import { NotificationProvider } from './modules/notifications/hooks/useNotifications'
+import { AuthProvider } from './modules/auth/hooks/AuthProvider'
+import { useAuth } from './modules/auth/hooks/useAuth'
+import { AuthServiceProvider } from './modules/auth/hooks/AuthServiceProvider'
+import { CatalogProvider } from './modules/catalog/hooks/CatalogProvider'
+import { TicketClientProvider } from './modules/tickets/hooks/TicketClientProvider'
+import { NotificationProvider } from './modules/notifications/hooks/NotificationProvider'
 
 // Layout
 import { Navbar } from './core/ui/layout/Navbar'

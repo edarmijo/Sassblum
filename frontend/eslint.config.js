@@ -18,5 +18,13 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // react-hooks v6 prohíbe cualquier setState alcanzable desde un efecto,
+      // incluso tras un await — eso veta por completo el patrón documentado de
+      // data-fetching en efectos, que es el que usa este proyecto (sin
+      // react-query). Los casos síncronos genuinos ya se corrigieron con
+      // estado inicial calculado o ajuste durante el render.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

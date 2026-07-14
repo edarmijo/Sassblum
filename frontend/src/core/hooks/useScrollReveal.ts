@@ -14,17 +14,17 @@ interface ScrollRevealOptions {
 export function useScrollReveal(options: ScrollRevealOptions = {}) {
   const { threshold = 0.3, rootMargin = '-100px 0px', once = true } = options
   const ref = useRef<HTMLDivElement>(null)
-  const [isInView, setIsInView] = useState(false)
+  // Con reduced-motion el contenido nace visible (estado inicial, no setState en efecto).
+  const [isInView, setIsInView] = useState(
+    () => globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
 
     const prefersReduced = globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReduced) {
-      setIsInView(true)
-      return
-    }
+    if (prefersReduced) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
