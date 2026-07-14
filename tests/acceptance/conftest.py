@@ -1,4 +1,3 @@
-TEST_PASSWORD = 'TestPass123!'
 """
 Acceptance Test Suite — SassBlum Ticket Management System
 ═══════════════════════════════════════════════════════════
@@ -15,6 +14,32 @@ Run role: pytest tests/acceptance/ -v -k "client"
 import pytest
 from rest_framework.test import APIClient
 from apps.authentication.models import User
+
+from helpers import TEST_PASSWORD
+
+
+@pytest.fixture(autouse=True)
+def _disable_ssl_redirect(settings):
+    """Tests must not depend on the .env DJANGO_DEBUG value (301 → https)."""
+    settings.SECURE_SSL_REDIRECT = False
+
+
+@pytest.fixture(autouse=True)
+def _clear_throttle_cache():
+    """DRF throttling persists in the cache across tests; without this, the
+    rate-limiting test poisons every login test that runs after it (429)."""
+    from django.core.cache import cache
+    cache.clear()
+
+
+@pytest.fixture
+def catalog_service(db):
+    """An active catalog service — required FK for ticket creation."""
+    from apps.catalog.models import Service
+    return Service.objects.create(
+        nombre='Soporte Técnico', descripcion='Soporte de aceptación',
+        categoria='Soporte', activo=True,
+    )
 
 
 @pytest.fixture

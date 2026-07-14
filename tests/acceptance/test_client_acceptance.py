@@ -11,22 +11,25 @@ import pytest
 from rest_framework.test import APIClient
 from apps.authentication.models import User
 
+from helpers import NEW_USER_PASSWORD, TEST_PASSWORD, WRONG_PASSWORD
+
 
 # ── TC-C1: Registration ───────────────────────────────────────────────────────
 # Given a new email, when the client registers, then account is created as
 # "pendiente" and a verification email is sent.
 
 @pytest.mark.django_db
-class TestTC_C1_Registration:
+class TestTCC1Registration:
     """TC-C1: HU-02 — Client registration."""
 
     def test_register_with_new_email_creates_pending_account(self, api_client):
         """Given a new email, when registering, account is created as pending."""
         response = api_client.post('/api/auth/register', {
             'email': 'nuevo@sassblum.com',
-            'password': 'SecurePass123!',
-            'first_name': 'Nuevo',
-            'last_name': 'Cliente',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Nuevo',
+            'apellido': 'Cliente',
         })
         assert response.status_code in (200, 201)
         user = User.objects.get(email='nuevo@sassblum.com')
@@ -36,9 +39,10 @@ class TestTC_C1_Registration:
         """Given an existing email, when registering, request is rejected."""
         response = api_client.post('/api/auth/register', {
             'email': client_user.email,
-            'password': 'SecurePass123!',
-            'first_name': 'Dup',
-            'last_name': 'User',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Dup',
+            'apellido': 'User',
         })
         assert response.status_code in (400, 409)
 
@@ -48,7 +52,7 @@ class TestTC_C1_Registration:
 # Forgot/Reset issues a single-use 1-hour token.
 
 @pytest.mark.django_db
-class TestTC_C2_EmailVerification:
+class TestTCC2EmailVerification:
     """TC-C2: HU-03 — Email verification & password recovery."""
 
     def test_forgot_password_sends_email(self, api_client, client_user):
@@ -72,23 +76,23 @@ class TestTC_C2_EmailVerification:
 # and the user lands on the client dashboard.
 
 @pytest.mark.django_db
-class TestTC_C3_Login:
+class TestTCC3Login:
     """TC-C3: HU-01 — Login with valid credentials."""
 
     def test_login_with_valid_credentials_returns_jwt(self, api_client, client_user):
         """Given valid credentials, when logging in, JWT is returned."""
         response = api_client.post('/api/auth/login', {
             'email': client_user.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
         assert response.status_code == 200
-        assert 'access' in response.data
+        assert 'access' in response.data.get('tokens', response.data)
 
     def test_login_with_invalid_password_returns_401(self, api_client, client_user):
         """Given wrong password, when logging in, 401 is returned."""
         response = api_client.post('/api/auth/login', {
             'email': client_user.email,
-            'password': 'WrongPassword!',
+            'password': WRONG_PASSWORD,
         })
         assert response.status_code == 401
 
@@ -96,7 +100,7 @@ class TestTC_C3_Login:
         """Given unverified email, when logging in, access is denied."""
         user = User.objects.create_user(
             email='unverified@sassblum.com',
-            password='TestPass123!',
+            password=TEST_PASSWORD,
             first_name='Unverified',
             last_name='User',
             role=User.Role.CLIENT,
@@ -105,7 +109,7 @@ class TestTC_C3_Login:
         )
         response = api_client.post('/api/auth/login', {
             'email': user.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
         # Should reject unverified users
         assert response.status_code in (401, 403)
@@ -116,14 +120,15 @@ class TestTC_C3_Login:
 # optional attachment ≤5 MB), then ticket is created as "Nuevo" and Observer fires.
 
 @pytest.mark.django_db
-class TestTC_C4_TicketCreation:
+class TestTCC4TicketCreation:
     """TC-C4: HU-04 — Ticket creation with validation."""
 
-    def test_create_ticket_with_valid_data(self, authenticated_client):
+    def test_create_ticket_with_valid_data(self, authenticated_client, catalog_service):
         """Given valid data, when creating ticket, it's created as Nuevo."""
         response = authenticated_client.post('/api/tickets/', {
             'asunto': 'Problema con servidor',
             'descripcion': 'El servidor no responde desde ayer por la tarde',
+            'servicio_id': catalog_service.id,
             'prioridad': 'Alta',
         })
         assert response.status_code in (200, 201)
@@ -158,7 +163,7 @@ class TestTC_C4_TicketCreation:
 # status badge, metadata and attachments are shown.
 
 @pytest.mark.django_db
-class TestTC_C5_Visualization:
+class TestTCC5Visualization:
     """TC-C5: HU-06 — Ticket detail visualization."""
 
     def test_view_ticket_detail_returns_all_fields(self, authenticated_client, client_user):
@@ -181,7 +186,7 @@ class TestTC_C5_Visualization:
 # chronologically with author and timestamp.
 
 @pytest.mark.django_db
-class TestTC_C6_History:
+class TestTCC6History:
     """TC-C6: HU-09 — Ticket event history."""
 
     def test_ticket_history_returns_events(self, authenticated_client, client_user):
@@ -204,7 +209,7 @@ class TestTC_C6_History:
 # tickets are shown (paginated).
 
 @pytest.mark.django_db
-class TestTC_C7_FilterSearch:
+class TestTCC7FilterSearch:
     """TC-C7: HU-10 — Filter and search tickets."""
 
     def test_filter_tickets_by_status(self, authenticated_client):
@@ -223,7 +228,7 @@ class TestTC_C7_FilterSearch:
 # history are shown; preferences toggle email/in-app/WebSocket.
 
 @pytest.mark.django_db
-class TestTC_C8_Notifications:
+class TestTCC8Notifications:
     """TC-C8: HU-15/16 — In-app notifications and preferences."""
 
     def test_notification_list_returns_data(self, authenticated_client):

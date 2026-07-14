@@ -8,6 +8,8 @@ Focus: OWASP Top 10, rate limiting, CORS, CSP, JWT security.
 import pytest
 from rest_framework.test import APIClient
 
+from helpers import SQLI_PAYLOAD, TEST_PASSWORD, WRONG_PASSWORD
+
 
 @pytest.mark.django_db
 class TestSecurity:
@@ -24,7 +26,7 @@ class TestSecurity:
         """Health check endpoint should be publicly accessible."""
         response = api_client.get('/health/')
         assert response.status_code == 200
-        assert response.data.get('status') == 'healthy'
+        assert response.json().get('status') == 'healthy'
 
     def test_cors_headers_present(self, api_client):
         """CORS headers should be configured."""
@@ -35,8 +37,8 @@ class TestSecurity:
     def test_sql_injection_protection(self, api_client):
         """SQL injection attempts should be handled safely."""
         response = api_client.post('/api/auth/login', {
-            "email": "' OR 1=1 --",
-            "password": "' OR 1=1 --",
+            "email": SQLI_PAYLOAD,
+            "password": SQLI_PAYLOAD,
         })
         assert response.status_code in (400, 401)
 
@@ -54,11 +56,11 @@ class TestSecurity:
         """Password hash should never appear in API responses."""
         response = api_client.post('/api/auth/login', {
             'email': client_user.email,
-            'password': 'TestPass123!',
+            'password': TEST_PASSWORD,
         })
         if response.status_code == 200:
             response_str = str(response.data)
-            assert 'TestPass123!' not in response_str
+            assert TEST_PASSWORD not in response_str
             assert 'password' not in response_str.lower() or 'access' in response_str
 
     def test_rate_limiting_on_login(self, api_client, client_user):
@@ -67,7 +69,7 @@ class TestSecurity:
         for _ in range(35):
             resp = api_client.post('/api/auth/login', {
                 'email': client_user.email,
-                'password': 'WrongPass!',
+                'password': WRONG_PASSWORD,
             })
             responses.append(resp.status_code)
         # Should see 429 after exceeding rate limit

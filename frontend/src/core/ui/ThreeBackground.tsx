@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef } from 'react';
+import { secureRandom } from '../utils/random';
 
 /**
  * ThreeBackground — Full-screen fixed Three.js canvas.
@@ -111,19 +112,19 @@ export function ThreeBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const THREE = (window as Record<string, any>).THREE;
+    const THREE = (globalThis as Record<string, any>).THREE;
     if (!THREE) {
       console.warn('[ThreeBackground] THREE not on window — CDN not loaded yet?');
       return;
     }
 
-    const isMobile      = window.innerWidth < 768;
+    const isMobile      = globalThis.window.innerWidth < 768;
     const PARTICLE_COUNT = isMobile ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP;
 
     /* ── renderer ── */
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: !isMobile });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
+    renderer.setPixelRatio(Math.min(globalThis.window.devicePixelRatio, 2));
     Object.assign(renderer.domElement.style, {
       position: 'fixed', top: '0', left: '0',
       width: '100%', height: '100%',
@@ -133,7 +134,7 @@ export function ThreeBackground() {
 
     /* ── scene & camera ── */
     const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, globalThis.window.innerWidth / globalThis.window.innerHeight, 0.1, 1000);
     camera.position.z = 5;
 
     /* ── smooth mouse state ── */
@@ -141,10 +142,10 @@ export function ThreeBackground() {
     const mouseSmooth = { x: 0, y: 0 };
 
     const onMouseMove = (e: MouseEvent) => {
-      mouseTarget.x = (e.clientX / window.innerWidth)  * 2 - 1;
-      mouseTarget.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      mouseTarget.x = (e.clientX / globalThis.window.innerWidth)  * 2 - 1;
+      mouseTarget.y = -(e.clientY / globalThis.window.innerHeight) * 2 + 1;
     };
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    globalThis.addEventListener('mousemove', onMouseMove, { passive: true });
 
     /* ── particles ── */
     const geo       = new THREE.BufferGeometry();
@@ -155,15 +156,15 @@ export function ThreeBackground() {
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const i3 = i * 3;
-      positions[i3]     = (Math.random() - 0.5) * 20;
-      positions[i3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i3 + 2] = (Math.random() - 0.5) * 15;
+      positions[i3]     = (secureRandom() - 0.5) * 20;
+      positions[i3 + 1] = (secureRandom() - 0.5) * 20;
+      positions[i3 + 2] = (secureRandom() - 0.5) * 15;
       // same velocity range as reference scripts.js
-      velocities[i3]     = (Math.random() - 0.5) * 0.005;
-      velocities[i3 + 1] = (Math.random() - 0.5) * 0.005;
-      velocities[i3 + 2] = (Math.random() - 0.5) * 0.003;
-      scales[i]  = Math.random() * 3 + 0.5;
-      randoms[i] = Math.random();
+      velocities[i3]     = (secureRandom() - 0.5) * 0.005;
+      velocities[i3 + 1] = (secureRandom() - 0.5) * 0.005;
+      velocities[i3 + 2] = (secureRandom() - 0.5) * 0.003;
+      scales[i]  = secureRandom() * 3 + 0.5;
+      randoms[i] = secureRandom();
     }
 
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -237,7 +238,7 @@ export function ThreeBackground() {
           if (idx >= lineCount * 6) break outer;
           const j3 = j * 3;
           const dx = pos[i3] - pos[j3], dy = pos[i3+1] - pos[j3+1], dz = pos[i3+2] - pos[j3+2];
-          if (Math.sqrt(dx*dx + dy*dy + dz*dz) < maxDist) {
+          if (Math.hypot(dx, dy, dz) < maxDist) {
             lp[idx++] = pos[i3];   lp[idx++] = pos[i3+1]; lp[idx++] = pos[i3+2];
             lp[idx++] = pos[j3];   lp[idx++] = pos[j3+1]; lp[idx++] = pos[j3+2];
           }
@@ -304,17 +305,17 @@ export function ThreeBackground() {
 
     /* ── resize ── */
     const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = globalThis.window.innerWidth / globalThis.window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
     };
-    window.addEventListener('resize', onResize, { passive: true });
+    globalThis.addEventListener('resize', onResize, { passive: true });
 
     /* ── cleanup ── */
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('resize',    onResize);
+      globalThis.removeEventListener('mousemove', onMouseMove);
+      globalThis.removeEventListener('resize',    onResize);
       geo.dispose();       particleMat.dispose();
       lineGeo.dispose();   lineMat.dispose();
       ring1.geometry.dispose(); ring1.material.dispose();

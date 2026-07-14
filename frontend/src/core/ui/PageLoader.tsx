@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { secureRandomInt } from '../utils/random';
 
 interface PageLoaderProps {
   onComplete: () => void;
@@ -27,7 +28,7 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
           return 100;
         }
         // Random increment between 2 and 8
-        const inc = Math.floor(Math.random() * 7) + 2;
+        const inc = secureRandomInt(2, 8);
         return Math.min(prev + inc, 100);
       });
     };
