@@ -27,14 +27,14 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
           finishLoader();
           return 100;
         }
-        // Random increment between 2 and 8
-        const inc = secureRandomInt(2, 8);
+        // Random increment between 4 and 12
+        const inc = secureRandomInt(4, 12);
         return Math.min(prev + inc, 100);
       });
     };
 
-    // ~2s total: 100 ticks at ~20ms each ≈ 2s (with random increments it finishes around that)
-    intervalRef.current = setInterval(tick, 20);
+    // ~250ms hasta 100% (+ fade): intro breve que no retrasa el contenido.
+    intervalRef.current = setInterval(tick, 16);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
