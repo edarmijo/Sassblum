@@ -17,7 +17,7 @@ interface RegisterFormProps {
  * SRP: captures registration input, runs the FE validator chain, submits via useAuth.
  * Chain of Responsibility: EmailValidator → PasswordValidator before the API call.
  */
-export function RegisterForm({ onSuccess }: RegisterFormProps) {
+export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
   const { register } = useAuth()
   const [form, setForm] = useState({
     nombre: '', apellido: '', email: '', ruc: '', password: '', confirmPassword: '',

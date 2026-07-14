@@ -30,7 +30,7 @@ interface NotificationProviderProps {
   children: ReactNode
 }
 
-export function NotificationProvider({ service, children }: NotificationProviderProps) {
+export function NotificationProvider({ service, children }: Readonly<NotificationProviderProps>) {
   return (
     <NotificationServiceContext.Provider value={service}>
       {children}
@@ -56,6 +56,13 @@ let _lastFetchMs = 0
 let _cachedNotifications: Notification[] = []
 let _cachedUnreadCount = 0
 const STALE_MS = 30_000 // 30 seconds — data is fresh enough to skip re-fetch
+
+/** Vacía el caché módulo-level (logout y aislamiento entre tests). */
+export function resetNotificationsCache(): void {
+  _lastFetchMs = 0
+  _cachedNotifications = []
+  _cachedUnreadCount = 0
+}
 
 export function useNotifications(): UseNotificationsResult {
   const service = useNotificationService()

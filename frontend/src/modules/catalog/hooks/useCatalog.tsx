@@ -16,7 +16,7 @@ function useCatalogService(): ICatalogClientView {
   return service
 }
 
-export function CatalogProvider({ service, children }: { service: ICatalogClientView; children: ReactNode }) {
+export function CatalogProvider({ service, children }: Readonly<{ service: ICatalogClientView; children: ReactNode }>) {
   return <CatalogServiceContext.Provider value={service}>{children}</CatalogServiceContext.Provider>
 }
 

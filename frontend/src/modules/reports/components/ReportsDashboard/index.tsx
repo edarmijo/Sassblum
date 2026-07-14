@@ -204,7 +204,7 @@ export function ReportsDashboard() {
   )
 }
 
-function Kpi({ label, value, accent = 'text-foreground' }: { label: string; value: number; accent?: string }) {
+function Kpi({ label, value, accent = 'text-foreground' }: Readonly<{ label: string; value: number; accent?: string }>) {
   return (
     <div className="bg-card border border-border rounded-xl p-4">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>

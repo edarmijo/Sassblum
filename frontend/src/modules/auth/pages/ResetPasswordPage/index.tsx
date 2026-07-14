@@ -18,7 +18,7 @@ interface ResetPasswordPageProps {
  * DIP: calls IAuthService.resetPassword via useAuthService.
  * Validation: minimum length + match (the S5 PasswordValidator chain plugs in here later).
  */
-export function ResetPasswordPage({ token, onSuccess }: ResetPasswordPageProps) {
+export function ResetPasswordPage({ token, onSuccess }: Readonly<ResetPasswordPageProps>) {
   const auth = useAuthService()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')

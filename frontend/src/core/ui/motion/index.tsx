@@ -31,7 +31,7 @@ export function Reveal({
   duration = 0.7,
   once = true,
   className,
-}: RevealProps) {
+}: Readonly<RevealProps>) {
   const reduce = useReducedMotion()
   return (
     <motion.div
@@ -65,7 +65,7 @@ export function FocusReveal({
   className,
   fromScale = 0.92,
   delay = 0,
-}: FocusRevealProps) {
+}: Readonly<FocusRevealProps>) {
   const reduce = useReducedMotion()
   return (
     <motion.div

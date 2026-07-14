@@ -9,7 +9,7 @@ interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElemen
 }
 
 /** <img> that swaps to a branded placeholder if the source fails to load. */
-export function ImageWithFallback({ src, fallbackSrc = FALLBACK, alt = '', ...props }: ImageWithFallbackProps) {
+export function ImageWithFallback({ src, fallbackSrc = FALLBACK, alt = '', ...props }: Readonly<ImageWithFallbackProps>) {
   const [errored, setErrored] = useState(false)
   return (
     <img

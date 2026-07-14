@@ -28,7 +28,7 @@ interface TicketClientProviderProps {
   children: ReactNode
 }
 
-export function TicketClientProvider({ service, children }: TicketClientProviderProps) {
+export function TicketClientProvider({ service, children }: Readonly<TicketClientProviderProps>) {
   return (
     <TicketClientContext.Provider value={service}>
       {children}

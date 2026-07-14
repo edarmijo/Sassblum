@@ -15,6 +15,48 @@ vi.mock('../../validators/TicketValidatorChain', () => ({
   },
 }))
 
+// El Select real es Radix (portales + pointer events) y no funciona en jsdom con
+// userEvent.selectOptions; se sustituye por un <select> nativo equivalente para
+// testear la lógica del formulario, no la librería de UI.
+vi.mock('../../../../core/ui/select', () => ({
+  Select: ({ value, onValueChange, children }: {
+    value: string
+    onValueChange: (v: string) => void
+    children: React.ReactNode
+  }) => (
+    <select
+      aria-label="Servicio"
+      value={value}
+      onChange={(e) => onValueChange(e.target.value)}
+    >
+      <option value="">Selecciona un servicio…</option>
+      {children}
+    </select>
+  ),
+  SelectTrigger: () => null,
+  SelectValue: () => null,
+  SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
+    <option value={value}>{children}</option>
+  ),
+}))
+
+// El formulario usa useAuth (autocompleta datos del cliente, H#7); se mockea para
+// no montar el AuthProvider completo (localStorage, ApiClient, SocketClient).
+vi.mock('../../../auth/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: {
+      id: '1', nombre: 'Cliente', apellido: 'Test',
+      email: 'cliente@test.com', ruc: '', rol: 'CLIENTE',
+    },
+    isAuthenticated: true,
+    isLoading: false,
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+  }),
+}))
+
 // ── Mock service ───────────────────────────────────────────────────────────────
 
 const mockTicket: TicketDetail = {

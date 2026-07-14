@@ -77,7 +77,7 @@ export function CursorFollower() {
     }
   }, [reduce])
 
-  if (reduce || (typeof window !== 'undefined' && globalThis.window.innerWidth < 768)) return null
+  if (reduce || (typeof globalThis.window !== 'undefined' && globalThis.window.innerWidth < 768)) return null
 
   return (
     <>

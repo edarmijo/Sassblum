@@ -18,7 +18,7 @@ export const GridBackground = memo(function GridBackground({
   cellSize = 60,
   opacity = 0.08,
   animated = true,
-}: GridBackgroundProps) {
+}: Readonly<GridBackgroundProps>) {
   const alphaHex = Math.round(opacity * 255)
     .toString(16)
     .padStart(2, '0')

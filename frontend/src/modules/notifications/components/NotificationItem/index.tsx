@@ -31,7 +31,7 @@ function relativeTime(iso: string): string {
  * SRP: renders one notification row. No data fetching.
  * OCP: new tipo → add an entry in TIPO_META; component logic unchanged.
  */
-export function NotificationItem({ notification, onMarkRead }: NotificationItemProps) {
+export function NotificationItem({ notification, onMarkRead }: Readonly<NotificationItemProps>) {
   const meta = TIPO_META[notification.tipo] ?? TIPO_META.informacion
   const Icon = meta.icon
 

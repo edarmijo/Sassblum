@@ -17,7 +17,7 @@ interface AuthServiceProviderProps {
   children: ReactNode
 }
 
-export function AuthServiceProvider({ service, children }: AuthServiceProviderProps) {
+export function AuthServiceProvider({ service, children }: Readonly<AuthServiceProviderProps>) {
   return (
     <AuthServiceContext.Provider value={service}>
       {children}

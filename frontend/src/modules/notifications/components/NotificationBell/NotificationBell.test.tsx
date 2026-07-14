@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { NotificationBell } from './index'
-import { NotificationServiceContext } from '../../hooks/useNotifications'
+import { NotificationServiceContext, resetNotificationsCache } from '../../hooks/useNotifications'
 import type { INotificationService } from '../../interfaces/INotificationService'
 import type { PaginatedNotifications } from '../../interfaces/types'
 
@@ -40,6 +40,9 @@ function renderBell(service: INotificationService) {
 }
 
 describe('NotificationBell', () => {
+  // El hook cachea a nivel de módulo (SWR); sin esto un test contamina al siguiente.
+  beforeEach(() => resetNotificationsCache())
+
   it('renders the bell button', () => {
     renderBell(makeService(0))
     expect(screen.getByRole('button', { name: /notificaciones/i })).toBeInTheDocument()

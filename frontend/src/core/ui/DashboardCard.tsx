@@ -52,8 +52,8 @@ export function DashboardCardHeader({ className, ...props }: Readonly<React.Comp
 }
 
 /** Title inside a DashboardCard header. */
-export function DashboardCardTitle({ className, ...props }: Readonly<React.ComponentProps<'h3'>>) {
-  return <h3 className={cn('leading-none font-semibold text-[#eef4f8]', className)} {...props} />
+export function DashboardCardTitle({ className, children, ...props }: Readonly<React.ComponentProps<'h3'>>) {
+  return <h3 className={cn('leading-none font-semibold text-[#eef4f8]', className)} {...props}>{children}</h3>
 }
 
 /** Description inside a DashboardCard header. */

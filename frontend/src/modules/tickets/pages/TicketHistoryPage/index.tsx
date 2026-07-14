@@ -16,7 +16,7 @@ interface TicketHistoryPageProps {
  * DIP: data via useTicketsList (ITicketClientActions through Context).
  * OCP: new filter → add a control + a key in TicketFilterOptions; list logic unchanged.
  */
-export function TicketHistoryPage({ onSelectTicket }: TicketHistoryPageProps) {
+export function TicketHistoryPage({ onSelectTicket }: Readonly<TicketHistoryPageProps>) {
   const [filters, setFilters] = useState<TicketFilterOptions>({})
   const { tickets, isLoading, error } = useTicketsList(filters)
 

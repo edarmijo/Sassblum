@@ -8,7 +8,7 @@ interface ServiceFilterProps {
 }
 
 /** SRP: emit catalog filter changes (categoría + búsqueda) using core UI components. */
-export function ServiceFilter({ onChange }: ServiceFilterProps) {
+export function ServiceFilter({ onChange }: Readonly<ServiceFilterProps>) {
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('')
 

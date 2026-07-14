@@ -12,7 +12,7 @@ interface TicketsTableProps {
   onView: (id: string) => void
 }
 
-export function TicketsTable({ tickets, onView }: TicketsTableProps) {
+export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
   const [search, setSearch] = useState('')
   const [estado, setEstado] = useState('all')
 

@@ -23,7 +23,7 @@ export default function CustomCursor() {
   const isHovering = useRef(false);
   const rafId = useRef<number>(0);
 
-  const isMobile = typeof window !== 'undefined' && globalThis.window.innerWidth < 768;
+  const isMobile = typeof globalThis.window !== 'undefined' && globalThis.window.innerWidth < 768;
 
   useEffect(() => {
     if (isMobile) return;

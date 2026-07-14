@@ -12,7 +12,7 @@ interface ServiceCardProps {
  * DIP: depends on ServiceSummary type only.
  * Futurista: GlowCard 3D tilt + glow effect que sigue al cursor.
  */
-export function ServiceCard({ service, onSelect }: ServiceCardProps) {
+export function ServiceCard({ service, onSelect }: Readonly<ServiceCardProps>) {
   return (
     <GlowCard className="bg-card border border-border shadow-sm hover:shadow-lg transition-shadow duration-500">
       <button

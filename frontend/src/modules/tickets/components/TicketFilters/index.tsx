@@ -21,7 +21,7 @@ interface TicketFiltersProps {
 }
 
 /** SRP: advanced filter panel for tickets (server-side). */
-export function TicketFilters({ filters, onChange }: TicketFiltersProps) {
+export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps>) {
   const [show, setShow] = useState(false)
   const [services, setServices] = useState<ServiceSummary[]>([])
   const [workers, setWorkers] = useState<AdminUser[]>([])

@@ -17,7 +17,7 @@ interface InteractiveGlowProps {
  * `relative` + `overflow-hidden`) y se actualiza con requestAnimationFrame.
  * Respeta `prefers-reduced-motion`.
  */
-export function InteractiveGlow({ color = '#00d4ff', size = 520 }: InteractiveGlowProps) {
+export function InteractiveGlow({ color = '#00d4ff', size = 520 }: Readonly<InteractiveGlowProps>) {
   const ref = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
 

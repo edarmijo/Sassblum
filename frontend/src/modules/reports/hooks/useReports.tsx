@@ -15,7 +15,7 @@ function useReportsService(): IReportsService {
   return s
 }
 
-export function ReportsProvider({ service, children }: { service: IReportsService; children: ReactNode }) {
+export function ReportsProvider({ service, children }: Readonly<{ service: IReportsService; children: ReactNode }>) {
   return <ReportsServiceContext.Provider value={service}>{children}</ReportsServiceContext.Provider>
 }
 

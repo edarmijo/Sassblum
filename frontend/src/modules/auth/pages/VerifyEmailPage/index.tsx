@@ -13,7 +13,7 @@ interface VerifyEmailPageProps {
  * SRP: confirms an email using the token from the verification link (?token=...).
  * DIP: calls IAuthService.verifyEmail via useAuthService. Runs once on mount.
  */
-export function VerifyEmailPage({ token }: VerifyEmailPageProps) {
+export function VerifyEmailPage({ token }: Readonly<VerifyEmailPageProps>) {
   const auth = useAuthService()
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading')
   const [message, setMessage] = useState('')

@@ -29,7 +29,7 @@ interface StatusChangeFormProps {
  *
  * SRP: only renders form UI, delegates API call to parent via onSubmit.
  */
-export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: StatusChangeFormProps) {
+export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: Readonly<StatusChangeFormProps>) {
   const [newStatus, setNewStatus] = useState<TicketEstado | ''>('')
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)

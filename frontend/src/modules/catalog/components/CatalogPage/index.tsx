@@ -9,7 +9,7 @@ interface CatalogPageProps {
 /**
  * SRP: grid of active services + filters. DIP: data via useCatalog (ICatalogClientView).
  */
-export function CatalogPage({ onSelectService }: CatalogPageProps) {
+export function CatalogPage({ onSelectService }: Readonly<CatalogPageProps>) {
   const { services, isLoading, error, setFilters } = useCatalog()
 
   return (

@@ -100,7 +100,7 @@ export function ProjectGalleryCarousel() {
       <div className="mx-auto mb-[clamp(2.5rem,4vw,4rem)]" style={{ maxWidth: 1400, padding: '0 clamp(1.5rem,4vw,4rem)' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} className="inline-flex items-center gap-3 mb-4" style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.accent }}>
           <span style={{ width: 32, height: 1, background: C.accent }} />
-          Proyectos
+          <span>Proyectos</span>
         </motion.div>
         <div className="flex items-end justify-between flex-wrap gap-4">
           <motion.h2

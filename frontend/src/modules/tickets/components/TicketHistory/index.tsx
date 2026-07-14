@@ -1,7 +1,6 @@
 import { ArrowRight } from 'lucide-react'
-import type { TicketEvent } from '../../interfaces/ITicketService'
+import type { TicketEvent, TicketEstado } from '../../interfaces/ITicketService'
 import { TicketStatusBadge } from '../TicketStatusBadge'
-import type { TicketEstado } from '../../interfaces/ITicketService'
 
 interface TicketHistoryProps {
   events: TicketEvent[]
@@ -19,7 +18,7 @@ const EVENT_LABELS: Record<string, string> = {
  * SRP: renders a timeline of TicketEvent records. No data fetching.
  * Receives events as props — TicketDetail is responsible for loading them.
  */
-export function TicketHistory({ events }: TicketHistoryProps) {
+export function TicketHistory({ events }: Readonly<TicketHistoryProps>) {
   if (events.length === 0) {
     return (
       <p className="text-sm text-[#5c7a94] italic">Sin historial de eventos.</p>

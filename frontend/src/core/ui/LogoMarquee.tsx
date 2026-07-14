@@ -18,7 +18,7 @@ interface LogoMarqueeProps {
  * CORS para <img>). Si falla, se oculta y queda el wordmark de texto — el chip
  * nunca se ve roto.
  */
-function BrandLogo({ domain, name }: { domain: string; name: string }) {
+function BrandLogo({ domain, name }: Readonly<{ domain: string; name: string }>) {
   const [ok, setOk] = useState(true)
   if (!ok) return null
   return (
@@ -32,7 +32,7 @@ function BrandLogo({ domain, name }: { domain: string; name: string }) {
   )
 }
 
-function Logos({ brands, ariaHidden }: { brands: Brand[]; ariaHidden?: boolean }) {
+function Logos({ brands, ariaHidden }: Readonly<{ brands: Brand[]; ariaHidden?: boolean }>) {
   return (
     <ul className="animate-marquee flex items-center gap-6 pr-6" aria-hidden={ariaHidden}>
       {brands.map((b, i) => (
@@ -54,7 +54,7 @@ function Logos({ brands, ariaHidden }: { brands: Brand[]; ariaHidden?: boolean }
  * marcas". Duplica la lista para un loop sin costuras; se pausa al pasar el cursor.
  * Respeta prefers-reduced-motion vía la regla global de index.css.
  */
-export function LogoMarquee({ brands, durationSec = 36 }: LogoMarqueeProps) {
+export function LogoMarquee({ brands, durationSec = 36 }: Readonly<LogoMarqueeProps>) {
   return (
     <div
       className="marquee-track marquee-mask relative w-full overflow-hidden"

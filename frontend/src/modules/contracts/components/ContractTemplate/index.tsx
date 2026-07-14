@@ -94,7 +94,7 @@ export function ContractTemplate() {
 
   const handlePrint = () => {
     setShowPreview(true)
-    setTimeout(() => window.print(), 300)
+    setTimeout(() => globalThis.print(), 300)
   }
 
   const handleDownload = () => {

@@ -40,7 +40,7 @@ const PRIORIDADES: TicketPrioridad[] = ['Baja', 'Media', 'Alta', 'Critica']
  * DIP: submits via useTicketsList (ITicketClientActions) — never calls TicketService directly.
  * OCP: new field → add to state + JSX; validation chain handles it automatically.
  */
-export function CreateTicketForm({ services, onSuccess }: CreateTicketFormProps) {
+export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketFormProps>) {
   const { createTicket, isLoading } = useTicketsList()
   const { user } = useAuth()
   const validatorChain = useRef(new TicketValidatorChain())

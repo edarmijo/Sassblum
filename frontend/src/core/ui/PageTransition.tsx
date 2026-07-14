@@ -12,7 +12,7 @@ interface PageTransitionProps {
  * Usa AnimatePresence de framer-motion para detectar cambios de ruta.
  * Respeta prefers-reduced-motion (framer-motion lo maneja automáticamente).
  */
-export function PageTransition({ children }: PageTransitionProps) {
+export function PageTransition({ children }: Readonly<PageTransitionProps>) {
   const location = useLocation()
 
   return (
