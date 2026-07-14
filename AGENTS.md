@@ -195,7 +195,7 @@ docker-compose -f docker-compose.prod.yml up -d  # Production
 
 ## Known Issues & TODO
 
-See `REPORTE_AUDITORIA_TOTAL.md` for the full audit report. All 30 findings have been addressed.
+The full audit (30 findings) was completed and all findings addressed; the one-off report files were removed from the repo (see git history if needed).
 
 ---
 
