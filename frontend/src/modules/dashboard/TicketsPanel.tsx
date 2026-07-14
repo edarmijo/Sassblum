@@ -16,7 +16,7 @@ import { TicketFilters } from '../tickets/components/TicketFilters'
 import { CreateTicketPage } from '../tickets/pages/CreateTicketPage'
 import type { TicketSummary, TicketFilterOptions } from '../tickets/interfaces/ITicketService'
 
-function StatCard({ label, value, icon: Icon, chip }: { label: string; value: number; icon: LucideIcon; chip: string }) {
+function StatCard({ label, value, icon: Icon, chip }: Readonly<{ label: string; value: number; icon: LucideIcon; chip: string }>) {
   return (
     <GlowCard
       className="ring-1 ring-white/5"

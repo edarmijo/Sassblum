@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, ImagePlus, Loader2, X } from 'lucide-react'
+import { Plus, Pencil, X } from 'lucide-react'
 import { useGalleryAdmin, type BeProject, type ProjectForm } from '../hooks/useGalleryAdmin'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
@@ -8,6 +8,7 @@ import { Input } from '../../../core/ui/input'
 import { Label } from '../../../core/ui/label'
 import { Textarea } from '../../../core/ui/textarea'
 import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
+import { AdminImagePicker, AdminFormActions } from '../../../core/ui/AdminEntityFormControls'
 
 const EMPTY: ProjectForm = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
 
@@ -131,26 +132,21 @@ export function GalleryAdminPanel() {
               <Label htmlFor="p-desc">Descripción</Label>
               <Textarea id="p-desc" rows={3} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-url">URL de imagen</Label>
-              <Input id="p-url" value={form.imagen_url} onChange={(e) => setForm((f) => ({ ...f, imagen_url: e.target.value }))} placeholder="https://…" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-img">…o sube una imagen</Label>
-              <label htmlFor="p-img" className="flex items-center gap-2 cursor-pointer rounded-lg border border-dashed border-gray-300 px-3 py-3 text-sm text-gray-600 hover:border-brand-cyan">
-                <ImagePlus className="h-4 w-4 text-brand-cyan" />
-                {imagen ? imagen.name : 'Seleccionar imagen…'}
-              </label>
-              <input id="p-img" type="file" accept="image/*" className="hidden" onChange={(e) => setImagen(e.target.files?.[0] ?? null)} />
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={submitting} className="flex-1 bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : submitContent}
-              </Button>
-              {isEditing && (
-                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-              )}
-            </div>
+            <AdminImagePicker
+              idPrefix="p"
+              urlValue={form.imagen_url}
+              onUrlChange={(v) => setForm((f) => ({ ...f, imagen_url: v }))}
+              fileLabel="…o sube una imagen"
+              filePlaceholder="Seleccionar imagen…"
+              fileName={imagen?.name}
+              onFileChange={setImagen}
+            />
+            <AdminFormActions
+              submitting={submitting}
+              submitContent={submitContent}
+              isEditing={isEditing}
+              onCancel={resetForm}
+            />
           </form>
         </CardContent>
       </Card>
