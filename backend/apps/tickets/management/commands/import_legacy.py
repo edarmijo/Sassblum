@@ -258,4 +258,4 @@ class Command(BaseCommand):
             dt = datetime.strptime(raw.strip(), "%Y-%m-%d %H:%M:%S")
         except ValueError:
             return None
-        return timezone.make_aware(dt) if timezone.
+        return timezone.make_aware(dt) if timezone.is_naive(dt) else dt

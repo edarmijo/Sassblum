@@ -112,4 +112,10 @@ class Ticket(models.Model):
             models.Index(fields=["estado", "prioridad"]),
         ]
 
-    
+    def __str__(self) -> str:
+        return f"{self.numero} — {self.asunto[:40]}"
+
+    @property
+    def is_closed(self) -> bool:
+        """True if ticket has reached the terminal Cerrado state."""
+        return self.estado == self.Estado.CERRADO

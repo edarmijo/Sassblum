@@ -246,4 +246,9 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
       )}
 
       {/* Submit */}
-      <Button type="submit" variant="brand" size="lg" disabled={is
+      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting || isLoading} className="w-full">
+        {isSubmitting ? 'Creando ticket…' : 'Crear ticket'}
+      </Button>
+    </form>
+  )
+}

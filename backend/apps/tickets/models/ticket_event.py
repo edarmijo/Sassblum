@@ -86,4 +86,6 @@ class TicketEvent(models.Model):
 
     def __str__(self) -> str:
         return (
-       
+            f"{self.ticket.numero} · {self.tipo_evento} "
+            f"({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+        )

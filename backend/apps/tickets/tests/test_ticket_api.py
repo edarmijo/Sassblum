@@ -10,6 +10,9 @@ Run: pytest apps/tickets/tests/test_ticket_api.py -v
 import pytest
 from rest_framework.test import APIClient
 
+# Credencial exclusiva de tests (no es un secreto real) — NOSONAR
+TEST_PASSWORD = "Secure123!"  # noqa: S105
+
 
 @pytest.mark.django_db
 class TestTicketAPIIntegration:
@@ -50,9 +53,39 @@ class TestTicketAPIIntegration:
         """LN-1 + requirement: only CLIENT role can create tickets (IsClient)."""
         from apps.authentication.models import User
         worker = User.objects.create_user(
-            email='worker@test.com', password='Secure123!',
+            email='worker@test.com', password=TEST_PASSWORD,
             role=User.Role.WORKER, estado=User.Estado.ACTIVE, email_verificado=True,
         )
         client = APIClient()
         client.force_authenticate(user=worker)
-        response = cl
+        response = client.post('/api/tickets/', {
+            'asunto': 'Test', 'descripcion': 'Test description',
+            'servicio_id': 1, 'prioridad': 'Media',
+        })
+        assert response.status_code == 403
+
+    def test_create_ticket_as_admin_returns_403(self):
+        """LN-1 + requirement: only CLIENT role can create tickets (IsClient)."""
+        from apps.authentication.models import User
+        admin = User.objects.create_user(
+            email='admin@test.com', password=TEST_PASSWORD,
+            role=User.Role.ADMIN, estado=User.Estado.ACTIVE, email_verificado=True,
+        )
+        client = APIClient()
+        client.force_authenticate(user=admin)
+        response = client.post('/api/tickets/', {
+            'asunto': 'Test', 'descripcion': 'Test description',
+            'servicio_id': 1, 'prioridad': 'Media',
+        })
+        assert response.status_code == 403
+
+    def test_rate_limiting_works(self):
+        """H#2: Rate limiting should kick in after many requests."""
+        client = APIClient()
+        # Make 35 rapid requests (limit is 30/minute for anon)
+        responses = []
+        for _ in range(35):
+            resp = client.get('/api/servicios/')
+            responses.append(resp.status_code)
+        # At least one should be 429 (Too Many Requests)
+        assert 429 in responses, f"Expected 429 in responses: {set(responses)}"

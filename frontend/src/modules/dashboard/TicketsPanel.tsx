@@ -136,4 +136,16 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
                       onCreated={(id, numero) => {
                         // Paridad LN-1 (sistema legado): confirmar el número asignado al cliente
                         toast.success(`Se te asignó el ticket ${numero}`)
-   
+                        navigate(`/tickets/${id}`)
+                      }}
+                    />
+                  </DashboardCardContent>
+                </DashboardCard>
+              </DashboardTabsContent>
+            )}
+          </DashboardTabs>
+        </Reveal>
+      </div>
+    </div>
+  )
+}

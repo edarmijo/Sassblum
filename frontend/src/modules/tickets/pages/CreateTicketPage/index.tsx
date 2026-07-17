@@ -27,4 +27,6 @@ export function CreateTicketPage({ onCreated }: Readonly<CreateTicketPageProps>)
         services={services.map((s) => ({ id: s.id, nombre: s.nombre }))}
         onSuccess={onCreated}
       />
-    </se
+    </section>
+  )
+}
