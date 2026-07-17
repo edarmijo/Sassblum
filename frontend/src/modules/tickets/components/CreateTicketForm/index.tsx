@@ -21,7 +21,8 @@ interface ServiceOption {
 
 interface CreateTicketFormProps {
   services: ServiceOption[]
-  onSuccess?: (ticketId: string) => void
+  /** Recibe el id (para navegar) y el número visible del ticket (paridad LN-1: "Se le asignó el ticket #N"). */
+  onSuccess?: (ticketId: string, numero: string) => void
 }
 
 interface FormErrors {
@@ -87,7 +88,7 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
     setIsSubmitting(true)
     try {
       const ticket = await createTicket({ asunto, descripcion, servicioId, prioridad, adjuntos: [] })
-      onSuccess?.(ticket.id)
+      onSuccess?.(ticket.id, ticket.numero)
       // Reset form on success
       setAsunto('')
       setDescripcion('')
@@ -245,9 +246,4 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
       )}
 
       {/* Submit */}
-      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting || isLoading} className="w-full">
-        {isSubmitting ? 'Creando ticket…' : 'Crear ticket'}
-      </Button>
-    </form>
-  )
-}
+      <Button type="submit" variant="brand" size="lg" disabled={is

@@ -25,7 +25,9 @@ export function apiError(err: unknown, fallback = 'Ocurrió un error.'): string 
   if (err instanceof AxiosError) {
     // No response → network error, CORS block, or server not running
     if (!err.response) {
-      return 'No se pudo conectar con el servidor. ¿Está el backend corriendo en http://localhost:8000?'
+      return err.code === 'ECONNABORTED'
+        ? 'El servidor está tardando en responder (puede estar iniciándose). Espera unos segundos e intenta de nuevo.'
+        : 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.'
     }
     const data = err.response.data as unknown
     if (data && typeof data === 'object') {

@@ -48,10 +48,17 @@ class TicketsConfig(AppConfig):
 
             # Serialize the TicketEvent to a transport dict (no model crosses the boundary)
             ticket = instance.ticket
+            cliente = ticket.cliente
             event_payload = {
                 "ticket_id":       ticket.id,
                 "ticket_numero":   ticket.numero,
                 "ticket_asunto":   ticket.asunto,
+                # LN-3 (paridad legado): el email de creación transcribe la consulta
+                # y los datos de contacto del cliente (RUC, empresa, correo).
+                "ticket_descripcion": ticket.descripcion,
+                "cliente_email":   getattr(cliente, "email", ""),
+                "cliente_ruc":     getattr(cliente, "ruc", ""),
+                "cliente_empresa": getattr(cliente, "empresa", ""),
                 "tipo_evento":     instance.tipo_evento,
                 "estado_anterior": instance.estado_anterior,
                 "estado_nuevo":    instance.estado_nuevo,

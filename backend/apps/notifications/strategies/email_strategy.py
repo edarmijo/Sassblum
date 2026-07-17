@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 from apps.notifications.interfaces import INotificationStrategy
@@ -54,14 +54,16 @@ class EmailNotificationStrategy(INotificationStrategy):
         subject = f"[SassBlum] {subject_prefix}"
         html_body = render_to_string(template_name, {**context, "recipient": recipient})
 
-        send_mail(
+        # LN-3/LN-4 (paridad legado): CC opcional al equipo (EMAIL_CC en settings/env).
+        email = EmailMultiAlternatives(
             subject=subject,
-            message=message,  # plain-text fallback
+            body=message,  # plain-text fallback
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient.email],
-            html_message=html_body,
-            fail_silently=False,
+            to=[recipient.email],
+            cc=getattr(settings, "EMAIL_CC", []) or None,
         )
+        email.attach_alternative(html_body, "text/html")
+        email.send(fail_silently=False)
         self.log("sent", f"email → {recipient.email} · tipo={tipo}")
 
     def log(self, status: str, details: str) -> None:

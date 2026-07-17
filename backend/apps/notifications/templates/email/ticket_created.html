@@ -1,20 +1,44 @@
 {% extends "email/base_email.html" %}
 
-{% block subject %}Nuevo ticket creado{% endblock %}
+{% block subject %}Ticket de servicio creado{% endblock %}
 
-{% block titulo %}Se ha creado un nuevo ticket{% endblock %}
+{% block titulo %}Ticket de servicio creado{% endblock %}
 
 {% block contenido %}
-  <p>Se ha registrado un nuevo ticket en el sistema:</p>
-  <table role="presentation" style="border-collapse: collapse; width: 100%; margin: 0 auto; text-align: center;"    style="margin:16px 0;width:100%;border-collapse:collapse;">
+  {# LN-3 — paridad con el email del sistema legado: saludo, transcripción de la #}
+  {# consulta, número asignado, datos de contacto e instrucción de Anydesk. #}
+  <p>Estimado(a) <b>{{ recipient_nombre }}</b>, ha realizado la siguiente consulta:</p>
+
+  <div style="margin:14px 0;padding:12px 16px;border-left:3px solid #00c4e0;background:#f6f8fa;font-size:13px;color:#1d1c1a;">
+    <p style="margin:0 0 6px 0;font-weight:600;">{{ ticket_asunto }}</p>
+    <p style="margin:0;white-space:pre-line;">{{ ticket_descripcion }}</p>
+  </div>
+
+  <p style="font-size:13px;">Se le ha asignado el ticket de servicio <b>{{ ticket_numero }}</b>.</p>
+
+  <p style="font-size:13px;margin-bottom:4px;">Los datos de contacto proporcionados son:</p>
+  <table role="presentation" style="margin:8px 0 16px 0;width:100%;border-collapse:collapse;">
     <tr>
-      <td style="padding:8px 0;font-size:13px;color:#6f6e68;width:140px;">Número</td>
-      <td style="padding:8px 0;font-size:13px;font-weight:600;color:#1d1c1a;">{{ ticket_numero }}</td>
+      <td style="padding:6px 0;font-size:13px;color:#6f6e68;width:140px;">RUC</td>
+      <td style="padding:6px 0;font-size:13px;color:#1d1c1a;">{{ cliente_ruc|default:"—" }}</td>
     </tr>
     <tr>
-      <td style="padding:8px 0;font-size:13px;color:#6f6e68;border-top:0.5px solid #e7e5de;">Asunto</td>
-      <td style="padding:8px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ ticket_asunto }}</td>
+      <td style="padding:6px 0;font-size:13px;color:#6f6e68;border-top:0.5px solid #e7e5de;">Correo</td>
+      <td style="padding:6px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ cliente_email }}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;font-size:13px;color:#6f6e68;border-top:0.5px solid #e7e5de;">Empresa</td>
+      <td style="padding:6px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ cliente_empresa|default:"—" }}</td>
     </tr>
   </table>
-  <p style="font-size:13px;color:#6f6e68;">Recibirás actualizaciones a medida que el ticket avance.</p>
+
+  <p style="font-size:13px;color:#1d1c1a;">
+    Por favor, para agilizar el proceso, responda este mensaje con el detalle o capturas
+    de su problema y facilítenos su <b>ID de Anydesk</b>.
+  </p>
+
+  <p style="font-size:13px;color:#6f6e68;margin-top:16px;">
+    Soporte al usuario<br />
+    <b>SASSBLUM</b>
+  </p>
 {% endblock %}

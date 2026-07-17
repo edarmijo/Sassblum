@@ -139,17 +139,26 @@ function AuthCard({ title, subtitle, children, footer }: Readonly<{ title: strin
 
 // ── Auth routes ───────────────────────────────────────────────────────────────
 
+/**
+ * Sanitiza el parámetro ?next= — solo rutas internas (previene open redirect).
+ */
+function safeNext(raw: string | null): string {
+  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/app'
+}
+
 function LoginRoute() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { user } = useAuth()
-  if (user) return <Navigate to="/app" replace />
+  const next = safeNext(params.get('next'))
+  if (user) return <Navigate to={next} replace />
   return (
     <AuthCard
       title="Iniciar sesión"
       subtitle="Accede a tu cuenta de SassBlum"
       footer={<>¿No tienes cuenta? <Link to="/register" className="text-brand-cyan-dark font-medium hover:underline">Regístrate</Link>{' · '}<Link to="/forgot-password" className="text-brand-cyan-dark font-medium hover:underline">Olvidé mi contraseña</Link></>}
     >
-      <LoginForm onSuccess={() => navigate('/app', { replace: true })} />
+      <LoginForm onSuccess={() => navigate(next, { replace: true })} />
     </AuthCard>
   )
 }
@@ -244,14 +253,4 @@ export default function App() {
               <Route path="/panel" element={<ProtectedRoute roles={['TRABAJADOR']}><WorkerDashboard /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute roles={['ADMINISTRADOR']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/tickets/:id" element={<ProtectedRoute><DetailRoute /></ProtectedRoute>} />
-              <Route path="/notificaciones" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </CatalogProvider>
-      </AuthProvider>
-    </BrowserRouter>
-    </>
-  )
-}
+              

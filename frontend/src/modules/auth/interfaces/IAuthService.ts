@@ -25,6 +25,7 @@ export interface RegisterData {
   nombre: string
   apellido: string
   email: string
+  empresa?: string
   ruc?: string
   password: string
   confirmPassword: string
@@ -51,6 +52,7 @@ export interface AuthUser {
   nombre: string
   apellido: string
   ruc: string
+  empresa: string
   rol: UserRole
   estado: UserStatus
   emailVerificado: boolean

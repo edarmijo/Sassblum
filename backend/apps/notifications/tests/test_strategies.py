@@ -35,14 +35,23 @@ class TestEmailStrategy:
         assert EmailNotificationStrategy().validate(make_user(estado="bloqueado")) is False
 
     @patch("apps.notifications.strategies.email_strategy.render_to_string", return_value="<p>x</p>")
-    @patch("apps.notifications.strategies.email_strategy.send_mail")
-    def test_send_calls_send_mail_with_recipient(self, mock_send, _mock_render):
+    @patch("apps.notifications.strategies.email_strategy.EmailMultiAlternatives")
+    def test_send_builds_email_with_recipient_and_html(self, mock_email_cls, _mock_render):
         strat = EmailNotificationStrategy()
         strat.send(make_user(email="dest@x.com"), "msg", {"tipo": "creacion"})
-        mock_send.assert_called_once()
-        kwargs = mock_send.call_args.kwargs
-        assert kwargs["recipient_list"] == ["dest@x.com"]
-        assert kwargs["html_message"] == "<p>x</p>"
+        mock_email_cls.assert_called_once()
+        kwargs = mock_email_cls.call_args.kwargs
+        assert kwargs["to"] == ["dest@x.com"]
+        mock_email_cls.return_value.attach_alternative.assert_called_once_with("<p>x</p>", "text/html")
+        mock_email_cls.return_value.send.assert_called_once_with(fail_silently=False)
+
+    @patch("apps.notifications.strategies.email_strategy.render_to_string", return_value="<p>x</p>")
+    @patch("apps.notifications.strategies.email_strategy.EmailMultiAlternatives")
+    def test_send_applies_cc_from_settings(self, mock_email_cls, _mock_render, settings):
+        """LN-3/LN-4: copia al equipo (paridad con el CC del sistema legado)."""
+        settings.EMAIL_CC = ["notificaciones@sassblum.com"]
+        EmailNotificationStrategy().send(make_user(), "msg", {"tipo": "creacion"})
+        assert mock_email_cls.call_args.kwargs["cc"] == ["notificaciones@sassblum.com"]
 
 
 # ── InAppNotificationStrategy ──────────────────────────────────────────────────

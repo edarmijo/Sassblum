@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { AxiosError } from 'axios'
 import { useAuth } from '../../hooks/useAuth'
 import { EmailValidator } from '../../validators/EmailValidator'
 import { PasswordValidator } from '../../validators/PasswordValidator'
@@ -20,10 +22,12 @@ interface RegisterFormProps {
 export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
   const { register } = useAuth()
   const [form, setForm] = useState({
-    nombre: '', apellido: '', email: '', ruc: '', password: '', confirmPassword: '',
+    nombre: '', apellido: '', email: '', empresa: '', ruc: '', password: '', confirmPassword: '',
   })
   const [error, setError] = useState<string | null>(null)
+  const [emailConflict, setEmailConflict] = useState(false)
   const [loading, setLoading] = useState(false)
+  const alertRef = useRef<HTMLDivElement>(null)
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -42,12 +46,24 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     const v = validate()
     if (v) { setError(v); return }
     setError(null)
+    setEmailConflict(false)
     setLoading(true)
     try {
       const res = await register(form)
       onSuccess?.(res.message)
     } catch (err: unknown) {
-      setError(apiError(err, 'No se pudo crear la cuenta.'))
+      const is409 = err instanceof AxiosError && err.response?.status === 409
+      setEmailConflict(is409)
+      setError(
+        is409
+          ? `Ya existe una cuenta registrada con ${form.email}.`
+          : apiError(err, 'No se pudo crear la cuenta.'),
+      )
+      // Ensure the user sees the error even on small screens
+      requestAnimationFrame(() => {
+        alertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        alertRef.current?.focus()
+      })
     } finally {
       setLoading(false)
     }
@@ -72,6 +88,11 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="reg-empresa">Empresa <span className="text-muted-foreground text-xs font-normal">(opcional — se autocompleta al crear tickets)</span></Label>
+        <Input id="reg-empresa" value={form.empresa} onChange={set('empresa')} placeholder="Nombre de tu empresa" />
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="reg-ruc">RUC <span className="text-muted-foreground text-xs font-normal">(opcional — se autocompleta al crear tickets)</span></Label>
         <Input id="reg-ruc" inputMode="numeric" maxLength={13} value={form.ruc} onChange={set('ruc')} placeholder="Ej: 0991234567001" />
       </div>
@@ -87,8 +108,18 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+        <Alert ref={alertRef} tabIndex={-1} variant="destructive" role="alert" aria-live="assertive">
+          <AlertDescription>
+            {error}
+            {emailConflict && (
+              <>
+                {' '}Puedes{' '}
+                <Link to="/login" className="font-medium underline">iniciar sesión</Link>
+                {' '}o{' '}
+                <Link to="/forgot-password" className="font-medium underline">recuperar tu contraseña</Link>.
+              </>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 

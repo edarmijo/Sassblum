@@ -25,7 +25,7 @@ class ApiClient {
     this.http = axios.create({
       baseURL: env.apiBaseUrl,
       headers: { 'Content-Type': 'application/json' },
-      timeout: 15_000, // 15 seconds — prevents infinite spinner on backend hang
+      timeout: 60_000, // 60s — Render free tier duerme la instancia y tarda ~30-50s en despertar
     })
 
     this.http.interceptors.request.use((config) => {

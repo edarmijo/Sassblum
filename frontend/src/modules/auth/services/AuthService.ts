@@ -33,6 +33,7 @@ interface BackendUser {
   nombre: string
   apellido: string
   ruc?: string
+  empresa?: string
   rol: string
   estado: string
   email_verificado: boolean
@@ -45,6 +46,7 @@ function mapUser(u: BackendUser): AuthUser {
     nombre: u.nombre,
     apellido: u.apellido,
     ruc: u.ruc ?? '',
+    empresa: u.empresa ?? '',
     rol: ROLE_MAP[u.rol] ?? 'CLIENTE',
     estado: STATUS_MAP[u.estado] ?? 'PENDIENTE',
     emailVerificado: u.email_verificado,
@@ -70,6 +72,7 @@ class AuthService implements IAuthService {
       apellido: data.apellido,
       email: data.email,
       ruc: data.ruc ?? '',
+      empresa: data.empresa ?? '',
       password: data.password,
       confirm_password: data.confirmPassword,
     })

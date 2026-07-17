@@ -8,6 +8,7 @@ class RegisterSerializer(serializers.Serializer):
     apellido = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     ruc = serializers.CharField(max_length=13, required=False, allow_blank=True, default="")
+    empresa = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True)
 

@@ -47,6 +47,12 @@ class User(AbstractUser):
         default='',
         verbose_name='RUC',
     )
+    empresa           = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        verbose_name='empresa',
+    )
     role              = models.CharField(
         max_length=20,
         choices=Role.choices,

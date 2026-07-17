@@ -217,6 +217,10 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@sassblum.com')
 
+# LN-3/LN-4 (paridad sistema legado): copia de cada email de notificación al equipo.
+# Vacío = sin CC. Ej: EMAIL_CC=notificaciones@sassblum.com
+EMAIL_CC = [e.strip() for e in config('EMAIL_CC', default='').split(',') if e.strip()]
+
 # URL del frontend (para construir los enlaces de verificación / reseteo en los emails)
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 

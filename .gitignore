@@ -26,3 +26,6 @@ supabase/.branches/
 
 # Artefactos
 *.tar.gz
+
+# Copia de trabajo del cPanel (contiene credenciales — NUNCA subir al repo)
+legacy_cpanel/

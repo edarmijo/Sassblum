@@ -46,6 +46,14 @@ class Ticket(models.Model):
         help_text="Formato T-YYYY-NNNN. Generado por TicketService, nunca por el modelo.",
     )
 
+    legacy_codigo = models.IntegerField(
+        null=True,
+        blank=True,
+        unique=True,
+        verbose_name="código legado",
+        help_text="Número del ticket en el sistema anterior (cPanel). Solo para tickets migrados.",
+    )
+
     # ── Content ───────────────────────────────────────────────────────────────
     asunto = models.CharField(
         max_length=80,
@@ -104,10 +112,4 @@ class Ticket(models.Model):
             models.Index(fields=["estado", "prioridad"]),
         ]
 
-    def __str__(self) -> str:
-        return f"{self.numero} — {self.asunto[:40]}"
-
-    @property
-    def is_closed(self) -> bool:
-        """True if ticket has reached the terminal Cerrado state."""
-        return self.estado == self.Estado.CERRADO
+    

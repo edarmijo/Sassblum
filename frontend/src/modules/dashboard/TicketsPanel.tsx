@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Plus, Ticket as TicketIcon, Clock, CheckCircle2, Loader2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -131,14 +132,8 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
                     <DashboardCardDescription>Completa el formulario para solicitar un servicio</DashboardCardDescription>
                   </DashboardCardHeader>
                   <DashboardCardContent>
-                    <CreateTicketPage onCreated={(id) => navigate(`/tickets/${id}`)} />
-                  </DashboardCardContent>
-                </DashboardCard>
-              </DashboardTabsContent>
-            )}
-          </DashboardTabs>
-        </Reveal>
-      </div>
-    </div>
-  )
-}
+                    <CreateTicketPage
+                      onCreated={(id, numero) => {
+                        // Paridad LN-1 (sistema legado): confirmar el número asignado al cliente
+                        toast.success(`Se te asignó el ticket ${numero}`)
+   

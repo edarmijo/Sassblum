@@ -2,7 +2,7 @@ import { useCatalog } from '../../../catalog/hooks/useCatalog'
 import { CreateTicketForm } from '../../components/CreateTicketForm'
 
 interface CreateTicketPageProps {
-  onCreated?: (ticketId: string) => void
+  onCreated?: (ticketId: string, numero: string) => void
 }
 
 /**
@@ -27,6 +27,4 @@ export function CreateTicketPage({ onCreated }: Readonly<CreateTicketPageProps>)
         services={services.map((s) => ({ id: s.id, nombre: s.nombre }))}
         onSuccess={onCreated}
       />
-    </section>
-  )
-}
+    </se

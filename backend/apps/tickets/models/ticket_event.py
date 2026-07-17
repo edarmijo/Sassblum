@@ -42,8 +42,11 @@ class TicketEvent(models.Model):
     autor = models.ForeignKey(
         "authentication.User",
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="ticket_events",
         verbose_name="autor",
+        help_text="Null = evento del sistema (p. ej. migración de datos legados).",
     )
 
     # ── Event data ────────────────────────────────────────────────────────────
@@ -83,6 +86,4 @@ class TicketEvent(models.Model):
 
     def __str__(self) -> str:
         return (
-            f"{self.ticket.numero} · {self.tipo_evento} "
-            f"({self.created_at.strftime('%Y-%m-%d %H:%M')})"
-        )
+       
