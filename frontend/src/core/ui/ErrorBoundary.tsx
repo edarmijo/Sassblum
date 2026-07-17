@@ -41,6 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Ha ocurrido un error inesperado. Por favor, intenta de nuevo.
             </p>
             <button
+              type="button"
               onClick={() => this.setState({ hasError: false })}
               className="inline-flex items-center px-6 py-2.5 bg-brand-cyan text-brand-navy font-semibold rounded-lg hover:opacity-90 transition-opacity"
             >

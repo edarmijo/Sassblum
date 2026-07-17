@@ -10,9 +10,6 @@ Run: pytest apps/tickets/tests/test_ticket_api.py -v
 import pytest
 from rest_framework.test import APIClient
 
-# Credencial exclusiva de tests (no es un secreto real) — NOSONAR
-TEST_PASSWORD = "Secure123!"  # noqa: S105
-
 
 @pytest.mark.django_db
 class TestTicketAPIIntegration:
@@ -52,8 +49,9 @@ class TestTicketAPIIntegration:
     def test_create_ticket_as_worker_returns_403(self):
         """LN-1 + requirement: only CLIENT role can create tickets (IsClient)."""
         from apps.authentication.models import User
+        # Sin password: los tests autentican con force_authenticate (no hay login real)
         worker = User.objects.create_user(
-            email='worker@test.com', password=TEST_PASSWORD,
+            email='worker@test.com',
             role=User.Role.WORKER, estado=User.Estado.ACTIVE, email_verificado=True,
         )
         client = APIClient()
@@ -68,7 +66,7 @@ class TestTicketAPIIntegration:
         """LN-1 + requirement: only CLIENT role can create tickets (IsClient)."""
         from apps.authentication.models import User
         admin = User.objects.create_user(
-            email='admin@test.com', password=TEST_PASSWORD,
+            email='admin@test.com',
             role=User.Role.ADMIN, estado=User.Estado.ACTIVE, email_verificado=True,
         )
         client = APIClient()

@@ -1,7 +1,7 @@
 import type { Variants } from 'framer-motion'
 
 // ═══════════════════════════════════════════════════════════════
-// ANIMATION VARIANTS — Reutilizables en todo el proyecto
+// ANIMATION VARIANTS — Reutilizables en el proyecto completo
 // SassBlum Futurista Design System
 // ═══════════════════════════════════════════════════════════════
 
