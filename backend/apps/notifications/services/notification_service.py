@@ -30,6 +30,31 @@ logger = logging.getLogger(__name__)
 
 # ── Recipient selection ────────────────────────────────────────────────────────
 
+def _add_user_by_id(recipients: set, user_id) -> None:
+    """Agrega un User por id si existe (silencioso si no)."""
+    from apps.authentication.models import User  # noqa: PLC0415
+    if not user_id:
+        return
+    try:
+        recipients.add(User.objects.get(id=user_id))
+    except User.DoesNotExist:
+        pass
+
+
+def _exclude_author(recipients: set, event: dict, tipo: str) -> set:
+    """
+    Regla "sin auto-notificaciones", con UNA excepción: en 'creacion' el
+    cliente-autor SÍ recibe su email de confirmación con el número de ticket
+    (paridad LN-3 con el sistema legado).
+    """
+    autor_id = event.get("autor_id")
+    if not autor_id:
+        return recipients
+    if tipo == "creacion" and autor_id == event.get("cliente_id"):
+        return recipients
+    return {r for r in recipients if r.id != autor_id}
+
+
 def _resolve_recipients(event: dict) -> list:
     """
     Load User instances that should receive this notification.
@@ -46,30 +71,12 @@ def _resolve_recipients(event: dict) -> list:
         )
 
     if tipo in ("cambio_estado", "comentario", "asignacion", "reasignacion", "creacion"):
-        if cliente_id := event.get("cliente_id"):
-            try:
-                recipients.add(User.objects.get(id=cliente_id))
-            except User.DoesNotExist:
-                pass
+        _add_user_by_id(recipients, event.get("cliente_id"))
 
     if tipo in ("asignacion", "reasignacion", "comentario"):
-        if asignado_id := event.get("asignado_id"):
-            try:
-                recipients.add(User.objects.get(id=asignado_id))
-            except User.DoesNotExist:
-                pass
+        _add_user_by_id(recipients, event.get("asignado_id"))
 
-    # Exclude the event author (no self-notifications)…
-    # …EXCEPTO en 'creacion': el cliente-autor SÍ recibe su email de confirmación
-    # con el número de ticket (paridad LN-3 con el sistema legado).
-    if autor_id := event.get("autor_id"):
-        author_is_client_confirmation = (
-            tipo == "creacion" and autor_id == event.get("cliente_id")
-        )
-        if not author_is_client_confirmation:
-            recipients = {r for r in recipients if r.id != autor_id}
-
-    return list(recipients)
+    return list(_exclude_author(recipients, event, tipo))
 
 
 # ── NotificationService ────────────────────────────────────────────────────────

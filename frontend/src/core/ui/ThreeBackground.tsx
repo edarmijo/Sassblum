@@ -245,8 +245,8 @@ export function ThreeBackground() {
     const CELL      = maxDist;
     const lineLimit = lineCount * 6;
 
-    function updateLines(elapsed: number) {
-      // Sync cpuPositions with the GPU drift formula (no oscillation — same as before)
+    /** Sync cpuPositions with the GPU drift formula (no oscillation — same as before) */
+    function syncCpuPositions(elapsed: number) {
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const i3 = i * 3;
         const rawX = initPositions[i3]     + velocities[i3]     * elapsed;
@@ -255,10 +255,10 @@ export function ThreeBackground() {
         cpuPositions[i3 + 1] = ((rawY + 10) % 20 + 20) % 20 - 10;
         cpuPositions[i3 + 2] = initPositions[i3 + 2] + velocities[i3 + 2] * elapsed;
       }
+    }
 
-      const lp = lineGeo.attributes.position.array as Float32Array;
-
-      // Build 2D spatial grid (XY) — each cell holds particle indices
+    /** Build 2D spatial grid (XY) — each cell holds particle indices */
+    function buildGrid(): Map<string, number[]> {
       const grid = new Map<string, number[]>();
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const cx = Math.floor(cpuPositions[i * 3]     / CELL);
@@ -268,9 +268,33 @@ export function ThreeBackground() {
         if (!bucket) { bucket = []; grid.set(k, bucket); }
         bucket.push(i);
       }
+      return grid;
+    }
 
+    /** Write line segments for close pairs between two buckets; returns next idx. */
+    function connectBuckets(bucket: number[], neighbors: number[], lp: Float32Array, idx: number): number {
+      for (const i of bucket) {
+        const i3 = i * 3;
+        for (const j of neighbors) {
+          if (j <= i) continue;
+          if (idx >= lineLimit) return idx;
+          const j3 = j * 3;
+          const dx = cpuPositions[i3]     - cpuPositions[j3];
+          const dy = cpuPositions[i3 + 1] - cpuPositions[j3 + 1];
+          const dz = cpuPositions[i3 + 2] - cpuPositions[j3 + 2];
+          if (dx * dx + dy * dy + dz * dz < maxDistSq) {
+            lp[idx++] = cpuPositions[i3];   lp[idx++] = cpuPositions[i3 + 1]; lp[idx++] = cpuPositions[i3 + 2];
+            lp[idx++] = cpuPositions[j3];   lp[idx++] = cpuPositions[j3 + 1]; lp[idx++] = cpuPositions[j3 + 2];
+          }
+        }
+      }
+      return idx;
+    }
+
+    /** Scan each cell against its 3×3 neighborhood; returns segments written. */
+    function writeSegments(grid: Map<string, number[]>, lp: Float32Array): number {
       let idx = 0;
-      outer: for (const [key, bucket] of grid) {
+      for (const [key, bucket] of grid) {
         const comma = key.indexOf(',');
         const cx = +key.slice(0, comma);
         const cy = +key.slice(comma + 1);
@@ -278,24 +302,18 @@ export function ThreeBackground() {
           for (let dj = -1; dj <= 1; dj++) {
             const neighbors = grid.get(`${cx + di},${cy + dj}`);
             if (!neighbors) continue;
-            for (const i of bucket) {
-              const i3 = i * 3;
-              for (const j of neighbors) {
-                if (j <= i) continue;
-                if (idx >= lineLimit) break outer;
-                const j3 = j * 3;
-                const dx = cpuPositions[i3]     - cpuPositions[j3];
-                const dy = cpuPositions[i3 + 1] - cpuPositions[j3 + 1];
-                const dz = cpuPositions[i3 + 2] - cpuPositions[j3 + 2];
-                if (dx * dx + dy * dy + dz * dz < maxDistSq) {
-                  lp[idx++] = cpuPositions[i3];   lp[idx++] = cpuPositions[i3 + 1]; lp[idx++] = cpuPositions[i3 + 2];
-                  lp[idx++] = cpuPositions[j3];   lp[idx++] = cpuPositions[j3 + 1]; lp[idx++] = cpuPositions[j3 + 2];
-                }
-              }
-            }
+            idx = connectBuckets(bucket, neighbors, lp, idx);
+            if (idx >= lineLimit) return idx;
           }
         }
       }
+      return idx;
+    }
+
+    function updateLines(elapsed: number) {
+      syncCpuPositions(elapsed);
+      const lp = lineGeo.attributes.position.array as Float32Array;
+      const idx = writeSegments(buildGrid(), lp);
       for (let k = idx; k < lineLimit; k++) lp[k] = 0;
       lineGeo.attributes.position.needsUpdate = true;
     }

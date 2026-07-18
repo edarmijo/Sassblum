@@ -10,6 +10,8 @@ Reglas cubiertas:
 Run: pytest apps/authentication/tests/test_user_rules.py -v
 """
 
+import secrets
+
 import pytest
 
 from apps.authentication.models import User
@@ -17,6 +19,10 @@ from apps.authentication.serializers.user_admin_serializers import UserCreateSer
 from apps.authentication.services.auth_service import AuthService
 from apps.authentication.services.user_admin_service import UserAdminService
 from core.exceptions.domain_exceptions import DomainException
+
+# Clave de prueba generada en runtime (nunca un literal — cumple política y Sonar)
+# y con los requisitos de la cadena de validación: mayúscula, minúscula y número.
+RUNTIME_SECRET = f"Aa1.{secrets.token_urlsafe(12)}"
 
 
 @pytest.mark.django_db
@@ -27,7 +33,7 @@ class TestPublicRegistrationRole:
         AuthService().register({
             'email': 'intruso@test.com',
             'nombre': 'X', 'apellido': 'Y',
-            'password': 'Secur3.Pass!',
+            'password': RUNTIME_SECRET,
             'role': 'admin',  # intento de inyección — debe ignorarse
         })
         assert User.objects.get(email='intruso@test.com').role == User.Role.CLIENT
@@ -38,18 +44,23 @@ class TestSingleAdminRule:
 
     def test_create_superuser_rejected_when_admin_exists(self):
         """R3: el sistema permite UN solo administrador."""
-        User.objects.create_superuser('admin1@test.com', 'Secur3.Pass!')
+        # Arrange: el admin preexistente se crea por la vía sin guardia
+        # (así el bloque raises contiene UNA sola invocación que puede lanzar).
+        User.objects.create_user(
+            'admin1@test.com', RUNTIME_SECRET, role=User.Role.ADMIN,
+        )
         with pytest.raises(ValueError, match='un solo admin'):
-            User.objects.create_superuser('admin2@test.com', 'Secur3.Pass!')
+            User.objects.create_superuser('admin2@test.com', RUNTIME_SECRET)
 
     def test_admin_panel_service_cannot_create_admin(self):
         """R2 (servicio): defensa en profundidad ante un serializer comprometido."""
+        payload = {
+            'email': 'otro-admin@sassblum.com',
+            'password': RUNTIME_SECRET,
+            'role': User.Role.ADMIN,
+        }
         with pytest.raises(DomainException, match='administradores'):
-            UserAdminService().create_user({
-                'email': 'otro-admin@sassblum.com',
-                'password': 'Secur3.Pass!',
-                'role': User.Role.ADMIN,
-            })
+            UserAdminService().create_user(payload)
 
 
 class TestAdminPanelSerializerRules:
@@ -58,7 +69,7 @@ class TestAdminPanelSerializerRules:
         """R2 (serializer): 'admin' no es una opción válida."""
         s = UserCreateSerializer(data={
             'nombre': 'A', 'apellido': 'B',
-            'email': 'x@sassblum.com', 'password': 'Secur3.Pass!',
+            'email': 'x@sassblum.com', 'password': RUNTIME_SECRET,
             'role': 'admin',
         })
         assert not s.is_valid()
@@ -69,7 +80,7 @@ class TestAdminPanelSerializerRules:
         for email in ('tecnico@sassblum.com', 'tecnico.externo@gmail.com'):
             s = UserCreateSerializer(data={
                 'nombre': 'A', 'apellido': 'B',
-                'email': email, 'password': 'Secur3.Pass!',
+                'email': email, 'password': RUNTIME_SECRET,
                 'role': 'worker',
             })
             assert s.is_valid(), s.errors

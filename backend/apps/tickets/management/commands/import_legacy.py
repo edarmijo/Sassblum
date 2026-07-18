@@ -81,7 +81,11 @@ def _read_tuple(sql_text: str, i: int) -> tuple[list[str | None], int]:
             quoted = True
         elif ch in ",)":
             raw = "".join(buf).strip()
-            row.append(raw if quoted else (None if raw.upper() == "NULL" else raw))
+            if not quoted and raw.upper() == "NULL":
+                value = None
+            else:
+                value = raw
+            row.append(value)
             buf, quoted = [], False
             i += 1
             if ch == ")":

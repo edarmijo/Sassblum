@@ -101,7 +101,7 @@ function AuthedActions() {
           <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
           <DropdownMenuItem
             onClick={() => navigate('/perfil')}
-            className="text-white\70 focus:text-white focus:bg-white/6"
+            className="text-white/70 focus:text-white focus:bg-white/6"
           >
             <User className="mr-2 h-4 w-4" />
             <span>Mi perfil</span>
