@@ -3,6 +3,23 @@
 > **Estado: NO EJECUTAR.** Este plan se activa solo cuando tú lo decidas, después de que el plan principal (`PLAN_UNIFICACION.md`) esté completo y validado en producción con usuarios reales.
 > Es la única parte de todo el proyecto que algún día tocaría el cPanel, y aun entonces con cambios mínimos y reversibles.
 
+## Concepto clave: el código NUNCA viaja al cPanel
+
+> Idea rectora de toda la migración: **el código no se muda al cPanel — el dominio se muda hacia el código.**
+
+- La aplicación nueva ya vive en su casa definitiva: frontend en Vercel, backend en Render, base en Supabase, deploys automáticos desde GitHub. El hosting cPanel (PHP/MySQL) no puede ejecutar este stack y moverlo allá sería una degradación técnica.
+- "Migrar" significa, en orden: (1) importar los datos legados a Supabase (`import_legacy`, ya listo — F0), (2) darle identidad corporativa al correo (verificar sassblum.com en Brevo → `DEFAULT_FROM_EMAIL=notificaciones@sassblum.com` — F3), y (3) apuntar 2 registros DNS (`@` y `www`) del Zone Editor hacia Vercel (F4). Eso es TODA la migración; reversible en minutos.
+- El cPanel queda vivo con los dos trabajos que hace bien: **correo corporativo** (buzones info@, soporte@, notificaciones@ intactos; MX no se tocan) y **DNS del dominio**. El sitio PHP viejo queda congelado como respaldo, sin visitas.
+- Resultado final: dominio + correo corporativo del cPanel, aplicación + datos en la nube moderna.
+
+## Arquitectura de correo (decidida 2026-07-17)
+
+- Render bloquea SMTP saliente (`Errno 101` verificado en logs) → el envío va por **API HTTPS con django-anymail + Brevo** (300/día gratis). Todo se controla por variables de entorno; cambiar de proveedor jamás toca código.
+- Hoy (fase de testing): remitente = Gmail verificado en Brevo.
+- Futuro (F3): verificar el dominio sassblum.com en Brevo (2 registros DNS en Zone Editor) y cambiar `DEFAULT_FROM_EMAIL` a notificaciones@sassblum.com. Los correos salen por Brevo con identidad corporativa y el buzón real del cPanel recibe las respuestas de los clientes ("responda con su ID de Anydesk") — los dos mundos colaborando.
+- El `EMAIL_CC=notificaciones@sassblum.com` (ya implementado) deja copia de cada envío en el buzón del cPanel, replicando el comportamiento del sistema legado.
+- Alternativa descartada: SMTP de mail.sassblum.com desde Render (mismo bloqueo de red que Gmail).
+
 ## Prerrequisitos para activar este plan
 
 1. Plan principal 100% completo: login obligatorio, emails con formato legado, 1.458 tickets importados y verificados.

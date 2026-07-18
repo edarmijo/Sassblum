@@ -193,8 +193,14 @@ class AuthService(IAuthService):
 
     @staticmethod
     def _dispatch_verification_email(user: User, token: str) -> None:
+        """
+        Envía el correo de verificación en un hilo de fondo (fire-and-forget).
+
+        El envío de email NUNCA debe estar en el camino de la respuesta HTTP:
+        si el SMTP está lento o inalcanzable (p. ej. red de Render), el registro
+        responde igual de inmediato y el fallo queda solo en logs.
+        """
         from django.conf import settings  # noqa: PLC0415
-        from apps.notifications.factory import NotificationFactory  # noqa: PLC0415
         frontend = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
         verify_url = f"{frontend}/verify-email?token={token}"
         context = {
@@ -205,16 +211,23 @@ class AuthService(IAuthService):
             "expira_en": "24 horas",
             "recipient_nombre": user.first_name,
         }
-        # Transactional email: send directly (bypass the channel-preference gate,
-        # since a brand-new user is not yet verified/active).
-        try:
-            NotificationFactory.build("email").send(user, "Verifica tu correo", context)
-        except Exception:  # noqa: BLE001
-            logger.warning(
-                "No se pudo enviar el correo de verificación a %s",
-                user.email,
-                exc_info=True,
-            )
+
+        def _send() -> None:
+            # Transactional email: send directly (bypass the channel-preference
+            # gate, since a brand-new user is not yet verified/active).
+            from apps.notifications.factory import NotificationFactory  # noqa: PLC0415
+            try:
+                NotificationFactory.build("email").send(
+                    user, "Verifica tu correo", context
+                )
+            except Exception:  # noqa: BLE001
+                logger.warning(
+                    "No se pudo enviar el correo de verificación a %s",
+                    user.email,
+                    exc_info=True,
+                )
+
+        threading.Thread(target=_send, daemon=True, name="verify-email").start()
 
 
 # ── Singleton accessor ─────────────────────────────────────────────────────────

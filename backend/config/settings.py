@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'channels',
+    'anymail',
     # SassBlum apps
     'apps.authentication',
     'apps.catalog',
@@ -214,6 +215,22 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+# SSL directo (puerto 465). Si EMAIL_USE_SSL=True, desactivar EMAIL_USE_TLS.
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+# Límite de espera del SMTP: si el servidor de correo no responde, el request
+# no se congela — el registro continúa y el fallo de email solo queda en logs.
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+
+# ── Envío por API HTTPS (django-anymail) ───────────────────────────────────────
+# Render bloquea/no rutea SMTP saliente (Errno 101), así que en producción el
+# correo sale por la API HTTP de Brevo (puerto 443, siempre alcanzable).
+# Activación: definir en el entorno
+#   EMAIL_BACKEND=anymail.backends.brevo.EmailBackend
+#   BREVO_API_KEY=xkeysib-...
+#   DEFAULT_FROM_EMAIL=<remitente verificado en Brevo>
+ANYMAIL = {
+    "BREVO_API_KEY": config('BREVO_API_KEY', default=''),
+}
 
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@sassblum.com')
 
