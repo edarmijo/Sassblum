@@ -41,23 +41,42 @@ import { ProtectedRoute } from './modules/auth/components/ProtectedRoute'
 import { LoginForm } from './modules/auth/components/LoginForm'
 import { RegisterForm } from './modules/auth/components/RegisterForm'
 
+/**
+ * lazyRetry — import dinámico resiliente a deploys.
+ * Tras un deploy, los chunks viejos dejan de existir (hash nuevo); si un usuario
+ * con el index anterior navega a una ruta lazy, el import falla y la página queda
+ * en negro. Este wrapper recarga la página UNA vez para obtener el index nuevo.
+ */
+function lazyRetry<T>(factory: () => Promise<T>): () => Promise<T> {
+  return () =>
+    factory().catch((err: unknown) => {
+      const KEY = 'sassblum:chunk-reloaded'
+      if (sessionStorage.getItem(KEY) !== '1') {
+        sessionStorage.setItem(KEY, '1')
+        window.location.reload()
+        return new Promise<T>(() => {}) // la recarga interrumpe; promesa pendiente
+      }
+      throw err // segunda falla real → dejar que ErrorBoundary la muestre
+    })
+}
+
 // Páginas cargadas bajo demanda (code-splitting → chunk por ruta)
-const Home = lazy(() => import('./modules/public/pages/Home').then(m => ({ default: m.Home })))
-const About = lazy(() => import('./modules/public/pages/About').then(m => ({ default: m.About })))
-const Services = lazy(() => import('./modules/public/pages/Services').then(m => ({ default: m.Services })))
-const Gallery = lazy(() => import('./modules/public/pages/Gallery').then(m => ({ default: m.Gallery })))
-const Clients = lazy(() => import('./modules/public/pages/Clients').then(m => ({ default: m.Clients })))
+const Home = lazy(lazyRetry(() => import('./modules/public/pages/Home').then(m => ({ default: m.Home }))))
+const About = lazy(lazyRetry(() => import('./modules/public/pages/About').then(m => ({ default: m.About }))))
+const Services = lazy(lazyRetry(() => import('./modules/public/pages/Services').then(m => ({ default: m.Services }))))
+const Gallery = lazy(lazyRetry(() => import('./modules/public/pages/Gallery').then(m => ({ default: m.Gallery }))))
+const Clients = lazy(lazyRetry(() => import('./modules/public/pages/Clients').then(m => ({ default: m.Clients }))))
 
-const ForgotPasswordPage = lazy(() => import('./modules/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
-const ResetPasswordPage = lazy(() => import('./modules/auth/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
-const VerifyEmailPage = lazy(() => import('./modules/auth/pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })))
+const ForgotPasswordPage = lazy(lazyRetry(() => import('./modules/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage }))))
+const ResetPasswordPage = lazy(lazyRetry(() => import('./modules/auth/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage }))))
+const VerifyEmailPage = lazy(lazyRetry(() => import('./modules/auth/pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage }))))
 
-const ClientDashboard = lazy(() => import('./modules/dashboard/ClientDashboard').then(m => ({ default: m.ClientDashboard })))
-const WorkerDashboard = lazy(() => import('./modules/dashboard/WorkerDashboard').then(m => ({ default: m.WorkerDashboard })))
-const AdminDashboard = lazy(() => import('./modules/dashboard/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
-const TicketDetailPage = lazy(() => import('./modules/tickets/pages/TicketDetailPage').then(m => ({ default: m.TicketDetailPage })))
-const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
-const ProfilePage = lazy(() => import('./modules/auth/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const ClientDashboard = lazy(lazyRetry(() => import('./modules/dashboard/ClientDashboard').then(m => ({ default: m.ClientDashboard }))))
+const WorkerDashboard = lazy(lazyRetry(() => import('./modules/dashboard/WorkerDashboard').then(m => ({ default: m.WorkerDashboard }))))
+const AdminDashboard = lazy(lazyRetry(() => import('./modules/dashboard/AdminDashboard').then(m => ({ default: m.AdminDashboard }))))
+const TicketDetailPage = lazy(lazyRetry(() => import('./modules/tickets/pages/TicketDetailPage').then(m => ({ default: m.TicketDetailPage }))))
+const NotificationsPage = lazy(lazyRetry(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage }))))
+const ProfilePage = lazy(lazyRetry(() => import('./modules/auth/pages/ProfilePage').then(m => ({ default: m.ProfilePage }))))
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 

@@ -71,6 +71,11 @@ CORS_ALLOWED_ORIGINS = [
 # CORS preflight cache — reduce OPTIONS requests
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
+# El frontend envía X-Device-Id en el refresh de tokens (H#4: device binding).
+# Sin esto, el preflight CORS rechaza el refresh en producción → cascada de 401.
+from corsheaders.defaults import default_headers  # noqa: E402
+CORS_ALLOW_HEADERS = (*default_headers, 'x-device-id')
+
 # Permitir cualquier subdominio de vercel.app (deploys y previews)
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",

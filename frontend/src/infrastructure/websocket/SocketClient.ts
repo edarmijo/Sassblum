@@ -19,18 +19,24 @@ type EventHandler = (payload: unknown) => void
 
 const WS_BASE = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000'
 const MAX_BACKOFF_MS = 30_000
+// Tras N intentos fallidos consecutivos se deja de reintentar (evita spam infinito
+// en consola cuando el servidor no tiene WS disponible). Un nuevo connect() —
+// p. ej. al re-loguear — reinicia el ciclo.
+const MAX_RETRIES = 6
 
 class SocketClient {
   private socket: WebSocket | null = null
   private token: string | null = null
   private readonly handlers = new Map<string, Set<EventHandler>>()
   private backoff = 1_000
+  private retries = 0
   private shouldReconnect = false
 
   /** Open the connection with the user's access token. Idempotent. */
   connect(token: string): void {
     this.token = token
     this.shouldReconnect = true
+    this.retries = 0
     this.open()
   }
 
@@ -45,6 +51,7 @@ class SocketClient {
 
     this.socket.onopen = () => {
       this.backoff = 1_000 // reset backoff on a successful connection
+      this.retries = 0
     }
 
     this.socket.onmessage = (e: MessageEvent) => {
@@ -58,10 +65,16 @@ class SocketClient {
 
     this.socket.onclose = () => {
       this.socket = null
-      if (this.shouldReconnect) {
-        setTimeout(() => this.open(), this.backoff)
-        this.backoff = Math.min(this.backoff * 2, MAX_BACKOFF_MS)
+      if (!this.shouldReconnect) return
+      this.retries += 1
+      if (this.retries >= MAX_RETRIES) {
+        // El servidor no ofrece WS ahora mismo (p. ej. sin Redis). La app sigue
+        // funcionando sin tiempo real; se reintentará en el próximo login.
+        this.shouldReconnect = false
+        return
       }
+      setTimeout(() => this.open(), this.backoff)
+      this.backoff = Math.min(this.backoff * 2, MAX_BACKOFF_MS)
     }
 
     this.socket.onerror = () => {
