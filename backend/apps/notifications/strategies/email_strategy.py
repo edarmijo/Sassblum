@@ -52,7 +52,14 @@ class EmailNotificationStrategy(INotificationStrategy):
         )
 
         subject = f"[SassBlum] {subject_prefix}"
-        html_body = render_to_string(template_name, {**context, "recipient": recipient})
+        # Ensure recipient_nombre has a usable value even for admin accounts
+        # created via createsuperuser (first_name may be empty).
+        enriched_context = {
+            **context,
+            "recipient": recipient,
+            "recipient_nombre": context.get("recipient_nombre") or recipient.email,
+        }
+        html_body = render_to_string(template_name, enriched_context)
 
         # LN-3/LN-4 (paridad legado): CC opcional al equipo (EMAIL_CC en settings/env).
         email = EmailMultiAlternatives(

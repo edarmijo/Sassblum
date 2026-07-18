@@ -14,6 +14,8 @@ Security:
     exists (no user enumeration).
 """
 
+import logging
+
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -27,6 +29,8 @@ from apps.authentication.serializers import (
 from apps.authentication.services import TokenService
 from apps.authentication.services.token_service import InvalidToken, TokenExpired
 
+logger = logging.getLogger(__name__)
+
 _GENERIC_FORGOT_MSG = (
     "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña."
 )
@@ -35,6 +39,11 @@ _GENERIC_FORGOT_MSG = (
 class ForgotPasswordView(APIView):
     """POST /api/auth/forgot-password — request a reset link."""
 
+    # Empty authentication_classes prevents JWTAuthentication from raising
+    # AuthenticationFailed on an expired token before AllowAny can act.
+    # A user with a stale session in-browser would otherwise get a 401 that
+    # triggers the ApiClient refresh loop and produces an infinite spinner.
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -55,6 +64,11 @@ class ForgotPasswordView(APIView):
         """
         Send the password_reset email via EmailNotificationStrategy directly
         (this is not a TicketEvent, so it bypasses the Observer).
+
+        validate() is intentionally skipped: it gates normal ticket notifications
+        to active+verified users, but password reset is a transactional security
+        email that must reach any registered address regardless of account state
+        (same pattern used by auth_service._dispatch_verification_email).
         """
         from django.conf import settings  # noqa: PLC0415
         from apps.notifications.factory import NotificationFactory  # noqa: PLC0415
@@ -71,15 +85,21 @@ class ForgotPasswordView(APIView):
         }
         try:
             strategy = NotificationFactory.build("email")
-            if strategy.validate(user):
-                strategy.send(user, "Restablece tu contraseña", context)
+            strategy.send(user, "Restablece tu contraseña", context)
         except Exception:  # noqa: BLE001
-            pass  # email failure must not reveal anything to the caller
+            # Log internally for Render visibility; never propagate to caller
+            # (the view always returns 200 to avoid user enumeration).
+            logger.exception(
+                "password_reset_email_failed | user_id=%s email=%s",
+                user.pk,
+                user.email,
+            )
 
 
 class ResetPasswordView(APIView):
     """POST /api/auth/reset-password — set a new password using a valid token."""
 
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):

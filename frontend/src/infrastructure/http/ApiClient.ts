@@ -85,6 +85,10 @@ class ApiClient {
         refresh: this.refreshToken,
       }, {
         headers: fingerprint ? { 'X-Device-Id': fingerprint } : {},
+        // Must match the main client timeout — without this, a sleeping Render
+        // instance causes tryRefresh() to hang indefinitely, blocking the
+        // original request's Promise and producing an infinite spinner.
+        timeout: 60_000,
       })
       this.accessToken = data.access
       return true
