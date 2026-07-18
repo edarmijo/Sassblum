@@ -1,43 +1,55 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef } from 'react';
+import {
+  WebGLRenderer, Scene, PerspectiveCamera,
+  BufferGeometry, BufferAttribute, Points,
+  ShaderMaterial, LineSegments, LineBasicMaterial,
+  TorusGeometry, SphereGeometry, Mesh,
+  MeshBasicMaterial, Clock, Vector2,
+  AdditiveBlending, DoubleSide, DynamicDrawUsage,
+} from 'three';
 import { secureRandom } from '../utils/random';
 
 /**
  * ThreeBackground — Full-screen fixed Three.js canvas.
- * Matches scripts.js reference exactly:
- *  • CPU velocity-based particle drift (same as initThreeBackground)
- *  • Shader float + mouse repulsion
- *  • Camera follows mouse
- *  • Two orbiting torus rings
- *  • Central glowing orb (Fresnel)
- *  • Connecting line network (throttled every 3rd frame)
  *
- * Relies on THREE loaded via CDN in index.html.
- * NOTE: No prefers-reduced-motion gate — always animates (same as reference).
+ * Architecture:
+ *  • Particle drift lives entirely on the GPU: initial positions are static
+ *    (uploaded once); the vertex shader computes pos = initPos + aVelocity × uTime.
+ *    Zero CPU→GPU buffer transfers per frame for particles.
+ *  • Line network uses a dedicated cpuPositions buffer that mirrors the same
+ *    drift formula, keeping line connections visually accurate without touching
+ *    the GPU-side particle buffer.
+ *  • Connecting lines run a spatial grid-hash (O(n)) every 3rd frame.
+ *  • Respects prefers-reduced-motion: one static frame then stops.
  */
 
 /* ───────── constants ───────── */
-// Reducidos de 1500/600: visualmente equivalente y ~la mitad de trabajo por
-// frame en CPU/GPU (drift de partículas + red de líneas escalan con el count).
 const PARTICLE_COUNT_DESKTOP = 800;
 const PARTICLE_COUNT_MOBILE  = 300;
-const MOUSE_LERP       = 0.05;
-const CAMERA_LERP      = 0.02;
-const ORB_LERP         = 0.03;
+const MOUSE_LERP  = 0.05;
+const CAMERA_LERP = 0.02;
+const ORB_LERP    = 0.03;
 
 /* ───────── vertex shader ───────── */
+// 'position' holds the INITIAL (static) position.
+// Drift is computed here: finalDrift = position + aVelocity * uTime, wrapped to [-10,10].
 const particleVertexShader = /* glsl */ `
   uniform float uTime;
   uniform vec2  uMouse;
   attribute float aScale;
   attribute float aRandom;
+  attribute vec3  aVelocity;
   varying float vDist;
   varying float vAlpha;
 
   void main() {
-    vec3 pos = position;
+    // GPU drift: deterministic from initial position + velocity × time
+    vec3 pos = position + aVelocity * uTime;
+    // wrap XY to [-10, 10] — matches the CPU wrap used for line connections
+    pos.x = mod(pos.x + 10.0, 20.0) - 10.0;
+    pos.y = mod(pos.y + 10.0, 20.0) - 10.0;
 
-    // anti-gravity float (oscillation on top of CPU drift)
+    // anti-gravity oscillation on top of drift
     pos.y += sin(uTime * 0.4 + aRandom * 6.2831) * 0.5;
     pos.x += cos(uTime * 0.3 + aRandom * 6.2831) * 0.35;
     pos.z += sin(uTime * 0.2 + aRandom * 3.1416) * 0.25;
@@ -68,7 +80,6 @@ const particleFragmentShader = /* glsl */ `
     if (d > 0.5) discard;
     float glow = pow(1.0 - smoothstep(0.0, 0.5, d), 1.5);
 
-    // SassBlum teal palette
     vec3 teal  = vec3(0.0, 0.769, 0.878);   // #00c4e0
     vec3 cyan  = vec3(0.220, 0.851, 0.961);  // #38d9f5
     float mix_t = sin(uTime * 0.5 + vDist * 0.3) * 0.5 + 0.5;
@@ -101,8 +112,8 @@ const orbFragmentShader = /* glsl */ `
 
   void main() {
     float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 3.0);
-    vec3 core  = vec3(0.0, 0.769, 0.878);   // teal core
-    vec3 rim   = vec3(0.220, 0.851, 0.961);  // cyan rim
+    vec3 core  = vec3(0.0, 0.769, 0.878);
+    vec3 rim   = vec3(0.220, 0.851, 0.961);
     vec3 color = mix(core, rim, fresnel);
     float alpha = (fresnel * 0.4 + 0.05) + sin(uTime * 1.5) * 0.02;
     gl_FragColor = vec4(color, alpha);
@@ -114,17 +125,11 @@ export function ThreeBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const THREE = (globalThis as Record<string, any>).THREE;
-    if (!THREE) {
-      console.warn('[ThreeBackground] THREE not on window — CDN not loaded yet?');
-      return;
-    }
-
-    const isMobile      = globalThis.window.innerWidth < 768;
+    const isMobile       = globalThis.window.innerWidth < 768;
     const PARTICLE_COUNT = isMobile ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP;
 
     /* ── renderer ── */
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: !isMobile });
+    const renderer = new WebGLRenderer({ alpha: true, antialias: !isMobile });
     renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
     renderer.setPixelRatio(Math.min(globalThis.window.devicePixelRatio, 2));
     Object.assign(renderer.domElement.style, {
@@ -135,8 +140,10 @@ export function ThreeBackground() {
     containerRef.current?.appendChild(renderer.domElement);
 
     /* ── scene & camera ── */
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, globalThis.window.innerWidth / globalThis.window.innerHeight, 0.1, 1000);
+    const scene  = new Scene();
+    const camera = new PerspectiveCamera(
+      75, globalThis.window.innerWidth / globalThis.window.innerHeight, 0.1, 1000,
+    );
     camera.position.z = 5;
 
     /* ── smooth mouse state ── */
@@ -144,24 +151,24 @@ export function ThreeBackground() {
     const mouseSmooth = { x: 0, y: 0 };
 
     const onMouseMove = (e: MouseEvent) => {
-      mouseTarget.x = (e.clientX / globalThis.window.innerWidth)  * 2 - 1;
+      mouseTarget.x =  (e.clientX / globalThis.window.innerWidth)  * 2 - 1;
       mouseTarget.y = -(e.clientY / globalThis.window.innerHeight) * 2 + 1;
     };
     globalThis.addEventListener('mousemove', onMouseMove, { passive: true });
 
-    /* ── particles ── */
-    const geo       = new THREE.BufferGeometry();
-    const positions  = new Float32Array(PARTICLE_COUNT * 3);
-    const velocities = new Float32Array(PARTICLE_COUNT * 3);   // CPU drift
-    const scales     = new Float32Array(PARTICLE_COUNT);
-    const randoms    = new Float32Array(PARTICLE_COUNT);
+    /* ── particle buffers ── */
+    const geo           = new BufferGeometry();
+    const initPositions = new Float32Array(PARTICLE_COUNT * 3); // static, never mutated
+    const velocities    = new Float32Array(PARTICLE_COUNT * 3); // static attribute
+    const scales        = new Float32Array(PARTICLE_COUNT);
+    const randoms       = new Float32Array(PARTICLE_COUNT);
+    const cpuPositions  = new Float32Array(PARTICLE_COUNT * 3); // mirrors GPU drift for lines
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const i3 = i * 3;
-      positions[i3]     = (secureRandom() - 0.5) * 20;
-      positions[i3 + 1] = (secureRandom() - 0.5) * 20;
-      positions[i3 + 2] = (secureRandom() - 0.5) * 15;
-      // same velocity range as reference scripts.js
+      initPositions[i3]     = (secureRandom() - 0.5) * 20;
+      initPositions[i3 + 1] = (secureRandom() - 0.5) * 20;
+      initPositions[i3 + 2] = (secureRandom() - 0.5) * 15;
       velocities[i3]     = (secureRandom() - 0.5) * 0.005;
       velocities[i3 + 1] = (secureRandom() - 0.5) * 0.005;
       velocities[i3 + 2] = (secureRandom() - 0.5) * 0.003;
@@ -169,100 +176,146 @@ export function ThreeBackground() {
       randoms[i] = secureRandom();
     }
 
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aScale',   new THREE.BufferAttribute(scales, 1));
-    geo.setAttribute('aRandom',  new THREE.BufferAttribute(randoms, 1));
+    // All particle attributes are static — uploaded once, never updated
+    geo.setAttribute('position',  new BufferAttribute(initPositions, 3));
+    geo.setAttribute('aVelocity', new BufferAttribute(velocities, 3));
+    geo.setAttribute('aScale',    new BufferAttribute(scales, 1));
+    geo.setAttribute('aRandom',   new BufferAttribute(randoms, 1));
 
     const particleUniforms = {
       uTime:  { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) },
+      uMouse: { value: new Vector2(0, 0) },
     };
 
-    const particleMat = new THREE.ShaderMaterial({
+    const particleMat = new ShaderMaterial({
       vertexShader:   particleVertexShader,
       fragmentShader: particleFragmentShader,
       uniforms:       particleUniforms,
       transparent: true,
       depthWrite:  false,
-      blending:    THREE.AdditiveBlending,
+      blending:    AdditiveBlending,
     });
 
-    const particles = new THREE.Points(geo, particleMat);
+    const particles = new Points(geo, particleMat);
     scene.add(particles);
 
-    /* ── connecting lines ── */
+    /* ── connecting lines (DynamicDrawUsage: updated every 3 frames) ── */
     const lineCount = Math.floor(PARTICLE_COUNT * 0.06);
-    const lineGeo   = new THREE.BufferGeometry();
+    const lineGeo   = new BufferGeometry();
     const linePos   = new Float32Array(lineCount * 6);
-    lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
-    const lineMat   = new THREE.LineBasicMaterial({
+    const linePosAttr = new BufferAttribute(linePos, 3);
+    linePosAttr.usage = DynamicDrawUsage;
+    lineGeo.setAttribute('position', linePosAttr);
+    const lineMat = new LineBasicMaterial({
       color: 0x38d9f5, transparent: true, opacity: 0.12,
-      blending: THREE.AdditiveBlending,
+      blending: AdditiveBlending,
     });
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    const lines = new LineSegments(lineGeo, lineMat);
     scene.add(lines);
 
     /* ── torus rings ── */
-    const ring1 = new THREE.Mesh(
-      new THREE.TorusGeometry(3, 0.02, 16, 100),
-      new THREE.MeshBasicMaterial({ color: 0x00c4e0, transparent: true, opacity: 0.09 }),
+    const ring1 = new Mesh(
+      new TorusGeometry(3, 0.02, 16, 60),
+      new MeshBasicMaterial({ color: 0x00c4e0, transparent: true, opacity: 0.09 }),
     );
     ring1.rotation.x = Math.PI * 0.3;
     scene.add(ring1);
 
-    const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x38d9f5, transparent: true, opacity: 0.06 });
-    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(3.9, 0.015, 16, 100), ring2Mat);
+    const ring2Mat = new MeshBasicMaterial({ color: 0x38d9f5, transparent: true, opacity: 0.06 });
+    const ring2 = new Mesh(new TorusGeometry(3.9, 0.015, 16, 60), ring2Mat);
     ring2.rotation.x = Math.PI * 0.6;
     ring2.rotation.y = Math.PI * 0.3;
     scene.add(ring2);
 
     /* ── central orb ── */
-    const orbMat = new THREE.ShaderMaterial({
+    const orbMat = new ShaderMaterial({
       vertexShader:   orbVertexShader,
       fragmentShader: orbFragmentShader,
       uniforms:       { uTime: { value: 0 } },
       transparent: true, depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
+      blending: AdditiveBlending,
+      side: DoubleSide,
     });
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.8, 64, 64), orbMat);
+    const orb = new Mesh(new SphereGeometry(0.8, 24, 24), orbMat);
     scene.add(orb);
 
-    /* ── connecting-line update ── */
-    function updateLines() {
-      const pos = geo.attributes.position.array as Float32Array;
-      const lp  = lineGeo.attributes.position.array as Float32Array;
-      const maxDist = 1.8;
-      let idx = 0;
-      outer: for (let i = 0; i < PARTICLE_COUNT; i++) {
+    /* ── connecting-line update — spatial grid hash O(n) ── */
+    const maxDist   = 1.8;
+    const maxDistSq = maxDist * maxDist;
+    const CELL      = maxDist;
+    const lineLimit = lineCount * 6;
+
+    function updateLines(elapsed: number) {
+      // Sync cpuPositions with the GPU drift formula (no oscillation — same as before)
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
         const i3 = i * 3;
-        for (let j = i + 1; j < PARTICLE_COUNT; j++) {
-          if (idx >= lineCount * 6) break outer;
-          const j3 = j * 3;
-          const dx = pos[i3] - pos[j3], dy = pos[i3+1] - pos[j3+1], dz = pos[i3+2] - pos[j3+2];
-          if (Math.hypot(dx, dy, dz) < maxDist) {
-            lp[idx++] = pos[i3];   lp[idx++] = pos[i3+1]; lp[idx++] = pos[i3+2];
-            lp[idx++] = pos[j3];   lp[idx++] = pos[j3+1]; lp[idx++] = pos[j3+2];
+        const rawX = initPositions[i3]     + velocities[i3]     * elapsed;
+        const rawY = initPositions[i3 + 1] + velocities[i3 + 1] * elapsed;
+        cpuPositions[i3]     = ((rawX + 10) % 20 + 20) % 20 - 10;
+        cpuPositions[i3 + 1] = ((rawY + 10) % 20 + 20) % 20 - 10;
+        cpuPositions[i3 + 2] = initPositions[i3 + 2] + velocities[i3 + 2] * elapsed;
+      }
+
+      const lp = lineGeo.attributes.position.array as Float32Array;
+
+      // Build 2D spatial grid (XY) — each cell holds particle indices
+      const grid = new Map<string, number[]>();
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const cx = Math.floor(cpuPositions[i * 3]     / CELL);
+        const cy = Math.floor(cpuPositions[i * 3 + 1] / CELL);
+        const k  = `${cx},${cy}`;
+        let bucket = grid.get(k);
+        if (!bucket) { bucket = []; grid.set(k, bucket); }
+        bucket.push(i);
+      }
+
+      let idx = 0;
+      outer: for (const [key, bucket] of grid) {
+        const comma = key.indexOf(',');
+        const cx = +key.slice(0, comma);
+        const cy = +key.slice(comma + 1);
+        for (let di = -1; di <= 1; di++) {
+          for (let dj = -1; dj <= 1; dj++) {
+            const neighbors = grid.get(`${cx + di},${cy + dj}`);
+            if (!neighbors) continue;
+            for (const i of bucket) {
+              const i3 = i * 3;
+              for (const j of neighbors) {
+                if (j <= i) continue;
+                if (idx >= lineLimit) break outer;
+                const j3 = j * 3;
+                const dx = cpuPositions[i3]     - cpuPositions[j3];
+                const dy = cpuPositions[i3 + 1] - cpuPositions[j3 + 1];
+                const dz = cpuPositions[i3 + 2] - cpuPositions[j3 + 2];
+                if (dx * dx + dy * dy + dz * dz < maxDistSq) {
+                  lp[idx++] = cpuPositions[i3];   lp[idx++] = cpuPositions[i3 + 1]; lp[idx++] = cpuPositions[i3 + 2];
+                  lp[idx++] = cpuPositions[j3];   lp[idx++] = cpuPositions[j3 + 1]; lp[idx++] = cpuPositions[j3 + 2];
+                }
+              }
+            }
           }
         }
       }
-      for (let k = idx; k < lineCount * 6; k++) lp[k] = 0;
+      for (let k = idx; k < lineLimit; k++) lp[k] = 0;
       lineGeo.attributes.position.needsUpdate = true;
     }
 
-    /* ── animation loop (always runs — no prefers-reduced-motion gate) ── */
-    let rafId = 0;
-    const clock = new THREE.Clock();
+    /* ── animation loop ── */
+    let rafId      = 0;
+    let frameCount = 0;   // Hz-independent throttle counter
+    let prevCamX   = 0;   // skip lookAt when camera barely moved
+    const clock    = new Clock();
 
     function animate() {
       rafId = requestAnimationFrame(animate);
+      frameCount++;
       const elapsed = clock.getElapsedTime();
 
-      // smooth mouse (same as reference)
+      // smooth mouse
       mouseSmooth.x += (mouseTarget.x - mouseSmooth.x) * MOUSE_LERP;
       mouseSmooth.y += (mouseTarget.y - mouseSmooth.y) * MOUSE_LERP;
 
-      // uniforms
+      // uniforms (uTime drives particle drift + oscillation + orb breathe)
       particleUniforms.uTime.value  = elapsed;
       particleUniforms.uMouse.value.set(mouseSmooth.x * 5, mouseSmooth.y * 4);
       orbMat.uniforms.uTime.value   = elapsed;
@@ -272,40 +325,34 @@ export function ThreeBackground() {
       orb.position.y += (mouseSmooth.y * 0.5 - orb.position.y) * ORB_LERP;
 
       // ring orbits
-      ring1.rotation.z = elapsed * 0.05;
+      ring1.rotation.z =  elapsed * 0.05;
       ring2.rotation.z = -elapsed * 0.03;
 
-      // camera follows mouse (same as reference)
+      // camera follows mouse; skip matrix rebuild when movement is negligible
       camera.position.x += (mouseSmooth.x * 0.3 - camera.position.x) * CAMERA_LERP;
       camera.position.y += (mouseSmooth.y * 0.2 - camera.position.y) * CAMERA_LERP;
-      camera.lookAt(0, 0, 0);
-
-      // CPU particle drift (same as reference — velocities + wrap-around)
-      const posArr = geo.attributes.position.array as Float32Array;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const i3 = i * 3;
-        posArr[i3]     += velocities[i3];
-        posArr[i3 + 1] += velocities[i3 + 1];
-        posArr[i3 + 2] += velocities[i3 + 2];
-        if (posArr[i3]     >  10) posArr[i3]     = -10;
-        if (posArr[i3]     < -10) posArr[i3]     =  10;
-        if (posArr[i3 + 1] >  10) posArr[i3 + 1] = -10;
-        if (posArr[i3 + 1] < -10) posArr[i3 + 1] =  10;
+      if (Math.abs(camera.position.x - prevCamX) > 0.0001) {
+        camera.lookAt(0, 0, 0);
+        prevCamX = camera.position.x;
       }
-      geo.attributes.position.needsUpdate = true;
 
       // slow whole-particle-cloud rotation
       particles.rotation.y = elapsed * 0.02;
 
-      // connecting lines (every 3rd frame)
-      if (Math.floor(elapsed * 60) % 3 === 0) updateLines();
+      // line network: Hz-independent throttle + O(n) grid hash
+      if (frameCount % 3 === 0) updateLines(elapsed);
 
       renderer.render(scene, camera);
     }
 
-    animate();   // ← always starts (no prefers-reduced-motion gate)
+    // Respect prefers-reduced-motion
+    if (globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      renderer.render(scene, camera);
+    } else {
+      animate();
+    }
 
-    /* ── pausa cuando la pestaña no es visible (ahorra CPU/GPU/batería) ── */
+    /* ── pause when tab is hidden ── */
     const onVisibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(rafId);

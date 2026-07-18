@@ -12,6 +12,7 @@ from apps.authentication.views import (
     VerifyEmailView,
     ForgotPasswordView,
     ResetPasswordView,
+    ProfileView,
 )
 
 urlpatterns = [
@@ -20,6 +21,7 @@ urlpatterns = [
     path("logout", LogoutView.as_view(), name="logout"),
     path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
     path("verify-email", VerifyEmailView.as_view(), name="verify-email"),
+    path("perfil", ProfileView.as_view(), name="perfil"),
     path("forgot-password", ForgotPasswordView.as_view(), name="forgot-password"),
     path("reset-password", ResetPasswordView.as_view(), name="reset-password"),
 ]

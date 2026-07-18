@@ -14,6 +14,7 @@ import type {
   AuthUser,
   UserRole,
   UserStatus,
+  ProfileUpdateData,
 } from '../interfaces/IAuthService'
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -96,6 +97,11 @@ class AuthService implements IAuthService {
 
   async verifyEmail(token: string) {
     return apiClient.post<{ message: string }>('/auth/verify-email', { token })
+  }
+
+  async updateProfile(data: ProfileUpdateData): Promise<AuthUser> {
+    const u = await apiClient.patch<BackendUser>('/auth/perfil', data)
+    return mapUser(u)
   }
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {

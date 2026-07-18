@@ -5,18 +5,31 @@
 {% block titulo %}Ticket de servicio creado{% endblock %}
 
 {% block contenido %}
-  {# LN-3 — paridad con el email del sistema legado: saludo, transcripción de la #}
-  {# consulta, número asignado, datos de contacto e instrucción de Anydesk. #}
-  <p>Estimado(a) <b>{{ recipient_nombre }}</b>, ha realizado la siguiente consulta:</p>
+  {# LN-3 — paridad con el legado, con texto según el destinatario: #}
+  {# · cliente → confirmación de SU consulta   · admin → aviso de ticket entrante #}
+  {% if recipient.email == cliente_email %}
+    <p>Estimado(a) <b>{{ recipient_nombre }}</b>:</p>
+    <p>Hemos recibido su consulta y ya está registrada en nuestro sistema:</p>
+  {% else %}
+    <p>Estimado(a) <b>{{ recipient_nombre }}</b>:</p>
+    <p>
+      El Sr./Sra. <b>{{ cliente_nombre|default:cliente_email }}</b>{% if cliente_empresa %}
+      de la empresa <b>{{ cliente_empresa }}</b>{% endif %} ha realizado la siguiente consulta:
+    </p>
+  {% endif %}
 
   <div style="margin:14px 0;padding:12px 16px;border-left:3px solid #00c4e0;background:#f6f8fa;font-size:13px;color:#1d1c1a;">
     <p style="margin:0 0 6px 0;font-weight:600;">{{ ticket_asunto }}</p>
     <p style="margin:0;white-space:pre-line;">{{ ticket_descripcion }}</p>
   </div>
 
-  <p style="font-size:13px;">Se le ha asignado el ticket de servicio <b>{{ ticket_numero }}</b>.</p>
-
-  <p style="font-size:13px;margin-bottom:4px;">Los datos de contacto proporcionados son:</p>
+  {% if recipient.email == cliente_email %}
+    <p style="font-size:13px;">Se le ha asignado el ticket de servicio <b>{{ ticket_numero }}</b>. Nuestro equipo lo atenderá a la brevedad y recibirá actualizaciones a medida que avance.</p>
+    <p style="font-size:13px;margin-bottom:4px;">Los datos de contacto que nos proporcionó son:</p>
+  {% else %}
+    <p style="font-size:13px;">Se generó el ticket <b>{{ ticket_numero }}</b> y está pendiente de asignación.</p>
+    <p style="font-size:13px;margin-bottom:4px;">Datos de contacto del cliente:</p>
+  {% endif %}
   <table role="presentation" style="margin:8px 0 16px 0;width:100%;border-collapse:collapse;">
     <tr>
       <td style="padding:6px 0;font-size:13px;color:#6f6e68;width:140px;">RUC</td>
@@ -31,11 +44,6 @@
       <td style="padding:6px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ cliente_empresa|default:"—" }}</td>
     </tr>
   </table>
-
-  <p style="font-size:13px;color:#1d1c1a;">
-    Por favor, para agilizar el proceso, responda este mensaje con el detalle o capturas
-    de su problema y facilítenos su <b>ID de Anydesk</b>.
-  </p>
 
   <p style="font-size:13px;color:#6f6e68;margin-top:16px;">
     Soporte al usuario<br />

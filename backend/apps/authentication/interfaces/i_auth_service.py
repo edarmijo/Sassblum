@@ -50,6 +50,17 @@ class IAuthService(ABC):
     """Abstract contract for all authentication use cases."""
 
     @abstractmethod
+    def get_profile(self, user) -> dict:
+        """Return the authenticated user's own profile data."""
+
+    @abstractmethod
+    def update_profile(self, user, data: dict) -> dict:
+        """
+        Update the user's OWN editable fields (nombre/apellido/ruc/empresa).
+        Email and rol are excluded by design (identity / admin-only).
+        """
+
+    @abstractmethod
     def authenticate(self, email: str, password: str) -> dict:
         """
         HU-01: Validate credentials and return tokens + profile.

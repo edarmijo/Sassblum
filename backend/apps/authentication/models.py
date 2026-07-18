@@ -17,6 +17,13 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        # Regla de negocio: el administrador es ÚNICO en todo el sistema.
+        # Para reemplazarlo, se edita/borra el existente — nunca se crea un segundo.
+        if self.model.objects.filter(role='admin').exists():
+            raise ValueError(
+                'Ya existe un administrador. El sistema permite un solo admin: '
+                'edita o elimina el actual antes de crear otro.'
+            )
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'admin')

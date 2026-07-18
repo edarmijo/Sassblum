@@ -29,6 +29,11 @@ class UserAdminService(IUserAdminActions):
         return [self._data(u) for u in users]
 
     def create_user(self, data: dict) -> dict:
+        # Defensa en profundidad: el serializer ya restringe los roles, pero el
+        # servicio garantiza por sí mismo que JAMÁS se cree un admin por esta vía
+        # (regla de negocio: administrador único, solo vía createsuperuser).
+        if data.get("role") == User.Role.ADMIN:
+            raise DomainException("No se pueden crear administradores desde el panel.")
         if self._repo.email_exists(data["email"]):
             raise DomainException("Ya existe una cuenta con ese correo.")
         user = self._repo.create({

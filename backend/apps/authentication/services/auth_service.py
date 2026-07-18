@@ -169,6 +169,27 @@ class AuthService(IAuthService):
         user.save(update_fields=["email_verificado", "estado"])
         return {"message": "Correo verificado. Ya puedes iniciar sesión."}
 
+    # ── perfil propio (GET/PATCH /api/auth/perfil) ─────────────────────────────
+
+    def get_profile(self, user: User) -> dict:
+        return self._user_data(user)
+
+    def update_profile(self, user: User, data: dict) -> dict:
+        """
+        Actualiza SOLO los campos editables del propio usuario.
+        Email y rol quedan fuera por diseño (identidad / decisión de admin).
+        """
+        editable = {"nombre": "first_name", "apellido": "last_name",
+                    "ruc": "ruc", "empresa": "empresa"}
+        changed: list[str] = []
+        for field, model_field in editable.items():
+            if field in data:
+                setattr(user, model_field, data[field])
+                changed.append(model_field)
+        if changed:
+            user.save(update_fields=changed)
+        return self._user_data(user)
+
     # ── tokens ─────────────────────────────────────────────────────────────────
 
     def generate_tokens(self, user) -> dict:

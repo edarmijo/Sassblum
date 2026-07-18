@@ -8,6 +8,7 @@ import {
 } from '../../../../core/ui/select'
 import { catalogService } from '../../../catalog/services/CatalogService'
 import { userAdminService } from '../../../auth/services/UserAdminService'
+import { useAuth } from '../../../auth/hooks/useAuth'
 import type { TicketFilterOptions } from '../../interfaces/ITicketService'
 import type { ServiceSummary } from '../../../catalog/interfaces/ICatalogService'
 import type { AdminUser } from '../../../auth/interfaces/IUserAdminActions'
@@ -25,11 +26,17 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
   const [show, setShow] = useState(false)
   const [services, setServices] = useState<ServiceSummary[]>([])
   const [workers, setWorkers] = useState<AdminUser[]>([])
+  const { user } = useAuth()
+  // El listado de trabajadores es un endpoint solo-admin: pedirlo con otro rol
+  // genera un 403 innecesario en consola. El filtro por técnico solo aplica a admin.
+  const isAdmin = user?.rol === 'ADMINISTRADOR'
 
   useEffect(() => {
     void catalogService.getActiveServices().then(setServices).catch(() => setServices([]))
-    void userAdminService.listUsers({ role: 'worker', estado: 'activo' }).then(setWorkers).catch(() => setWorkers([]))
-  }, [])
+    if (isAdmin) {
+      void userAdminService.listUsers({ role: 'worker', estado: 'activo' }).then(setWorkers).catch(() => setWorkers([]))
+    }
+  }, [isAdmin])
 
   const hasFilters = Object.values(filters).some(Boolean)
 
@@ -104,11 +111,11 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
             <Label htmlFor="tf-hasta">Fecha hasta</Label>
             <Input id="tf-hasta" type="date" value={filters.fechaHasta ?? ''} onChange={(e) => update('fechaHasta', e.target.value)} />
           </div>
-          <div className="space-y-1.5">
+          {isAdmin && <div className="space-y-1.5">
             <Label htmlFor="tf-cliente">Cliente (ID)</Label>
             <Input id="tf-cliente" value={filters.clienteId ?? ''} onChange={(e) => update('clienteId', e.target.value)} placeholder="ID del cliente" />
-          </div>
-          <div className="space-y-1.5">
+          </div>}
+          {isAdmin && <div className="space-y-1.5">
             <Label>Técnico asignado</Label>
             <Select value={filters.asignadoId?.toString() ?? ''} onValueChange={(v) => update('asignadoId', v)}>
               <SelectTrigger><SelectValue placeholder="Todos los técnicos" /></SelectTrigger>
@@ -121,7 +128,7 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div>}
         </div>
       )}
     </div>

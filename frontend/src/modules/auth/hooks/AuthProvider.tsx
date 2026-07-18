@@ -14,6 +14,7 @@ import type {
   LoginCredentials,
   RegisterData,
   AuthUser,
+  ProfileUpdateData,
 } from '../interfaces/IAuthService'
 import { authService as defaultAuthService } from '../services/AuthService'
 import { apiClient } from '../../../infrastructure/http/ApiClient'
@@ -96,9 +97,17 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
     setRefreshToken(null)
   }, [service, refreshToken])
 
+  const updateProfile = useCallback(async (data: ProfileUpdateData) => {
+    const updated = await service.updateProfile(data)
+    // Refresca el estado de sesión y la copia persistida (para recargas)
+    localStorage.setItem('auth_user', JSON.stringify(updated))
+    setUser(updated)
+    return updated
+  }, [service])
+
   const value = useMemo(
-    () => ({ user, isAuthenticated: user !== null, isLoading, login, register, logout }),
-    [user, isLoading, login, register, logout],
+    () => ({ user, isAuthenticated: user !== null, isLoading, login, register, logout, updateProfile }),
+    [user, isLoading, login, register, logout, updateProfile],
   )
 
   return (

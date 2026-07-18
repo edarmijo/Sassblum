@@ -57,6 +57,7 @@ class TicketsConfig(AppConfig):
                 # y los datos de contacto del cliente (RUC, empresa, correo).
                 "ticket_descripcion": ticket.descripcion,
                 "cliente_email":   getattr(cliente, "email", ""),
+                "cliente_nombre":  f"{getattr(cliente, 'first_name', '')} {getattr(cliente, 'last_name', '')}".strip(),
                 "cliente_ruc":     getattr(cliente, "ruc", ""),
                 "cliente_empresa": getattr(cliente, "empresa", ""),
                 "tipo_evento":     instance.tipo_evento,

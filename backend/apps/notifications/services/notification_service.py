@@ -59,9 +59,15 @@ def _resolve_recipients(event: dict) -> list:
             except User.DoesNotExist:
                 pass
 
-    # Exclude the event author (no self-notifications)
+    # Exclude the event author (no self-notifications)…
+    # …EXCEPTO en 'creacion': el cliente-autor SÍ recibe su email de confirmación
+    # con el número de ticket (paridad LN-3 con el sistema legado).
     if autor_id := event.get("autor_id"):
-        recipients = {r for r in recipients if r.id != autor_id}
+        author_is_client_confirmation = (
+            tipo == "creacion" and autor_id == event.get("cliente_id")
+        )
+        if not author_is_client_confirmation:
+            recipients = {r for r in recipients if r.id != autor_id}
 
     return list(recipients)
 
@@ -188,6 +194,7 @@ class NotificationService(INotificationService):
             # LN-3 (paridad legado): datos para el email de creación
             "ticket_descripcion": event.get("ticket_descripcion", ""),
             "cliente_email":   event.get("cliente_email", ""),
+            "cliente_nombre":  event.get("cliente_nombre", ""),
             "cliente_ruc":     event.get("cliente_ruc", ""),
             "cliente_empresa": event.get("cliente_empresa", ""),
             "estado_anterior": event.get("estado_anterior", ""),

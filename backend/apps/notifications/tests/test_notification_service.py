@@ -83,3 +83,23 @@ class TestResolveRecipients:
         ids = {r.id for r in recipients}
         assert 9 not in ids  # author excluded
         assert 5 in ids
+
+    def test_creacion_includes_client_author(self):
+        """LN-3 (paridad legado): al crear su ticket, el cliente-autor SÍ recibe
+        el email de confirmación con el número asignado."""
+        from apps.notifications.services import notification_service as mod
+
+        cliente = make_user(5)
+
+        fake_user_model = MagicMock()
+        fake_user_model.objects.get.side_effect = lambda id: {5: cliente}[id]
+        fake_user_model.objects.filter.return_value = []
+        fake_user_model.Role.ADMIN = "admin"
+        fake_user_model.Estado.ACTIVE = "activo"
+
+        patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
+        with patch.dict("sys.modules", patched):
+            event = {"tipo_evento": "creacion", "cliente_id": 5, "autor_id": 5}
+            recipients = mod._resolve_recipients(event)
+
+        assert 5 in {r.id for r in recipients}  # cliente-autor incluido en creacion

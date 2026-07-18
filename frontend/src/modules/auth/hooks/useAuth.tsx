@@ -11,6 +11,7 @@ import type {
   AuthUser,
   LoginCredentials,
   RegisterData,
+  ProfileUpdateData,
 } from '../interfaces/IAuthService'
 
 export interface AuthContextValue {
@@ -20,6 +21,8 @@ export interface AuthContextValue {
   login: (credentials: LoginCredentials) => Promise<void>
   register: (data: RegisterData) => Promise<{ message: string }>
   logout: () => Promise<void>
+  /** Edita el perfil propio y refresca el usuario en sesión. */
+  updateProfile: (data: ProfileUpdateData) => Promise<AuthUser>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

@@ -31,6 +31,14 @@ export interface RegisterData {
   confirmPassword: string
 }
 
+/** Campos del perfil que el propio usuario puede editar (email y rol excluidos por diseño). */
+export interface ProfileUpdateData {
+  nombre?: string
+  apellido?: string
+  ruc?: string
+  empresa?: string
+}
+
 // ─── Output / domain types ────────────────────────────────────────────────────
 
 export interface AuthTokens {
@@ -104,6 +112,12 @@ export interface IAuthService {
    * Throws: InvalidToken | TokenExpired | AlreadyVerified
    */
   verifyEmail(token: string): Promise<{ message: string }>
+
+  /**
+   * Update the authenticated user's own profile (nombre/apellido/ruc/empresa).
+   * Returns the fresh AuthUser so the session state can be refreshed.
+   */
+  updateProfile(data: ProfileUpdateData): Promise<AuthUser>
 
   /**
    * Exchange a valid refresh token for a new token pair.

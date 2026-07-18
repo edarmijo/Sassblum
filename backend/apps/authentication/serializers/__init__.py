@@ -3,8 +3,10 @@ from .reset_password_serializer import ResetPasswordSerializer
 from .login_serializer import LoginSerializer
 from .register_serializer import RegisterSerializer
 from .verify_email_serializer import VerifyEmailSerializer, LogoutSerializer
+from .profile_serializer import ProfileUpdateSerializer
 
 __all__ = [
+    "ProfileUpdateSerializer",
     "ForgotPasswordSerializer",
     "ResetPasswordSerializer",
     "LoginSerializer",

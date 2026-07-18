@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, UserPlus } from 'lucide-react'
 import { Reveal, FocusReveal } from '../../../../core/ui/motion'
+import { Button } from '../../../../core/ui/button'
 import { TicketDetail } from '../../components/TicketDetail'
 import { StatusChangeForm } from '../../components/StatusChangeForm'
+import { AssignModal } from '../../components/AssignModal'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { ticketService } from '../../services/TicketService'
 import { useTicketDetail } from '../../hooks/useTickets'
@@ -25,7 +27,9 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
   const { user } = useAuth()
   const { ticket } = useTicketDetail(ticketId)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [showAssign, setShowAssign] = useState(false)
   const isStaff = user?.rol === 'TRABAJADOR' || user?.rol === 'ADMINISTRADOR'
+  const isAdmin = user?.rol === 'ADMINISTRADOR'
 
   const handleStatusChange = async (newStatus: TicketEstado, comment: string) => {
     await ticketService.updateStatus(ticketId, newStatus, comment)
@@ -50,6 +54,25 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
           <TicketDetail key={refreshKey} ticketId={ticketId} />
         </div>
       </FocusReveal>
+
+      {/* HU-05/HU-08: asignación y reasignación — solo administradores */}
+      {isAdmin && ticket && (
+        <FocusReveal delay={0.05}>
+          <div className="flex justify-end">
+            <Button type="button" variant="brand" onClick={() => setShowAssign(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              {ticket.asignadoNombre ? 'Reasignar técnico' : 'Asignar técnico'}
+            </Button>
+          </div>
+        </FocusReveal>
+      )}
+      {showAssign && (
+        <AssignModal
+          ticketId={ticketId}
+          onClose={() => setShowAssign(false)}
+          onAssigned={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
 
       {/* H#3 (cliente): Status change with observations for staff */}
       {isStaff && ticket && (

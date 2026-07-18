@@ -57,6 +57,7 @@ const WorkerDashboard = lazy(() => import('./modules/dashboard/WorkerDashboard')
 const AdminDashboard = lazy(() => import('./modules/dashboard/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 const TicketDetailPage = lazy(() => import('./modules/tickets/pages/TicketDetailPage').then(m => ({ default: m.TicketDetailPage })))
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const ProfilePage = lazy(() => import('./modules/auth/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
@@ -254,6 +255,7 @@ export default function App() {
               <Route path="/admin" element={<ProtectedRoute roles={['ADMINISTRADOR']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/tickets/:id" element={<ProtectedRoute><DetailRoute /></ProtectedRoute>} />
               <Route path="/notificaciones" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+              <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
