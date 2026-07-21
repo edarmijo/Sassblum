@@ -18,6 +18,12 @@ export interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+  /**
+   * True mientras se canjea el refresh token persistido por un access nuevo
+   * (solo al montar, y solo si había sesión previa). Nada autenticado debe
+   * montarse en ese lapso: aún no hay Bearer y las peticiones darían 401.
+   */
+  isBootstrapping: boolean
   login: (credentials: LoginCredentials) => Promise<void>
   register: (data: RegisterData) => Promise<{ message: string }>
   logout: () => Promise<void>

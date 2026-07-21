@@ -4,7 +4,17 @@
  *
  * SRP: holds the session state and exposes login/register/logout.
  * DIP: depends on IAuthService (injected, defaults to the concrete authService).
- * Security: JWT tokens live in ApiClient memory; refresh/user persisted for reloads.
+ *
+ * Security (BUG-06, paso 1):
+ *   El ACCESS TOKEN nunca toca el disco — vive solo en memoria dentro de ApiClient.
+ *   Solo el refresh token se persiste, para poder rehidratar la sesión al recargar.
+ *   Al montar se canjea ese refresh por un access nuevo; mientras dura ese canje
+ *   `isBootstrapping` es true y App.tsx no monta nada autenticado (evita peticiones
+ *   sin Bearer que devolverían 401).
+ *
+ *   Persistir el refresh en localStorage sigue siendo una exposición a XSS; el paso 2
+ *   lo mueve a una cookie httpOnly. Este paso elimina la parte aguda del problema:
+ *   ya no se restaura un access token viejo en cada recarga.
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
@@ -21,6 +31,31 @@ import { apiClient } from '../../../infrastructure/http/ApiClient'
 import { socketClient } from '../../../infrastructure/websocket/SocketClient'
 import { AuthContext } from './useAuth'
 
+/** Solo el refresh token. Clave nueva: la vieja `auth_tokens` guardaba el access. */
+const SESSION_KEY = 'auth_session'
+const USER_KEY = 'auth_user'
+/** Clave heredada — se purga al arrancar para no dejar access tokens viejos en disco. */
+const LEGACY_TOKENS_KEY = 'auth_tokens'
+
+function readStoredRefresh(): string | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    return raw ? (JSON.parse(raw).refreshToken ?? null) : null
+  } catch {
+    return null
+  }
+}
+
+function persistSession(refreshToken: string): void {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ refreshToken }))
+}
+
+function clearStoredSession(): void {
+  localStorage.removeItem(SESSION_KEY)
+  localStorage.removeItem(USER_KEY)
+  localStorage.removeItem(LEGACY_TOKENS_KEY)
+}
+
 interface AuthProviderProps {
   children: ReactNode
   service?: IAuthService
@@ -28,36 +63,57 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, service = defaultAuthService }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const saved = localStorage.getItem('auth_user')
-    return saved ? JSON.parse(saved) : null
+    try {
+      const saved = localStorage.getItem(USER_KEY)
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
   })
-  const [refreshToken, setRefreshToken] = useState<string | null>(() => {
-    const saved = localStorage.getItem('auth_tokens')
-    return saved ? JSON.parse(saved).refreshToken : null
-  })
+  const [refreshToken, setRefreshToken] = useState<string | null>(readStoredRefresh)
   const [isLoading, setIsLoading] = useState(false)
+  // Solo hay que rehidratar si quedó un refresh token de una sesión anterior.
+  const [isBootstrapping, setIsBootstrapping] = useState(() => readStoredRefresh() !== null)
 
-  // Restore API and Socket tokens on mount if available
+  // Rehidratación: canjea el refresh persistido por un access nuevo (en memoria).
   useEffect(() => {
-    const savedTokens = localStorage.getItem('auth_tokens')
-    if (savedTokens) {
+    // Purga cualquier access token dejado por la versión anterior (BUG-06).
+    localStorage.removeItem(LEGACY_TOKENS_KEY)
+
+    const stored = readStoredRefresh()
+    if (!stored) return
+
+    let cancelled = false
+    void (async () => {
       try {
-        const tokens = JSON.parse(savedTokens)
+        const tokens = await service.refreshTokens(stored)
+        if (cancelled) return
         apiClient.setTokens(tokens.accessToken, tokens.refreshToken)
         socketClient.connect(tokens.accessToken)
-      } catch (err) {
-        console.warn('Sesión guardada ilegible; se descarta y se pide login de nuevo.', err)
-        localStorage.removeItem('auth_tokens')
-        localStorage.removeItem('auth_user')
+        // ROTATE_REFRESH_TOKENS=True → el backend devuelve un refresh nuevo.
+        persistSession(tokens.refreshToken)
+        setRefreshToken(tokens.refreshToken)
+      } catch {
+        // Refresh vencido o revocado: sesión muerta, se limpia sin ruido.
+        if (cancelled) return
+        clearStoredSession()
+        setUser(null)
+        setRefreshToken(null)
+      } finally {
+        if (!cancelled) setIsBootstrapping(false)
       }
+    })()
+
+    return () => {
+      cancelled = true
     }
-  }, [])
+  }, [service])
 
   // Wire ApiClient's forced-logout (refresh failure) to clear our state.
   useEffect(() => {
     apiClient.setForcedLogoutHandler(() => {
-      localStorage.removeItem('auth_tokens')
-      localStorage.removeItem('auth_user')
+      clearStoredSession()
+      socketClient.disconnect()
       setUser(null)
       setRefreshToken(null)
     })
@@ -69,8 +125,8 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
       const { user: u, tokens } = await service.login(credentials)
       apiClient.setTokens(tokens.accessToken, tokens.refreshToken)
       socketClient.connect(tokens.accessToken)  // live notifications (Observer FE)
-      localStorage.setItem('auth_tokens', JSON.stringify(tokens))
-      localStorage.setItem('auth_user', JSON.stringify(u))
+      persistSession(tokens.refreshToken)       // el access NO se persiste
+      localStorage.setItem(USER_KEY, JSON.stringify(u))
       setRefreshToken(tokens.refreshToken)
       setUser(u)
     } finally {
@@ -91,8 +147,7 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
     // Immediately clear all local state to avoid UI lag
     apiClient.setTokens(null, null)
     socketClient.disconnect()
-    localStorage.removeItem('auth_tokens')
-    localStorage.removeItem('auth_user')
+    clearStoredSession()
     setUser(null)
     setRefreshToken(null)
   }, [service, refreshToken])
@@ -100,14 +155,23 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   const updateProfile = useCallback(async (data: ProfileUpdateData) => {
     const updated = await service.updateProfile(data)
     // Refresca el estado de sesión y la copia persistida (para recargas)
-    localStorage.setItem('auth_user', JSON.stringify(updated))
+    localStorage.setItem(USER_KEY, JSON.stringify(updated))
     setUser(updated)
     return updated
   }, [service])
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: user !== null, isLoading, login, register, logout, updateProfile }),
-    [user, isLoading, login, register, logout, updateProfile],
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      isLoading,
+      isBootstrapping,
+      login,
+      register,
+      logout,
+      updateProfile,
+    }),
+    [user, isLoading, isBootstrapping, login, register, logout, updateProfile],
   )
 
   return (
