@@ -38,6 +38,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './cor
 
 // Auth (eager: pequeños y compartidos por los wrappers de AuthCard)
 import { ProtectedRoute } from './modules/auth/components/ProtectedRoute'
+import { PublicRoute } from './modules/auth/components/PublicRoute'
 import { LoginForm } from './modules/auth/components/LoginForm'
 import { RegisterForm } from './modules/auth/components/RegisterForm'
 
@@ -169,39 +170,48 @@ function safeNext(raw: string | null): string {
 function LoginRoute() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { user } = useAuth()
   const next = safeNext(params.get('next'))
-  if (user) return <Navigate to={next} replace />
   return (
-    <AuthCard
-      title="Iniciar sesión"
-      subtitle="Accede a tu cuenta de SassBlum"
-      footer={<>¿No tienes cuenta? <Link to="/register" className="text-brand-cyan-dark font-medium hover:underline">Regístrate</Link>{' · '}<Link to="/forgot-password" className="text-brand-cyan-dark font-medium hover:underline">Olvidé mi contraseña</Link></>}
-    >
-      <LoginForm onSuccess={() => navigate(next, { replace: true })} />
-    </AuthCard>
+    <PublicRoute redirectTo={next}>
+      <AuthCard
+        title="Iniciar sesión"
+        subtitle="Accede a tu cuenta de SassBlum"
+        footer={<>¿No tienes cuenta? <Link to="/register" className="text-brand-cyan-dark font-medium hover:underline">Regístrate</Link>{' · '}<Link to="/forgot-password" className="text-brand-cyan-dark font-medium hover:underline">Olvidé mi contraseña</Link></>}
+      >
+        <LoginForm onSuccess={() => navigate(next, { replace: true })} />
+      </AuthCard>
+    </PublicRoute>
   )
 }
 
 function RegisterRoute() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  if (user) return <Navigate to="/app" replace />
   return (
-    <AuthCard
-      title="Crear cuenta"
-      subtitle="Regístrate como cliente de SassBlum"
-      footer={<>¿Ya tienes cuenta? <Link to="/login" className="text-brand-cyan-dark font-medium hover:underline">Inicia sesión</Link></>}
-    >
-      <RegisterForm onSuccess={() => navigate('/login', { replace: true })} />
-    </AuthCard>
+    <PublicRoute>
+      <AuthCard
+        title="Crear cuenta"
+        subtitle="Regístrate como cliente de SassBlum"
+        footer={<>¿Ya tienes cuenta? <Link to="/login" className="text-brand-cyan-dark font-medium hover:underline">Inicia sesión</Link></>}
+      >
+        <RegisterForm onSuccess={() => navigate('/login', { replace: true })} />
+      </AuthCard>
+    </PublicRoute>
   )
 }
 
 function ForgotRoute() {
-  return <AuthCard title="Recuperar contraseña" subtitle="Te enviaremos un enlace a tu correo"><ForgotPasswordPage /></AuthCard>
+  return (
+    <PublicRoute>
+      <AuthCard title="Recuperar contraseña" subtitle="Te enviaremos un enlace a tu correo"><ForgotPasswordPage /></AuthCard>
+    </PublicRoute>
+  )
 }
 
+/**
+ * NO lleva PublicRoute a propósito: el token del correo es intención explícita.
+ * Un usuario con sesión viva que abre su enlace de reset debe poder completarlo
+ * (el backend invalida sus sesiones al terminar), no ser redirigido a /app.
+ */
 function ResetRoute() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
