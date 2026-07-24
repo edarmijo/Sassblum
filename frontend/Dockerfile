@@ -9,8 +9,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # npm install (no npm ci): el lockfile generado en Windows no incluye las
-# variantes Linux de los paquetes opcionales WASM (bug conocido de npm)
-RUN npm install --prefer-offline --no-audit
+# variantes Linux de los paquetes opcionales WASM (bug conocido de npm).
+# --ignore-scripts: ningún paquete ejecuta lifecycle scripts al instalar
+# (los binarios nativos llegan como optionalDependencies, no via postinstall).
+RUN npm install --prefer-offline --no-audit --ignore-scripts
 
 # Copy source
 COPY . .

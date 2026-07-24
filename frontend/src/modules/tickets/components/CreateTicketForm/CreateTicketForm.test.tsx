@@ -167,7 +167,7 @@ describe('CreateTicketForm', () => {
       })
     })
 
-    it('calls onSuccess with the new ticket id', async () => {
+    it('calls onSuccess with the new ticket id and numero', async () => {
       const service = makeService()
       const onSuccess = vi.fn()
       renderForm(service, onSuccess)
@@ -181,7 +181,8 @@ describe('CreateTicketForm', () => {
       await userEvent.click(screen.getByRole('button', { name: /crear ticket/i }))
 
       await waitFor(() => {
-        expect(onSuccess).toHaveBeenCalledWith(mockTicket.id)
+        // El componente entrega (id, numero): el numero alimenta el toast de éxito.
+        expect(onSuccess).toHaveBeenCalledWith(mockTicket.id, mockTicket.numero)
       })
     })
   })

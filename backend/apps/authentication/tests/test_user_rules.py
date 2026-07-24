@@ -59,8 +59,11 @@ class TestSingleAdminRule:
             'password': RUNTIME_SECRET,
             'role': User.Role.ADMIN,
         }
+        # El servicio se construye FUERA del bloque raises: así la única
+        # invocación que puede lanzar es create_user (regla pytest de Sonar).
+        service = UserAdminService()
         with pytest.raises(DomainException, match='administradores'):
-            UserAdminService().create_user(payload)
+            service.create_user(payload)
 
 
 class TestAdminPanelSerializerRules:

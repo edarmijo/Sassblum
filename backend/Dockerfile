@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements and install into a portable prefix that the runtime image
 # can copy into Python's global site-packages.
 COPY requirements.txt .
-RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
+# --only-binary: solo wheels, nunca setup.py arbitrarios (verificado: los 31
+# paquetes pinneados publican wheel manylinux para py312).
+RUN pip install --prefix=/install --no-cache-dir --only-binary=:all: -r requirements.txt
 
 # ─────────────────────────────────────────────
 # Stage 2: Runtime (minimal footprint)
@@ -31,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy and install Python dependencies in the runtime image so Django is available
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
 # Copy application code explicitly to avoid copying sensitive data
 COPY apps/ apps/
