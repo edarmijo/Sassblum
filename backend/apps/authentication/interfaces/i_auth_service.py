@@ -170,3 +170,20 @@ class IAuthService(ABC):
             user: a Django User model instance (avoids coupling to User import here)
         """
         ...
+
+    @abstractmethod
+    def refresh_session(self, refresh_token: str) -> dict:
+        """
+        Exchange a refresh token for a new access token, rotating the refresh
+        token (ROTATE_REFRESH_TOKENS) and blacklisting the old one.
+
+        Returns the user alongside the tokens so the client never has to persist
+        session data on disk — it rehydrates from this single call (BUG-06).
+
+        Returns:
+            {"access": str, "refresh": str, "user": {...}}
+
+        Raises:
+            InvalidRefreshToken — token expired, malformed, or blacklisted
+        """
+        ...

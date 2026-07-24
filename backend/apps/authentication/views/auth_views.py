@@ -12,15 +12,19 @@ Endpoints:
 """
 
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.authentication.cookies import (
+    clear_refresh_cookie,
+    read_refresh_token,
+    set_refresh_cookie,
+)
 from apps.authentication.serializers import (
     LoginSerializer,
     RegisterSerializer,
     VerifyEmailSerializer,
-    LogoutSerializer,
 )
 from apps.authentication.services import get_auth_service
 from apps.authentication.services.auth_service import (
@@ -63,20 +67,37 @@ class LoginView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_423_LOCKED)
         except EmailNotVerified as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
-        return Response(result, status=status.HTTP_200_OK)
+
+        # BUG-06: el refresh token viaja en cookie httpOnly (inaccesible a JS).
+        # Se mantiene además en el body mientras haya clientes sin actualizar.
+        response = Response(result, status=status.HTTP_200_OK)
+        return set_refresh_cookie(response, result["tokens"]["refresh"])
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    POST /api/auth/logout — cierra la sesión.
+
+    AllowAny + sin autenticador a propósito: cerrar sesión con un access token ya
+    vencido debe funcionar, no devolver 401. Responde 200 siempre — el cliente ya
+    limpió su estado y un error aquí solo lo dejaría en un limbo.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = LogoutSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            get_auth_service().logout(serializer.validated_data["refresh"])
-        except AuthenticationFailed as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_205_RESET_CONTENT)
+        token = read_refresh_token(request)
+        if token:
+            try:
+                get_auth_service().logout(token)
+            except (AuthenticationFailed, Exception):  # noqa: BLE001
+                # Token ya vencido o en blacklist: el objetivo (sesión muerta)
+                # está cumplido igual. No se propaga al cliente.
+                pass
+
+        response = Response(status=status.HTTP_200_OK)
+        return clear_refresh_cookie(response)
 
 
 class VerifyEmailView(APIView):

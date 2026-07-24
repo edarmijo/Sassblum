@@ -185,6 +185,34 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 
+# COOKIE DE REFRESH TOKEN (BUG-06) — ver apps/authentication/cookies.py
+#
+# Default 'None' porque HOY el frontend (vercel.app) y la API (onrender.com) son
+# sitios distintos: con 'Lax' el navegador NO enviaría la cookie y la sesión no
+# sobreviviría a una recarga. Se pone el valor que funciona en la topología real,
+# no el que se ve mejor en el papel.
+#
+# Análisis del riesgo CSRF que 'None' deja abierto:
+#   La cookie SOLO transporta el refresh token y SOLO se acepta en /api/auth/.
+#   Ningún endpoint de negocio autentica por cookie: todos exigen el header
+#   Bearer, que un atacante cross-site no puede fijar. Y CORS le impide leer la
+#   respuesta, así que tampoco puede robar el access token.
+#   Peor caso: forzar una rotación o un logout ajeno. Molesto, no un compromiso.
+#
+# Cuando el rewrite de Vercel (/api/* → Render) esté activo, ambos pasan a ser
+# el mismo sitio: poner AUTH_COOKIE_SAMESITE=Lax y ese riesgo residual desaparece.
+#
+# En local el default es 'Lax': localhost:5173 y localhost:8000 son el MISMO sitio
+# (el puerto no cuenta), y 'None' sería inservible porque exige Secure=True, que
+# sobre http el navegador rechaza.
+AUTH_COOKIE_SAMESITE = config('AUTH_COOKIE_SAMESITE', default='Lax' if DEBUG else 'None')
+AUTH_COOKIE_SECURE = config('AUTH_COOKIE_SECURE', default=not DEBUG, cast=bool)
+
+# El navegador solo adjunta cookies cross-origin si el servidor lo permite
+# explícitamente y el cliente envía withCredentials.
+CORS_ALLOW_CREDENTIALS = True
+
+
 # DJANGO CHANNELS — tiempo real (Sprint 4)
 USE_REDIS = config('USE_REDIS', default=False, cast=bool)
 

@@ -26,6 +26,9 @@ class ApiClient {
       baseURL: env.apiBaseUrl,
       headers: { 'Content-Type': 'application/json' },
       timeout: 60_000, // 60s — Render free tier duerme la instancia y tarda ~30-50s en despertar
+      // BUG-06: el refresh token viaja en cookie httpOnly; sin esto el navegador
+      // no la adjunta y la sesión no sobrevive a una recarga.
+      withCredentials: true,
     })
 
     this.http.interceptors.request.use((config) => {
@@ -82,15 +85,20 @@ class ApiClient {
       // simplejwt rotation + blacklist mitigates token theft.
       const fingerprint = this._getDeviceFingerprint()
       const { data } = await axios.post(`${env.apiBaseUrl}/auth/token/refresh`, {
-        refresh: this.refreshToken,
+        // Respaldo en memoria: si la cookie httpOnly está presente, el backend
+        // la prefiere e ignora este campo (BUG-06).
+        refresh: this.refreshToken ?? undefined,
       }, {
         headers: fingerprint ? { 'X-Device-Id': fingerprint } : {},
         // Must match the main client timeout — without this, a sleeping Render
         // instance causes tryRefresh() to hang indefinitely, blocking the
         // original request's Promise and producing an infinite spinner.
         timeout: 60_000,
+        withCredentials: true, // sin esto el navegador no manda la cookie
       })
       this.accessToken = data.access
+      // La rotación emite un refresh nuevo; el viejo queda en blacklist.
+      if (data.refresh) this.refreshToken = data.refresh
       return true
     } catch {
       return false

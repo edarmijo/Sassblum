@@ -58,6 +58,10 @@ class InvalidVerificationToken(Exception):
     """Email-verification token invalid or expired."""
 
 
+class InvalidRefreshToken(Exception):
+    """Refresh token expired, malformed, or already blacklisted."""
+
+
 # ── Service ────────────────────────────────────────────────────────────────────
 
 class AuthService(IAuthService):
@@ -195,6 +199,41 @@ class AuthService(IAuthService):
     def generate_tokens(self, user) -> dict:
         refresh = RefreshToken.for_user(user)
         return {"access": str(refresh.access_token), "refresh": str(refresh)}
+
+    # ── BUG-06: rehidratación de sesión desde el refresh token ─────────────────
+
+    def refresh_session(self, refresh_token: str) -> dict:
+        """
+        Canjea el refresh por un access nuevo y devuelve también el usuario.
+
+        Se delega la rotación/blacklist a TokenRefreshSerializer de simplejwt en
+        lugar de reimplementarla: respeta ROTATE_REFRESH_TOKENS y
+        BLACKLIST_AFTER_ROTATION sin duplicar esa lógica aquí.
+        """
+        from rest_framework_simplejwt.serializers import (  # noqa: PLC0415
+            TokenRefreshSerializer,
+        )
+        from rest_framework_simplejwt.settings import api_settings  # noqa: PLC0415
+        from rest_framework_simplejwt.tokens import AccessToken  # noqa: PLC0415
+
+        serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as exc:  # noqa: BLE001 — cualquier fallo = token inservible
+            raise InvalidRefreshToken("Sesión expirada. Inicia sesión de nuevo.") from exc
+
+        data = dict(serializer.validated_data)
+        user_id = AccessToken(data["access"])[api_settings.USER_ID_CLAIM]
+        user = self._repo.get_by_id(user_id)
+        if user is None or user.estado == User.Estado.BLOCKED:
+            raise InvalidRefreshToken("Cuenta no disponible.")
+
+        return {
+            "access": data["access"],
+            # Sin rotación, simplejwt no devuelve 'refresh': se reutiliza el actual.
+            "refresh": data.get("refresh", refresh_token),
+            "user": self._user_data(user),
+        }
 
     # ── helpers ────────────────────────────────────────────────────────────────
 

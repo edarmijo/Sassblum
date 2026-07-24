@@ -47,7 +47,11 @@ export interface AuthTokens {
    * NEVER stored in localStorage or sessionStorage (XSS risk).
    */
   accessToken: string
-  /** Long-lived JWT (7 d). Used by ApiClient interceptor to refresh accessToken. */
+  /**
+   * Long-lived JWT (7 d). Desde BUG-06 lo custodia una cookie httpOnly emitida
+   * por el backend; esta copia vive solo en memoria como respaldo mientras
+   * queden despliegues sin la cookie. NUNCA se persiste en disco.
+   */
   refreshToken: string
 }
 
@@ -125,4 +129,12 @@ export interface IAuthService {
    * Throws: InvalidToken | TokenExpired
    */
   refreshTokens(refreshToken: string): Promise<AuthTokens>
+
+  /**
+   * Rehidrata la sesión al cargar la app usando la cookie httpOnly (BUG-06).
+   * No recibe el token: lo adjunta el navegador. Devuelve también el usuario,
+   * para que el cliente no tenga que persistir datos de sesión en disco.
+   * Throws: si no hay sesión válida (401).
+   */
+  refreshSession(): Promise<{ user: AuthUser; tokens: AuthTokens }>
 }

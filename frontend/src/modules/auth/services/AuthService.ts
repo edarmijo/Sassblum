@@ -111,6 +111,19 @@ class AuthService implements IAuthService {
     )
     return { accessToken: data.access, refreshToken: data.refresh ?? refreshToken }
   }
+
+  async refreshSession(): Promise<{ user: AuthUser; tokens: AuthTokens }> {
+    // Sin body: el refresh token lo adjunta el navegador vía cookie httpOnly.
+    const data = await apiClient.post<{
+      access: string
+      refresh?: string
+      user: BackendUser
+    }>('/auth/token/refresh', {})
+    return {
+      user: mapUser(data.user),
+      tokens: { accessToken: data.access, refreshToken: data.refresh ?? '' },
+    }
+  }
 }
 
 export const authService = new AuthService()
