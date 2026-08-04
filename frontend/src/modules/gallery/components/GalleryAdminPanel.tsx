@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
-import { Plus, Pencil, X } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 import { useGalleryAdmin, type BeProject } from '../hooks/useGalleryAdmin'
 import { useAdminEntityPanel } from '../../../core/hooks/useAdminEntityPanel'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
-import { Button } from '../../../core/ui/button'
 import { Input } from '../../../core/ui/input'
 import { Label } from '../../../core/ui/label'
 import { Textarea } from '../../../core/ui/textarea'
 import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
-import { AdminImagePicker, AdminFormActions } from '../../../core/ui/AdminEntityFormControls'
+import { AdminImagePicker, AdminFormActions, AdminFormCard, AdminEntityLayout } from '../../../core/ui/AdminEntityFormControls'
 
 const EMPTY_FORM = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
 
@@ -58,59 +56,47 @@ export function GalleryAdminPanel() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <Card className="lg:col-span-1 h-fit">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{isEditing ? 'Editar proyecto' : 'Nuevo proyecto'}</CardTitle>
-              <CardDescription>
-                {isEditing ? 'Modifica los datos del proyecto' : 'Publica un proyecto en la galería'}
-              </CardDescription>
-            </div>
-            {isEditing && (
-              <Button type="button" variant="ghost" size="icon" onClick={resetForm} aria-label="Cancelar edición">
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+    <AdminEntityLayout
+      formCard={
+        <AdminFormCard
+          isEditing={isEditing}
+          editTitle="Editar proyecto"
+          createTitle="Nuevo proyecto"
+          editDescription="Modifica los datos del proyecto"
+          createDescription="Publica un proyecto en la galería"
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="p-titulo">Título</Label>
+            <Input id="p-titulo" value={form.titulo} onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))} />
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="p-titulo">Título</Label>
-              <Input id="p-titulo" value={form.titulo} onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-tag">Etiqueta</Label>
-              <Input id="p-tag" value={form.tag} onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))} placeholder="Servidores, CCTV, Domótica…" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="p-desc">Descripción</Label>
-              <Textarea id="p-desc" rows={3} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} />
-            </div>
-            <AdminImagePicker
-              idPrefix="p"
-              urlValue={form.imagen_url}
-              onUrlChange={(v) => setForm((f) => ({ ...f, imagen_url: v }))}
-              fileLabel="…o sube una imagen"
-              filePlaceholder="Seleccionar imagen…"
-              fileName={imagen?.name}
-              onFileChange={setImagen}
-            />
-            <AdminFormActions
-              submitting={submitting}
-              submitContent={submitContent}
-              isEditing={isEditing}
-              onCancel={resetForm}
-            />
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="lg:col-span-2">
-        {projectsList}
-      </div>
-    </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-tag">Etiqueta</Label>
+            <Input id="p-tag" value={form.tag} onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))} placeholder="Servidores, CCTV, Domótica…" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-desc">Descripción</Label>
+            <Textarea id="p-desc" rows={3} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} />
+          </div>
+          <AdminImagePicker
+            idPrefix="p"
+            urlValue={form.imagen_url}
+            onUrlChange={(v) => setForm((f) => ({ ...f, imagen_url: v }))}
+            fileLabel="…o sube una imagen"
+            filePlaceholder="Seleccionar imagen…"
+            fileName={imagen?.name}
+            onFileChange={setImagen}
+          />
+          <AdminFormActions
+            submitting={submitting}
+            submitContent={submitContent}
+            isEditing={isEditing}
+            onCancel={resetForm}
+          />
+        </AdminFormCard>
+      }
+      listArea={projectsList}
+    />
   )
 }

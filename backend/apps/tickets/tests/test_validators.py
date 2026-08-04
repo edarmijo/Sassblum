@@ -49,18 +49,21 @@ class TestBasicFieldValidator:
 
     def test_asunto_empty_fails(self):
         r = self.v.validate({**VALID_DATA, "asunto": ""})
-        assert not r.is_valid and r.field_name == "asunto"
+        assert not r.is_valid
+        assert r.field_name == "asunto"
 
     def test_asunto_at_limit_passes(self):
         assert self.v.validate({**VALID_DATA, "asunto": "A" * 80}).is_valid
 
     def test_asunto_over_limit_fails(self):
         r = self.v.validate({**VALID_DATA, "asunto": "A" * 81})
-        assert not r.is_valid and r.field_name == "asunto"
+        assert not r.is_valid
+        assert r.field_name == "asunto"
 
     def test_descripcion_too_short_fails(self):
         r = self.v.validate({**VALID_DATA, "descripcion": "Corto"})
-        assert not r.is_valid and r.field_name == "descripcion"
+        assert not r.is_valid
+        assert r.field_name == "descripcion"
 
     def test_descripcion_at_minimum_passes(self):
         assert self.v.validate({**VALID_DATA, "descripcion": "A" * 10}).is_valid
@@ -90,12 +93,14 @@ class TestFileValidator:
     def test_file_too_large_fails(self):
         f = make_file("grande.pdf", 6_000_000, "application/pdf")
         r = self.v.validate({"adjuntos": [f]})
-        assert not r.is_valid and r.field_name == "adjuntos"
+        assert not r.is_valid
+        assert r.field_name == "adjuntos"
 
     def test_invalid_mime_fails(self):
         f = make_file("script.exe", 1000, "application/x-msdownload")
         r = self.v.validate({"adjuntos": [f]})
-        assert not r.is_valid and r.field_name == "adjuntos"
+        assert not r.is_valid
+        assert r.field_name == "adjuntos"
 
     def test_first_invalid_file_stops_iteration(self):
         good = make_file("ok.pdf", 100, "application/pdf")
@@ -121,7 +126,8 @@ class TestBusinessRuleValidator:
     def test_duplicate_ticket_fails(self):
         self.repo.find_active_duplicate.return_value = object()  # truthy = duplicate exists
         r = self.v.validate(VALID_DATA)
-        assert not r.is_valid and r.field_name == "duplicado"
+        assert not r.is_valid
+        assert r.field_name == "duplicado"
 
 
 # ── Full chain via TicketValidatorChain ────────────────────────────────────────

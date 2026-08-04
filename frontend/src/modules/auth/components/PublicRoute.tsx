@@ -20,8 +20,9 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children, redirectTo = '/app' }: Readonly<PublicRouteProps>) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isBootstrapping } = useAuth()
 
+  if (isBootstrapping) return null
   if (isAuthenticated) return <Navigate to={redirectTo} replace />
   return <>{children}</>
 }

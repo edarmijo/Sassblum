@@ -73,6 +73,8 @@ class GalleryService:
             return project
         path = f"gallery/{project.id}/{getattr(imagen, 'name', 'imagen')}"
         url = self._storage.upload(imagen, path)
+        if not url:
+            return project
         return self._repo.update(project.id, {"imagen_url": url})
 
     # ── Serialization helpers ──────────────────────────────────────────────────

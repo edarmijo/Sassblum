@@ -81,6 +81,8 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
             return service
         path = f"services/{service.id}/{getattr(imagen, 'name', 'imagen')}"
         url = self._storage.upload(imagen, path)
+        if not url:
+            return service
         return self._repo.update(service.id, {"imagen_url": url})
 
     # ── Serialization helpers ──────────────────────────────────────────────────

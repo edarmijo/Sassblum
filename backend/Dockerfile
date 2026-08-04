@@ -13,10 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # requirements.lock fija versiones + hashes SHA-256 de todos los paquetes
 # (directos y transitivos) para linux/amd64 + Python 3.12.
+# --require-hashes: verificación explícita de integridad (Sonar S6471).
 # --only-binary: solo wheels, nunca setup.py arbitrarios.
-# Los hashes en el lockfile activan la verificación de integridad implícitamente.
 COPY requirements.lock .
-RUN pip install --prefix=/install --no-cache-dir --only-binary=:all: -r requirements.lock
+RUN pip install --prefix=/install --no-cache-dir --only-binary=:all: --require-hashes -r requirements.lock
 
 # ─────────────────────────────────────────────
 # Stage 2: Runtime (minimal footprint)
@@ -31,9 +31,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar desde el lockfile con hashes para verificación de integridad.
+# Instalar desde el lockfile con verificación explícita de integridad (Sonar S6471).
 COPY requirements.lock .
-RUN pip install --no-cache-dir --only-binary=:all: -r requirements.lock
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes -r requirements.lock
 
 # Copy application code explicitly to avoid copying sensitive data
 COPY apps/ apps/

@@ -54,8 +54,10 @@ class StorageService(IStorageService):
     def upload(self, file, path: str) -> str:
         path = path.lstrip("/")
         if not self._enabled:
-            # Dev fallback: no real bucket configured.
-            return f"{_STUB_BASE_URL}/{path}"
+            # Supabase not configured: return empty string so callers skip the
+            # DB update and image fields stay null instead of storing a broken
+            # relative path that the browser can't resolve.
+            return ""
 
         # H#17 (audit): Validate MIME type server-side — OWASP defense-in-depth
         content_type = (

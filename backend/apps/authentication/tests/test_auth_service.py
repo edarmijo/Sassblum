@@ -35,7 +35,8 @@ class TestAuthenticate:
     def test_success_returns_user_and_tokens(self, active_user):
         result = AuthService().authenticate("user@example.com", TEST_PASSWORD)
         assert result["user"]["email"] == "user@example.com"
-        assert "access" in result["tokens"] and "refresh" in result["tokens"]
+        assert "access" in result["tokens"]
+        assert "refresh" in result["tokens"]
 
     def test_wrong_password_increments_attempts(self, active_user):
         svc = AuthService()

@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
-import { Plus, Pencil, X } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 import { useCatalogAdmin, type BeService } from '../hooks/useCatalogAdmin'
 import { useAdminEntityPanel } from '../../../core/hooks/useAdminEntityPanel'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
-import { Button } from '../../../core/ui/button'
 import { Input } from '../../../core/ui/input'
 import { Label } from '../../../core/ui/label'
 import { Textarea } from '../../../core/ui/textarea'
 import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
-import { AdminImagePicker, AdminFormActions } from '../../../core/ui/AdminEntityFormControls'
+import { AdminImagePicker, AdminFormActions, AdminFormCard, AdminEntityLayout } from '../../../core/ui/AdminEntityFormControls'
 
 const EMPTY_FORM = { nombre: '', descripcion: '', categoria: '', imagen_url: '' }
 
@@ -59,59 +57,47 @@ export function CatalogAdminPanel() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <Card className="lg:col-span-1 h-fit">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{isEditing ? 'Editar servicio' : 'Nuevo servicio'}</CardTitle>
-              <CardDescription>
-                {isEditing ? 'Modifica los datos del servicio' : 'Publica un servicio con su foto en el catálogo'}
-              </CardDescription>
-            </div>
-            {isEditing && (
-              <Button type="button" variant="ghost" size="icon" onClick={resetForm} aria-label="Cancelar edición">
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+    <AdminEntityLayout
+      formCard={
+        <AdminFormCard
+          isEditing={isEditing}
+          editTitle="Editar servicio"
+          createTitle="Nuevo servicio"
+          editDescription="Modifica los datos del servicio"
+          createDescription="Publica un servicio con su foto en el catálogo"
+          onCancel={resetForm}
+          onSubmit={handleSubmit}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="s-nombre">Nombre</Label>
+            <Input id="s-nombre" value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} />
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="s-nombre">Nombre</Label>
-              <Input id="s-nombre" value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="s-cat">Categoría</Label>
-              <Input id="s-cat" value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} placeholder="CCTV, Domótica, Soporte…" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="s-desc">Descripción</Label>
-              <Textarea id="s-desc" rows={4} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} />
-            </div>
-            <AdminImagePicker
-              idPrefix="s"
-              urlValue={form.imagen_url}
-              onUrlChange={(v) => setForm((f) => ({ ...f, imagen_url: v }))}
-              fileLabel={isEditing ? '…o sube una nueva foto' : '…o sube una foto'}
-              filePlaceholder={imageInputLabel}
-              fileName={imagen?.name}
-              onFileChange={setImagen}
-            />
-            <AdminFormActions
-              submitting={submitting}
-              submitContent={submitContent}
-              isEditing={isEditing}
-              onCancel={resetForm}
-            />
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="lg:col-span-2">
-        {servicesList}
-      </div>
-    </div>
+          <div className="space-y-2">
+            <Label htmlFor="s-cat">Categoría</Label>
+            <Input id="s-cat" value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} placeholder="CCTV, Domótica, Soporte…" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="s-desc">Descripción</Label>
+            <Textarea id="s-desc" rows={4} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} />
+          </div>
+          <AdminImagePicker
+            idPrefix="s"
+            urlValue={form.imagen_url}
+            onUrlChange={(v) => setForm((f) => ({ ...f, imagen_url: v }))}
+            fileLabel={isEditing ? '…o sube una nueva foto' : '…o sube una foto'}
+            filePlaceholder={imageInputLabel}
+            fileName={imagen?.name}
+            onFileChange={setImagen}
+          />
+          <AdminFormActions
+            submitting={submitting}
+            submitContent={submitContent}
+            isEditing={isEditing}
+            onCancel={resetForm}
+          />
+        </AdminFormCard>
+      }
+      listArea={servicesList}
+    />
   )
 }
