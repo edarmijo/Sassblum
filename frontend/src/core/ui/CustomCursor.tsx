@@ -28,6 +28,28 @@ export default function CustomCursor() {
   useEffect(() => {
     if (isMobile) return;
 
+    const applyCursorStyles = (hovering: boolean) => {
+      isHovering.current = hovering;
+      if (dotRef.current) {
+        const size = hovering ? 50 : 8;
+        const margin = hovering ? -25 : -4;
+        dotRef.current.style.width = `${size}px`;
+        dotRef.current.style.height = `${size}px`;
+        dotRef.current.style.marginLeft = `${margin}px`;
+        dotRef.current.style.marginTop = `${margin}px`;
+        dotRef.current.style.background = hovering ? '#7c5cfc' : '#fff';
+      }
+      if (followerRef.current) {
+        const size = hovering ? 70 : 40;
+        const margin = hovering ? -35 : -20;
+        followerRef.current.style.width = `${size}px`;
+        followerRef.current.style.height = `${size}px`;
+        followerRef.current.style.marginLeft = `${margin}px`;
+        followerRef.current.style.marginTop = `${margin}px`;
+        followerRef.current.style.borderColor = hovering ? '#7c5cfc' : 'rgba(124,92,252,0.5)';
+      }
+    };
+
     function animate() {
       dotPos.current.x = lerp(dotPos.current.x, mousePos.current.x, 0.2);
       dotPos.current.y = lerp(dotPos.current.y, mousePos.current.y, 0.2);
@@ -54,41 +76,13 @@ export default function CustomCursor() {
 
     const onMouseOver = (e: MouseEvent) => {
       if ((e.target as Element).closest(INTERACTIVE_SELECTORS)) {
-        isHovering.current = true;
-        if (dotRef.current) {
-          dotRef.current.style.width = '50px';
-          dotRef.current.style.height = '50px';
-          dotRef.current.style.marginLeft = '-25px';
-          dotRef.current.style.marginTop = '-25px';
-          dotRef.current.style.background = '#7c5cfc';
-        }
-        if (followerRef.current) {
-          followerRef.current.style.width = '70px';
-          followerRef.current.style.height = '70px';
-          followerRef.current.style.marginLeft = '-35px';
-          followerRef.current.style.marginTop = '-35px';
-          followerRef.current.style.borderColor = '#7c5cfc';
-        }
+        applyCursorStyles(true);
       }
     };
 
     const onMouseOut = (e: MouseEvent) => {
       if ((e.target as Element).closest(INTERACTIVE_SELECTORS)) {
-        isHovering.current = false;
-        if (dotRef.current) {
-          dotRef.current.style.width = '8px';
-          dotRef.current.style.height = '8px';
-          dotRef.current.style.marginLeft = '-4px';
-          dotRef.current.style.marginTop = '-4px';
-          dotRef.current.style.background = '#fff';
-        }
-        if (followerRef.current) {
-          followerRef.current.style.width = '40px';
-          followerRef.current.style.height = '40px';
-          followerRef.current.style.marginLeft = '-20px';
-          followerRef.current.style.marginTop = '-20px';
-          followerRef.current.style.borderColor = 'rgba(124,92,252,0.5)';
-        }
+        applyCursorStyles(false);
       }
     };
 

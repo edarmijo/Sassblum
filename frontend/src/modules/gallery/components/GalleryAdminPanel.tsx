@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
+import type { ReactNode } from 'react'
 import { Plus, Pencil, X } from 'lucide-react'
-import { useGalleryAdmin, type BeProject, type ProjectForm } from '../hooks/useGalleryAdmin'
+import { useGalleryAdmin, type BeProject } from '../hooks/useGalleryAdmin'
+import { useAdminEntityPanel } from '../../../core/hooks/useAdminEntityPanel'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
 import { Input } from '../../../core/ui/input'
@@ -10,71 +10,29 @@ import { Textarea } from '../../../core/ui/textarea'
 import { AdminEntityCard } from '../../../core/ui/AdminEntityCard'
 import { AdminImagePicker, AdminFormActions } from '../../../core/ui/AdminEntityFormControls'
 
-const EMPTY: ProjectForm = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
+const EMPTY_FORM = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
 
-/**
- * Gestión de la galería de proyectos para admin/trabajador (crear + editar + activar).
- * Mirror de CatalogAdminPanel — para que el admin agregue cards sin tocar código.
- * DIP: depende de useGalleryAdmin (no de apiClient directamente).
- */
 export function GalleryAdminPanel() {
   const { projects, loading, load, createProject, editProject, toggleProject } = useGalleryAdmin()
-  const [submitting, setSubmitting] = useState(false)
-  const [form, setForm] = useState<ProjectForm>(EMPTY)
-  const [imagen, setImagen] = useState<File | null>(null)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const isEditing = editingId !== null
 
-  const resetForm = () => {
-    setForm(EMPTY)
-    setImagen(null)
-    setEditingId(null)
-  }
-
-  const startEdit = (p: BeProject) => {
-    setForm({ titulo: p.titulo, descripcion: p.descripcion, tag: p.tag, imagen_url: p.imagen_url ?? '' })
-    setImagen(null)
-    setEditingId(p.id)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.titulo) {
-      toast.error('El título es obligatorio')
-      return
-    }
-    setSubmitting(true)
-    try {
-      if (isEditing) {
-        await editProject(editingId as number, form, imagen)
-        toast.success('Proyecto actualizado', { description: form.titulo })
-      } else {
-        await createProject(form, imagen)
-        toast.success('Proyecto creado', { description: form.titulo })
-      }
-      resetForm()
-      await load()
-    } catch {
-      toast.error(editingId ? 'No se pudo actualizar el proyecto' : 'No se pudo crear el proyecto')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleToggle = async (id: number) => {
-    try {
-      await toggleProject(id)
-      await load()
-    } catch {
-      toast.error('No se pudo cambiar el estado del proyecto')
-    }
-  }
+  const { submitting, form, setForm, imagen, setImagen, editingId, isEditing, resetForm, startEdit, handleSubmit, handleToggle } =
+    useAdminEntityPanel<typeof EMPTY_FORM, BeProject>({
+      emptyForm: EMPTY_FORM,
+      formFromEntity: (p) => ({ titulo: p.titulo, descripcion: p.descripcion, tag: p.tag, imagen_url: p.imagen_url ?? '' }),
+      createFn: (f, img) => createProject(f, img),
+      editFn: (id, f, img) => editProject(id, f, img),
+      toggleFn: toggleProject,
+      loadFn: load,
+      validate: (f) => !f.titulo ? 'El título es obligatorio' : null,
+      entityLabel: 'proyecto',
+      descriptionFn: (f) => f.titulo,
+    })
 
   const submitContent = isEditing
     ? <><Pencil className="h-4 w-4 mr-2" />Actualizar</>
     : <><Plus className="h-4 w-4 mr-2" />Crear proyecto</>
 
-  let projectsList: React.ReactNode
+  let projectsList: ReactNode
   if (loading) {
     projectsList = <p className="text-gray-500">Cargando galería…</p>
   } else if (projects.length === 0) {
@@ -101,7 +59,6 @@ export function GalleryAdminPanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      {/* Form — create or edit mode */}
       <Card className="lg:col-span-1 h-fit">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -151,7 +108,6 @@ export function GalleryAdminPanel() {
         </CardContent>
       </Card>
 
-      {/* List with edit + toggle buttons */}
       <div className="lg:col-span-2">
         {projectsList}
       </div>

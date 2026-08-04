@@ -11,12 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install into a portable prefix that the runtime image
-# can copy into Python's global site-packages.
-COPY requirements.txt .
-# --only-binary: solo wheels, nunca setup.py arbitrarios (verificado: los 31
-# paquetes pinneados publican wheel manylinux para py312).
-RUN pip install --prefix=/install --no-cache-dir --only-binary=:all: -r requirements.txt
+# requirements.lock fija versiones + hashes SHA-256 de todos los paquetes
+# (directos y transitivos) para linux/amd64 + Python 3.12.
+# --only-binary: solo wheels, nunca setup.py arbitrarios.
+# Los hashes en el lockfile activan la verificación de integridad implícitamente.
+COPY requirements.lock .
+RUN pip install --prefix=/install --no-cache-dir --only-binary=:all: -r requirements.lock
 
 # ─────────────────────────────────────────────
 # Stage 2: Runtime (minimal footprint)
@@ -31,9 +31,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies in the runtime image so Django is available
-COPY requirements.txt .
-RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
+# Instalar desde el lockfile con hashes para verificación de integridad.
+COPY requirements.lock .
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.lock
 
 # Copy application code explicitly to avoid copying sensitive data
 COPY apps/ apps/
