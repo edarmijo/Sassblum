@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket as TicketIcon, Users, BarChart3, Package, FileText, Images } from 'lucide-react'
+import { Ticket as TicketIcon, Users, BarChart3, Package, FileText, Images, BadgeCheck } from 'lucide-react'
 import { DashboardTabs, DashboardTabsList, DashboardTabsTrigger, DashboardTabsContent, DashboardTabsStyle } from '../../core/ui/DashboardTabs'
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription, DashboardCardContent } from '../../core/ui/DashboardCard'
 import { Skeleton } from '../../core/ui/skeleton'
@@ -15,6 +15,7 @@ import { ReportsProvider } from '../reports/hooks/ReportsProvider'
 import { reportsService } from '../reports/services/ReportsService'
 import { CatalogAdminPanel } from '../catalog/components/CatalogAdminPanel'
 import { GalleryAdminPanel } from '../gallery/components/GalleryAdminPanel'
+import { ClientLogosAdminPage } from '../clients/pages/ClientLogosAdminPage'
 import { ContractTemplate } from '../contracts/components/ContractTemplate'
 import type { TicketFilterOptions } from '../tickets/interfaces/ITicketService'
 
@@ -43,6 +44,7 @@ export function AdminDashboard() {
               <DashboardTabsTrigger value="users"><Users className="h-4 w-4 mr-2" />Usuarios</DashboardTabsTrigger>
               <DashboardTabsTrigger value="catalog"><Package className="h-4 w-4 mr-2" />Catálogo</DashboardTabsTrigger>
               <DashboardTabsTrigger value="gallery"><Images className="h-4 w-4 mr-2" />Galería</DashboardTabsTrigger>
+              <DashboardTabsTrigger value="clients"><BadgeCheck className="h-4 w-4 mr-2" />Clientes</DashboardTabsTrigger>
               <DashboardTabsTrigger value="reports"><BarChart3 className="h-4 w-4 mr-2" />Reportes</DashboardTabsTrigger>
               <DashboardTabsTrigger value="contracts"><FileText className="h-4 w-4 mr-2" />Contratos</DashboardTabsTrigger>
             </DashboardTabsList>
@@ -70,6 +72,8 @@ export function AdminDashboard() {
             <DashboardTabsContent value="catalog"><CatalogAdminPanel /></DashboardTabsContent>
 
             <DashboardTabsContent value="gallery"><GalleryAdminPanel /></DashboardTabsContent>
+
+            <DashboardTabsContent value="clients"><ClientLogosAdminPage /></DashboardTabsContent>
 
             <DashboardTabsContent value="reports">
               <ReportsProvider service={reportsService}>

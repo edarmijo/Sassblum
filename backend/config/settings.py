@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     # SassBlum apps
     'apps.authentication',
     'apps.catalog',
+    'apps.clientes',
     'apps.gallery',
     'apps.tickets',
     'apps.notifications',

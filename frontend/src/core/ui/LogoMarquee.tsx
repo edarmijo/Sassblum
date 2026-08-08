@@ -3,8 +3,10 @@ import { useState } from 'react'
 export interface Brand {
   /** Nombre visible de la marca/empresa. */
   name: string
-  /** Dominio para resolver el logo (ej. "hikvision.com"). */
-  domain: string
+  /** URL publicada y autorizada del logotipo. Tiene prioridad sobre domain. */
+  logoUrl?: string
+  /** Dominio para resolver un favicon cuando no se ha cargado un logo propio. */
+  domain?: string
 }
 
 interface LogoMarqueeProps {
@@ -18,16 +20,19 @@ interface LogoMarqueeProps {
  * CORS para <img>). Si falla, se oculta y queda el wordmark de texto — el chip
  * nunca se ve roto.
  */
-function BrandLogo({ domain, name }: Readonly<{ domain: string; name: string }>) {
+function BrandLogo({ domain, logoUrl, name }: Readonly<{ domain?: string; logoUrl?: string; name: string }>) {
   const [ok, setOk] = useState(true)
-  if (!ok) return null
+  const source = logoUrl || (domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '')
+  if (!ok || !source) return null
   return (
     <img
-      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+      src={source}
       alt={`Logo ${name}`}
       loading="lazy"
       onError={() => setOk(false)}
-      className="h-8 w-8 shrink-0 object-contain opacity-80 grayscale transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0"
+      className={logoUrl
+        ? 'h-12 max-w-36 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105'
+        : 'h-8 w-8 shrink-0 object-contain opacity-80 grayscale transition-all duration-300 group-hover:opacity-100 group-hover:grayscale-0'}
     />
   )
 }
@@ -38,7 +43,7 @@ function Logos({ brands, ariaHidden }: Readonly<{ brands: Brand[]; ariaHidden?: 
       {brands.map((b, i) => (
         <li key={`${b.name}-${i}`} className="shrink-0">
           <div className="group flex h-20 w-52 items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-cyan/40 hover:shadow-lg">
-            <BrandLogo domain={b.domain} name={b.name} />
+            <BrandLogo domain={b.domain} logoUrl={b.logoUrl} name={b.name} />
             <span className="text-base font-semibold tracking-wide text-gray-500 transition-colors group-hover:text-brand-navy">
               {b.name}
             </span>

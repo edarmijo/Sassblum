@@ -4,6 +4,9 @@ import { LogoMarquee, type Brand } from '../../../core/ui/LogoMarquee'
 import { GlowCard } from '../../../core/ui/GlowCard'
 import { PageHero } from '../../../core/ui/layout/PageHero'
 import { Reveal, FocusReveal } from '../../../core/ui/motion'
+import { PublicClientLogosSection } from '../../clients/components/PublicClientLogoMarquee'
+import { ClientLogoProvider } from '../../clients/hooks/ClientLogoProvider'
+import { clientLogoService } from '../../clients/services/ClientLogoService'
 
 const STAR_KEYS = Array.from({ length: 5 }, (_, i) => `star-${i}`)
 
@@ -66,6 +69,10 @@ export function Clients() {
           </div>
         </div>
       </section>
+
+      <ClientLogoProvider service={clientLogoService}>
+        <PublicClientLogosSection />
+      </ClientLogoProvider>
 
       <section className="relative z-10 py-20 md:py-28 overflow-hidden" style={{ background: 'rgba(0,0,0,0.32)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
