@@ -2,6 +2,7 @@ import { useRef, useEffect, type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useProjects } from '../../modules/gallery/hooks/useProjects';
 import { EASE_APPLE } from './motion/ease';
+import { ImageWithFallback } from './ImageWithFallback';
 
 /* ─── brand palette ─── */
 const C = {
@@ -140,13 +141,11 @@ export function ProjectGalleryCarousel() {
                     onMouseMove={onCardMove}
                     onMouseLeave={onCardLeave}
                   >
-                    <div
-                      style={{
-                        position: 'absolute', inset: 0,
-                        backgroundImage: `url('${g.img}')`, backgroundSize: 'cover', backgroundPosition: 'center',
-                        transition: 'transform 0.8s cubic-bezier(0.22,1,0.36,1)',
-                      }}
-                      className="pgc__img"
+                    <ImageWithFallback
+                      src={g.img}
+                      alt={g.title}
+                      className="pgc__img absolute inset-0 h-full w-full object-cover"
+                      style={{ transition: 'transform 0.8s cubic-bezier(0.22,1,0.36,1)' }}
                     />
                     <div className="pgc__info">
                       <span style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.accent, marginBottom: '0.4rem' }}>{g.tag}</span>

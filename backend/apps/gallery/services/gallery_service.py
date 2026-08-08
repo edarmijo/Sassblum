@@ -13,6 +13,7 @@ import threading
 
 from apps.gallery.repositories import ProjectRepository
 from apps.tickets.interfaces import IStorageService
+from apps.tickets.services.storage_name import storage_filename
 from core.exceptions.domain_exceptions import DomainException
 
 
@@ -71,7 +72,7 @@ class GalleryService:
     def _maybe_attach_image(self, project, imagen):
         if imagen is None or self._storage is None:
             return project
-        path = f"gallery/{project.id}/{getattr(imagen, 'name', 'imagen')}"
+        path = f"gallery/{project.id}/{storage_filename(getattr(imagen, 'name', 'imagen'))}"
         url = self._storage.upload(imagen, path)
         if not url:
             return project

@@ -52,6 +52,11 @@ export function Services() {
   const [selected, setSelected] = useState<(typeof services)[number] | null>(null)
 
   const ctaTo = user ? '/mis-tickets' : '/login'
+  const selectedGallery = selected
+    ? selected.imagenes
+        .slice()
+        .sort((a, b) => a.orden - b.orden)
+    : []
 
   // Estado de carga / vacío precalculado — null significa "renderiza la grilla"
   let catalogFallback: React.ReactNode = null
@@ -168,10 +173,23 @@ export function Services() {
                 <DialogHeader>
                   <p className="text-[11px] uppercase tracking-[0.2em] mb-1" style={{ color: '#00c4e0' }}>{selected.categoria}</p>
                   <DialogTitle className="text-2xl" style={{ color: '#eef4f8' }}>{selected.nombre}</DialogTitle>
-                  <DialogDescription className="text-base leading-relaxed mt-2" style={{ color: '#5c7a94' }}>
-                    {selected.descripcion}
-                  </DialogDescription>
                 </DialogHeader>
+                {selectedGallery.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
+                    {selectedGallery.map((image) => (
+                      <div key={image.id} className="aspect-[4/3] overflow-hidden rounded-md border border-white/10">
+                        <ImageWithFallback
+                          src={image.imagenUrl}
+                          alt={`${selected.nombre}, imagen ${image.orden + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <DialogDescription className="text-base leading-relaxed mt-5" style={{ color: '#5c7a94' }}>
+                  {selected.descripcionDetalle || selected.descripcion}
+                </DialogDescription>
                 <DialogFooter className="mt-6">
                   <Button asChild size="lg" className="w-full sm:w-auto bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
                     <Link to={ctaTo}>{user ? 'Solicitar servicio' : 'Inicia sesión para solicitar'}</Link>
