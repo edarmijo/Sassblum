@@ -20,6 +20,9 @@ class Service(models.Model):
     imagen_url = models.URLField(
         max_length=500, blank=True, default="", verbose_name="URL de imagen"
     )
+    descripcion_detalle = models.TextField(
+        blank=True, default="", verbose_name="descripción detallada"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado en")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="actualizado en")

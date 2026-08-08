@@ -23,6 +23,8 @@ interface BackendService {
   imagen_url?: string
   creado_en?: string
   actualizado_en?: string
+  imagenes?: Array<{ id: number; imagen_url: string; orden: number }>
+  descripcion_detalle?: string
 }
 
 function mapSummary(s: BackendService): ServiceSummary {
@@ -33,6 +35,12 @@ function mapSummary(s: BackendService): ServiceSummary {
     categoria: s.categoria,
     activo: s.activo,
     imagenUrl: s.imagen_url ?? '',
+    imagenes: (s.imagenes ?? []).map((img) => ({
+      id: img.id,
+      imagenUrl: img.imagen_url,
+      orden: img.orden,
+    })),
+    descripcionDetalle: s.descripcion_detalle ?? '',
   }
 }
 

@@ -13,6 +13,12 @@
 
 // ─── Shared data shapes ──────────────────────────────────────────────────────
 
+export interface ServiceImage {
+  id: number
+  imagenUrl: string
+  orden: number
+}
+
 export interface ServiceSummary {
   id: string
   nombre: string
@@ -20,6 +26,8 @@ export interface ServiceSummary {
   categoria: string
   activo: boolean
   imagenUrl: string
+  imagenes: ServiceImage[]
+  descripcionDetalle: string
 }
 
 export interface ServiceDetail extends ServiceSummary {

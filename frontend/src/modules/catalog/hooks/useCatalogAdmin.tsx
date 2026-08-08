@@ -1,6 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { apiClient } from '../../../infrastructure/http/ApiClient'
 
+export interface BeServiceImage {
+  id: number
+  imagen_url: string
+  orden: number
+}
+
 export interface BeService {
   id: number
   nombre: string
@@ -8,6 +14,8 @@ export interface BeService {
   categoria: string
   activo: boolean
   imagen_url?: string
+  imagenes?: BeServiceImage[]
+  descripcion_detalle?: string
 }
 
 /**
@@ -31,31 +39,90 @@ export function useCatalogAdmin() {
     }
   }, [])
 
-  const createService = useCallback(async (form: { nombre: string; descripcion: string; categoria: string; imagen_url?: string }, imagen?: File | null) => {
-    const fd = new FormData()
-    fd.append('nombre', form.nombre)
-    fd.append('descripcion', form.descripcion)
-    fd.append('categoria', form.categoria)
-    if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
-    if (imagen) fd.append('imagen', imagen)
-    await apiClient.post('/servicios/admin/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-  }, [])
+  const createService = useCallback(
+    async (
+      form: {
+        nombre: string
+        descripcion: string
+        categoria: string
+        imagen_url?: string
+        descripcion_detalle?: string
+      },
+      imagen?: File | null,
+    ) => {
+      const fd = new FormData()
+      fd.append('nombre', form.nombre)
+      fd.append('descripcion', form.descripcion)
+      fd.append('categoria', form.categoria)
+      if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
+      if (form.descripcion_detalle !== undefined)
+        fd.append('descripcion_detalle', form.descripcion_detalle)
+      if (imagen) fd.append('imagen', imagen)
+      await apiClient.post('/servicios/admin/', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    },
+    [],
+  )
 
-  const editService = useCallback(async (id: number, form: { nombre: string; descripcion: string; categoria: string; imagen_url?: string }, imagen?: File | null) => {
-    const fd = new FormData()
-    fd.append('nombre', form.nombre)
-    fd.append('descripcion', form.descripcion)
-    fd.append('categoria', form.categoria)
-    if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
-    if (imagen) fd.append('imagen', imagen)
-    await apiClient.patch(`/servicios/admin/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-  }, [])
+  const editService = useCallback(
+    async (
+      id: number,
+      form: {
+        nombre: string
+        descripcion: string
+        categoria: string
+        imagen_url?: string
+        descripcion_detalle?: string
+      },
+      imagen?: File | null,
+    ) => {
+      const fd = new FormData()
+      fd.append('nombre', form.nombre)
+      fd.append('descripcion', form.descripcion)
+      fd.append('categoria', form.categoria)
+      if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
+      if (form.descripcion_detalle !== undefined)
+        fd.append('descripcion_detalle', form.descripcion_detalle)
+      if (imagen) fd.append('imagen', imagen)
+      await apiClient.patch(`/servicios/admin/${id}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    },
+    [],
+  )
 
   const toggleService = useCallback(async (id: number) => {
     await apiClient.patch(`/servicios/admin/${id}?action=toggle`)
   }, [])
 
-  useEffect(() => { load().catch(console.error) }, [load])
+  const addServiceImage = useCallback(async (serviceId: number, file: File) => {
+    const fd = new FormData()
+    fd.append('imagen', file)
+    const result = await apiClient.post<BeServiceImage>(
+      `/servicios/admin/${serviceId}/imagenes/`,
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    return result
+  }, [])
 
-  return { services, loading, load, createService, editService, toggleService }
+  const deleteServiceImage = useCallback(async (imageId: number) => {
+    await apiClient.delete(`/servicios/admin/imagenes/${imageId}/`)
+  }, [])
+
+  useEffect(() => {
+    load().catch(console.error)
+  }, [load])
+
+  return {
+    services,
+    loading,
+    load,
+    createService,
+    editService,
+    toggleService,
+    addServiceImage,
+    deleteServiceImage,
+  }
 }

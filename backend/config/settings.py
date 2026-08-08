@@ -340,4 +340,4 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Si estas variables quedan vacías, StorageService usa una URL stub local (dev sin bucket).
 SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_SERVICE_KEY = config('SUPABASE_SERVICE_KEY', default='')
-SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='sassblum')
+SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='SassBlumImagenes')

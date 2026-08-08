@@ -12,11 +12,13 @@ SOLID: DIP · SRP · LSP · ISP · OCP
 
 from __future__ import annotations
 
+import re
 import threading
 
 from apps.catalog.interfaces import ICatalogClientView, ICatalogAdminView
 from apps.catalog.repositories import ServiceRepository
 from apps.tickets.interfaces import IStorageService
+from apps.tickets.services.storage_name import storage_filename
 from core.exceptions.domain_exceptions import ServiceNotFound
 
 
@@ -74,12 +76,36 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         service = self._repo.update(service_id, {"activo": not service.activo})
         return self._detail(service)
 
+    # ── Gallery image management (ICatalogAdminView) ───────────────────────────
+
+    def add_service_image(self, service_id: int, file) -> dict:
+        service = self._repo.get_by_id(service_id)
+        if service is None:
+            raise ServiceNotFound("El servicio no existe.")
+        orden = self._repo.get_next_order(service_id)
+        path = f"services/{service_id}/gallery/{storage_filename(getattr(file, 'name', 'imagen'))}"
+        url = self._storage.upload(file, path) if self._storage is not None else ""
+        if not url:
+            raise RuntimeError("No se pudo subir la imagen al almacenamiento.")
+        img = self._repo.add_image(service_id, url, orden)
+        return {"id": img.id, "imagen_url": img.imagen_url, "orden": img.orden}
+
+    def delete_service_image(self, image_id: int) -> None:
+        img = self._repo.get_image_by_id(image_id)
+        if img is None:
+            return
+        if self._storage is not None:
+            m = re.search(r'/object/public/[^/]+/(.+)$', img.imagen_url)
+            if m:
+                self._storage.delete(m.group(1))
+        self._repo.delete_image(image_id)
+
     # ── Image upload (Strategy via IStorageService) ────────────────────────────
 
     def _maybe_attach_image(self, service, imagen):
         if imagen is None or self._storage is None:
             return service
-        path = f"services/{service.id}/{getattr(imagen, 'name', 'imagen')}"
+        path = f"services/{service.id}/cover/{storage_filename(getattr(imagen, 'name', 'imagen'))}"
         url = self._storage.upload(imagen, path)
         if not url:
             return service
@@ -93,9 +119,14 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
             "id": s.id,
             "nombre": s.nombre,
             "descripcion": s.descripcion,
+            "descripcion_detalle": s.descripcion_detalle,
             "categoria": s.categoria,
             "activo": s.activo,
             "imagen_url": s.imagen_url,
+            "imagenes": [
+                {"id": img.id, "imagen_url": img.imagen_url, "orden": img.orden}
+                for img in s.imagenes.all()
+            ],
         }
 
     @classmethod

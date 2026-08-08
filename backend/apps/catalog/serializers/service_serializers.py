@@ -12,6 +12,7 @@ class ServiceCreateSerializer(serializers.Serializer):
     descripcion = serializers.CharField()
     categoria = serializers.CharField(max_length=80)
     imagen_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    descripcion_detalle = serializers.CharField(required=False, allow_blank=True, default='')
 
 
 class ServiceEditSerializer(serializers.Serializer):
@@ -19,6 +20,7 @@ class ServiceEditSerializer(serializers.Serializer):
     descripcion = serializers.CharField(required=False)
     categoria = serializers.CharField(max_length=80, required=False)
     imagen_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    descripcion_detalle = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate(self, attrs):
         if not attrs:

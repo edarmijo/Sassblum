@@ -56,3 +56,21 @@ class ICatalogAdminView(ABC):
         Raises: ServiceNotFound.
         """
         ...
+
+    @abstractmethod
+    def add_service_image(self, service_id: int, file) -> dict:
+        """
+        Upload a gallery image for a service via IStorageService.
+        Args: service_id — existing service PK; file — Django InMemoryUploadedFile.
+        Returns: {'id': int, 'imagen_url': str, 'orden': int}.
+        Raises: ServiceNotFound, RuntimeError on upload failure.
+        """
+        ...
+
+    @abstractmethod
+    def delete_service_image(self, image_id: int) -> None:
+        """
+        Remove a gallery image from storage and the DB.
+        Args: image_id — ServiceImage PK. Silent no-op if image not found.
+        """
+        ...

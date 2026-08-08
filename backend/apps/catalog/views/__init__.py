@@ -1,3 +1,3 @@
-from .catalog_views import ServiceListView, ServiceDetailView, ServiceAdminView
+from .catalog_views import ServiceListView, ServiceDetailView, ServiceAdminView, ServiceImageAdminView
 
-__all__ = ["ServiceListView", "ServiceDetailView", "ServiceAdminView"]
+__all__ = ["ServiceListView", "ServiceDetailView", "ServiceAdminView", "ServiceImageAdminView"]

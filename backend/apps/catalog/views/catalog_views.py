@@ -6,11 +6,13 @@ Browse views depend on ICatalogClientView; admin views on ICatalogAdminView
 touches the ORM. Service management (create/edit/toggle) requires worker or admin.
 
 Endpoints:
-    GET   /api/servicios              → ServiceListView   (public — marketing catalog)
-    GET   /api/servicios/<id>         → ServiceDetailView (authenticated)
-    POST  /api/servicios/admin        → ServiceAdminView.post   (IsAdmin)
-    PATCH /api/servicios/admin/<id>   → ServiceAdminView.patch  (IsAdmin)
-    PATCH /api/servicios/admin/<id>?action=toggle → toggle      (IsAdmin)
+    GET    /api/servicios                              → ServiceListView   (public)
+    GET    /api/servicios/<id>                         → ServiceDetailView (authenticated)
+    POST   /api/servicios/admin                        → ServiceAdminView.post   (IsAdmin)
+    PATCH  /api/servicios/admin/<id>                   → ServiceAdminView.patch  (IsAdmin)
+    PATCH  /api/servicios/admin/<id>?action=toggle     → toggle           (IsAdmin)
+    POST   /api/servicios/admin/<id>/imagenes/         → ServiceImageAdminView.post   (IsAdmin)
+    DELETE /api/servicios/admin/imagenes/<img_id>/     → ServiceImageAdminView.delete (IsAdmin)
 
 Service photos: the admin endpoints accept a multipart `imagen` file which is
 uploaded to Supabase Storage by CatalogService via IStorageService (DIP).
@@ -96,3 +98,34 @@ class ServiceAdminView(APIView):
         except ServiceNotFound as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(updated, status=status.HTTP_200_OK)
+
+
+class ServiceImageAdminView(APIView):
+    """
+    Gallery image management for a catalog service (IsAdmin only).
+
+    POST   /api/servicios/admin/<service_id>/imagenes/   — upload a gallery image
+    DELETE /api/servicios/admin/imagenes/<image_id>/     — remove a gallery image
+    """
+
+    permission_classes = [IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, service_id: int):
+        imagen = request.FILES.get("imagen")
+        if not imagen:
+            return Response(
+                {"detail": "Se requiere un archivo de imagen."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            result = get_catalog_service().add_service_image(service_id, imagen)
+        except ServiceNotFound as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as exc:  # noqa: BLE001
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, image_id: int):
+        get_catalog_service().delete_service_image(image_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
