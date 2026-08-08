@@ -14,6 +14,8 @@ from core.testing import random_credential
 
 import pytest
 from django.test import override_settings
+
+pytestmark = pytest.mark.django_db
 from rest_framework.test import APIClient
 
 from apps.authentication.cookies import REFRESH_COOKIE_NAME
