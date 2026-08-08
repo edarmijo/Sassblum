@@ -81,6 +81,17 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
 
+# WEBSOCKETS — orígenes permitidos en el handshake (ver config/asgi.py)
+# El WS va DIRECTO a Render (el rewrite de Vercel NO proxea WebSockets), así que
+# el Origin del handshake es el dominio del frontend, no el de la API. Con
+# AllowedHostsOriginValidator (que valida contra ALLOWED_HOSTS) todo handshake
+# desde Vercel se rechazaba antes de llegar al consumer.
+# Un patrón que empieza con punto cubre el dominio y todos sus subdominios.
+WS_ALLOWED_ORIGINS = [
+    *CORS_ALLOWED_ORIGINS,
+    '.vercel.app',  # producción + previews (mismo criterio que CORS_ALLOWED_ORIGIN_REGEXES)
+]
+
 # Content-Security-Policy — OWASP A03:2021 defense-in-depth
 SELF_SRC = "'self'"
 CSP_DEFAULT_SRC = (SELF_SRC,)
@@ -176,6 +187,11 @@ SIMPLE_JWT = {
 
 
 # SECURITY HEADERS (HTTPS enforcement + cookies)
+# Render (y cualquier proxy) termina TLS y reenvía al contenedor por HTTP
+# interno. Sin esta cabecera Django cree que la petición es insegura:
+# SECURE_SSL_REDIRECT redirige en bucle y las cookies Secure no se emiten.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True

@@ -18,6 +18,11 @@
 type EventHandler = (payload: unknown) => void
 
 const WS_BASE = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000'
+// El access token viaja como subprotocolo (header Sec-WebSocket-Protocol), NUNCA
+// en la query string: las URLs quedan en logs del proxy/servidor y en la consola
+// del navegador, y eso filtra la credencial. Debe coincidir con
+// backend/apps/realtime/auth.py (JWT_SUBPROTOCOL).
+const JWT_SUBPROTOCOL = 'sassblum.jwt'
 const MAX_BACKOFF_MS = 30_000
 // Tras N intentos fallidos consecutivos se deja de reintentar (evita spam infinito
 // en consola cuando el servidor no tiene WS disponible). Un nuevo connect() —
@@ -44,10 +49,9 @@ class SocketClient {
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return
 
     const urlObj = new URL('/ws/notifications/', WS_BASE)
-    if (this.token) {
-      urlObj.searchParams.set('token', this.token)
-    }
-    this.socket = new WebSocket(urlObj.toString())
+    this.socket = this.token
+      ? new WebSocket(urlObj.toString(), [JWT_SUBPROTOCOL, this.token])
+      : new WebSocket(urlObj.toString())
 
     this.socket.onopen = () => {
       this.backoff = 1_000 // reset backoff on a successful connection

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { apiError } from '../../../../infrastructure/http/apiError'
@@ -11,6 +11,11 @@ interface LoginFormProps {
   readonly onSuccess?: () => void
 }
 
+// Si el servidor (Render plan gratuito) está dormido, tarda ~30-50 s en
+// despertar. Tras este umbral le avisamos al usuario para que no piense que
+// algo está roto.
+const COLD_START_HINT_MS = 8_000
+
 /**
  * SRP: captures credentials and submits via useAuth (DIP — never AuthService directly).
  */
@@ -19,17 +24,34 @@ export function LoginForm({ onSuccess }: Readonly<LoginFormProps>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [isSlowStart, setIsSlowStart] = useState(false)
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsSlowStart(false)
+
+    // Si la respuesta tarda más de COLD_START_HINT_MS mostramos el aviso de
+    // cold-start — luego lo limpiamos en el finally, haya o no error.
+    slowTimerRef.current = setTimeout(() => setIsSlowStart(true), COLD_START_HINT_MS)
+
     try {
       await login({ email, password })
       onSuccess?.()
     } catch (err: unknown) {
       setError(apiError(err, 'No se pudo iniciar sesión.'))
+    } finally {
+      if (slowTimerRef.current) {
+        clearTimeout(slowTimerRef.current)
+        slowTimerRef.current = null
+      }
+      setIsSlowStart(false)
     }
   }
+
+  let buttonLabel = 'Ingresar'
+  if (isLoading) buttonLabel = isSlowStart ? 'Despertando el servidor…' : 'Entrando…'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,8 +71,16 @@ export function LoginForm({ onSuccess }: Readonly<LoginFormProps>) {
         </Alert>
       )}
 
+      {isSlowStart && (
+        <Alert>
+          <AlertDescription className="text-sm text-muted-foreground">
+            El servidor está iniciando. Esto puede tardar hasta 30 segundos en la primera conexión del día.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <RippleButton type="submit" variant="brand" size="lg" disabled={isLoading} className="w-full">
-        {isLoading ? 'Entrando…' : 'Ingresar'}
+        {buttonLabel}
       </RippleButton>
     </form>
   )
