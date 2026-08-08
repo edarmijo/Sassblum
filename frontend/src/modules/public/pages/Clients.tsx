@@ -1,88 +1,74 @@
-import type { CSSProperties } from 'react'
-import { Star, Quote } from 'lucide-react'
-import { LogoMarquee, type Brand } from '../../../core/ui/LogoMarquee'
-import { GlowCard } from '../../../core/ui/GlowCard'
+import { ImageWithFallback } from '../../../core/ui/ImageWithFallback'
 import { PageHero } from '../../../core/ui/layout/PageHero'
-import { Reveal, FocusReveal } from '../../../core/ui/motion'
+import { Reveal } from '../../../core/ui/motion'
 
-// Claves estables para las 5 estrellas (evita usar el índice del array como key)
-const STAR_KEYS = Array.from({ length: 5 }, (_, i) => `star-${i}`)
+const CLIENT_LOGO_SHEET =
+  'https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/sassblum-clientes.png'
 
-const TESTIMONIALS = [
-  { name: 'María González', company: 'Distribuidora Andina', text: 'SASS BLUM transformó nuestra infraestructura de red. El soporte es excelente y siempre responden a tiempo.' },
-  { name: 'Carlos Mendoza', company: 'Clínica San Rafael', text: 'Instalaron todo nuestro sistema de CCTV y domótica. Profesionalismo de principio a fin.' },
-  { name: 'Ana Vélez', company: 'Corporación Litoral', text: 'El equipo de soporte técnico es de primera. Resolvieron problemas que otros proveedores no pudieron.' },
-]
-
-const PARTNERS: Brand[] = [
-  { name: 'Hikvision', domain: 'hikvision.com' },
-  { name: 'Ubiquiti', domain: 'ui.com' },
-  { name: 'Grandstream', domain: 'grandstream.com' },
-  { name: 'ZKTeco', domain: 'zkteco.com' },
-]
-
-const cardStyle: CSSProperties = {
-  background: 'rgba(8,22,36,0.7)',
-  border: '1px solid rgba(0,196,224,0.12)',
-  backdropFilter: 'blur(12px)',
-}
+const CLIENTS = [
+  'Policentro',
+  'SCD — Sistema de Control Documental',
+  'Velázquez Velázquez Abogados',
+  'Todo Fiesta',
+  'La Sevillana',
+  'Sony',
+  'Acería Xinlong S.A.',
+  'Banapov',
+  'Omaconsa',
+  'IMDO Sport Medical Center',
+  'Soelec',
+  'Globos Payaso',
+  'Crokitos',
+  'Regus',
+  'Viamatica',
+  'Súper Éxito',
+] as const
 
 export function Clients() {
   return (
     <div className="min-h-screen">
       <PageHero
         eyebrow="Confianza"
-        title="Clientes"
-        subtitle="Empresas e industrias que confían en nosotros"
+        title="Nuestros clientes"
+        subtitle="Empresas e instituciones que han confiado en las soluciones de SassBlum"
         accent="cyan"
         orbPosition="top-right"
       />
 
-      {/* Testimonios */}
       <section className="relative z-10 py-24 md:py-32" style={{ background: 'rgba(255,255,255,0.03)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="text-center mb-14">
-            <p className="uppercase mb-3 tracking-[0.3em] text-sm" style={{ color: '#00c4e0' }}>Testimonios</p>
-            <h2 className="text-3xl md:text-5xl font-semibold tracking-tight" style={{ color: '#eef4f8' }}>
-              Lo que dicen nuestros clientes
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <Reveal className="mb-12 text-center">
+            <p className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#00c4e0' }}>
+              Experiencia comprobada
+            </p>
+            <h2 className="text-3xl font-semibold tracking-tight md:text-5xl" style={{ color: '#eef4f8' }}>
+              Empresas que confían en nosotros
             </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t, i) => (
-              <FocusReveal key={t.name} delay={i * 0.1}>
-                <GlowCard className="h-full" style={cardStyle}>
-                  <div className="p-8">
-                    <Quote className="h-9 w-9 mb-4" style={{ color: 'rgba(0,196,224,0.3)' }} />
-                    <p className="mb-6 leading-relaxed" style={{ color: '#7aa3b8' }}>{t.text}</p>
-                    <div className="flex items-center gap-1 mb-3">
-                      {STAR_KEYS.map((k) => (
-                        <Star key={k} className="h-4 w-4 fill-brand-cyan text-brand-cyan" />
-                      ))}
-                    </div>
-                    <p className="font-medium" style={{ color: '#eef4f8' }}>{t.name}</p>
-                    <p className="text-sm" style={{ color: '#5c7a94' }}>{t.company}</p>
-                  </div>
-                </GlowCard>
-              </FocusReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Carrusel de marcas / aliados */}
-      <section className="relative z-10 py-20 md:py-28 overflow-hidden" style={{ background: 'rgba(0,0,0,0.32)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="text-center mb-12">
-            <p className="uppercase tracking-[0.3em] mb-3 text-sm" style={{ color: '#00c4e0' }}>Aliados tecnológicos</p>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ color: '#eef4f8' }}>
-              Marcas que integramos
-            </h2>
-            <p className="mt-3 max-w-2xl mx-auto" style={{ color: '#5c7a94' }}>
-              Somos integradores autorizados de las marcas líderes en seguridad, redes y control de acceso.
+            <p className="mx-auto mt-4 max-w-2xl leading-relaxed" style={{ color: '#7aa3b8' }}>
+              Cada marca representa un proyecto y una relación profesional construida por SassBlum.
             </p>
           </Reveal>
+
+          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white p-4 shadow-2xl shadow-black/30 sm:p-8">
+            <ImageWithFallback
+              src={CLIENT_LOGO_SHEET}
+              alt={`Logotipos de clientes SassBlum: ${CLIENTS.join(', ')}`}
+              className="mx-auto block h-auto w-full max-w-4xl object-contain"
+            />
+          </div>
+
+          <ul className="mt-10 flex flex-wrap justify-center gap-x-5 gap-y-3" aria-label="Clientes SassBlum">
+            {CLIENTS.map((client) => (
+              <li
+                key={client}
+                className="rounded-full border border-brand-cyan/15 bg-brand-navy/60 px-4 py-2 text-sm"
+                style={{ color: '#a9c4d3' }}
+              >
+                {client}
+              </li>
+            ))}
+          </ul>
         </div>
-        <LogoMarquee brands={PARTNERS} durationSec={28} />
       </section>
     </div>
   )
