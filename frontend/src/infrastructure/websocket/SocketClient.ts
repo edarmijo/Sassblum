@@ -36,7 +36,7 @@ class SocketClient {
   private backoff = 1_000
   private retries = 0
   private shouldReconnect = false
-  private isPageFrozen = false
+  private isSuspended = false
   private reconnectTimer: number | null = null
 
   constructor() {
@@ -44,32 +44,35 @@ class SocketClient {
     // explicitly closed. Close it while the page is frozen and create a fresh
     // transport when the user returns with the browser navigation controls.
     window.addEventListener('pagehide', this.handlePageHide)
-    window.addEventListener('pageshow', this.handlePageShow)
   }
 
   /** Open the connection with the user's access token. Idempotent. */
   connect(token: string): void {
+    const tokenChanged = this.token !== null && this.token !== token
     this.token = token
     this.shouldReconnect = true
+    this.isSuspended = false
     this.retries = 0
+    if (tokenChanged) this.closeCurrentSocket()
     this.open()
   }
 
   private open(): void {
-    if (this.isPageFrozen) return
+    if (this.isSuspended) return
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return
 
     const urlObj = new URL('/ws/notifications/', WS_BASE)
-    this.socket = this.token
+    const socket = this.token
       ? new WebSocket(urlObj.toString(), [JWT_SUBPROTOCOL, this.token])
       : new WebSocket(urlObj.toString())
+    this.socket = socket
 
-    this.socket.onopen = () => {
+    socket.onopen = () => {
       this.backoff = 1_000 // reset backoff on a successful connection
       this.retries = 0
     }
 
-    this.socket.onmessage = (e: MessageEvent) => {
+    socket.onmessage = (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data) as { event?: string; payload?: unknown }
         if (data.event) this.emit(data.event, data.payload)
@@ -78,9 +81,11 @@ class SocketClient {
       }
     }
 
-    this.socket.onclose = () => {
+    socket.onclose = () => {
+      // A socket replaced after token rotation must not affect the new one.
+      if (this.socket !== socket) return
       this.socket = null
-      if (!this.shouldReconnect || this.isPageFrozen) return
+      if (!this.shouldReconnect || this.isSuspended) return
       this.retries += 1
       if (this.retries >= MAX_RETRIES) {
         // El servidor no ofrece WS ahora mismo (p. ej. sin Redis). La app sigue
@@ -95,40 +100,41 @@ class SocketClient {
       this.backoff = Math.min(this.backoff * 2, MAX_BACKOFF_MS)
     }
 
-    this.socket.onerror = () => {
-      this.socket?.close()
+    socket.onerror = () => {
+      socket.close()
     }
   }
 
   /** Close the connection and stop reconnecting. */
   disconnect(): void {
     this.shouldReconnect = false
+    this.isSuspended = false
     this.clearReconnectTimer()
-    this.socket?.close()
-    this.socket = null
+    this.closeCurrentSocket()
+  }
+
+  /** Pause a live connection while the document is being frozen or hidden. */
+  suspend(): void {
+    this.isSuspended = true
+    this.clearReconnectTimer()
+    this.closeCurrentSocket()
   }
 
   private handlePageHide = (event: PageTransitionEvent): void => {
     if (!event.persisted) return
-    this.isPageFrozen = true
-    this.clearReconnectTimer()
-    this.socket?.close()
-    this.socket = null
-  }
-
-  private handlePageShow = (event: PageTransitionEvent): void => {
-    if (!event.persisted) return
-    this.isPageFrozen = false
-    if (this.shouldReconnect && this.token) {
-      this.retries = 0
-      this.open()
-    }
+    this.suspend()
   }
 
   private clearReconnectTimer(): void {
     if (this.reconnectTimer === null) return
     window.clearTimeout(this.reconnectTimer)
     this.reconnectTimer = null
+  }
+
+  private closeCurrentSocket(): void {
+    const socket = this.socket
+    this.socket = null
+    socket?.close()
   }
 
   /** Subscribe to a server event. Returns an unsubscribe function. */

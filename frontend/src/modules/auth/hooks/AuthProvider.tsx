@@ -20,7 +20,7 @@
  *   autenticado (evitaría peticiones sin Bearer → 401 en cascada).
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type {
   IAuthService,
@@ -73,6 +73,7 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   const [refreshToken, setRefreshToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isBootstrapping, setIsBootstrapping] = useState(hasSessionHint)
+  const isResumingSession = useRef(false)
 
   // Rehidratación: la cookie httpOnly se canjea por access + usuario.
   useEffect(() => {
@@ -121,6 +122,55 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
       setRefreshToken(null)
     })
   }, [])
+
+  // Keep real-time authentication in sync when Axios silently rotates a token.
+  useEffect(() => {
+    apiClient.setTokenRefreshHandler((accessToken, nextRefreshToken) => {
+      setRefreshToken(nextRefreshToken)
+      socketClient.connect(accessToken)
+    })
+    return () => apiClient.setTokenRefreshHandler(null)
+  }, [])
+
+  // A tab can remain alive for hours, including when restored from BFCache. On
+  // visibility return, exchange the httpOnly refresh cookie before reconnecting
+  // so the WebSocket never reuses yesterday's expired access token.
+  useEffect(() => {
+    const resumeSession = async () => {
+      if (!user || document.visibilityState === 'hidden' || isResumingSession.current) return
+      isResumingSession.current = true
+      try {
+        const { user: refreshedUser, tokens } = await service.refreshSession()
+        apiClient.setTokens(tokens.accessToken, tokens.refreshToken || null)
+        socketClient.connect(tokens.accessToken)
+        setRefreshToken(tokens.refreshToken || null)
+        setUser(refreshedUser)
+      } catch {
+        // Do not force a logout on a transient offline/cold-start failure. The
+        // next API request will retry through ApiClient's shared refresh flow.
+      } finally {
+        isResumingSession.current = false
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        socketClient.suspend()
+        return
+      }
+      void resumeSession()
+    }
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void resumeSession()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pageshow', handlePageShow)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pageshow', handlePageShow)
+    }
+  }, [service, user])
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true)

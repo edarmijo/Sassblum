@@ -14,12 +14,15 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { env } from '../config/env'
 
+type TokenRefreshHandler = (accessToken: string, refreshToken: string | null) => void
+
 class ApiClient {
   private readonly http: AxiosInstance
   private accessToken: string | null = null
   private refreshToken: string | null = null
   private onForcedLogout: (() => void) | null = null
-  private isRefreshing = false
+  private onTokenRefreshed: TokenRefreshHandler | null = null
+  private refreshPromise: Promise<boolean> | null = null
 
   constructor() {
     this.http = axios.create({
@@ -44,12 +47,10 @@ class ApiClient {
         const original = error.config as AxiosRequestConfig & { _retry?: boolean }
         if (
           error.response?.status === 401 &&
-          this.refreshToken &&
-          !original._retry &&
-          !this.isRefreshing
+          !original._retry
         ) {
           original._retry = true
-          const refreshed = await this.tryRefresh()
+          const refreshed = await this.refreshAccessToken()
           if (refreshed) {
             original.headers = original.headers ?? {}
               ; (original.headers as Record<string, string>).Authorization = `Bearer ${this.accessToken}`
@@ -73,13 +74,26 @@ class ApiClient {
     this.onForcedLogout = handler
   }
 
+  /** Notifies the auth boundary after a silent cookie-based token refresh. */
+  setTokenRefreshHandler(handler: TokenRefreshHandler | null): void {
+    this.onTokenRefreshed = handler
+  }
+
   private forceLogout(): void {
     this.setTokens(null, null)
     this.onForcedLogout?.()
   }
 
+  private refreshAccessToken(): Promise<boolean> {
+    if (this.refreshPromise === null) {
+      this.refreshPromise = this.tryRefresh().finally(() => {
+        this.refreshPromise = null
+      })
+    }
+    return this.refreshPromise
+  }
+
   private async tryRefresh(): Promise<boolean> {
-    this.isRefreshing = true
     try {
       // H#4 (audit): Send device fingerprint with refresh token for binding.
       // simplejwt rotation + blacklist mitigates token theft.
@@ -99,11 +113,10 @@ class ApiClient {
       this.accessToken = data.access
       // La rotación emite un refresh nuevo; el viejo queda en blacklist.
       if (data.refresh) this.refreshToken = data.refresh
+      this.onTokenRefreshed?.(data.access, this.refreshToken)
       return true
     } catch {
       return false
-    } finally {
-      this.isRefreshing = false
     }
   }
 
