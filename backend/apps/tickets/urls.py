@@ -7,7 +7,7 @@ URL routing for the tickets API. Mounted under /api/tickets/ by config/urls.py.
     GET   /api/tickets/<id>/historial   → event timeline
     PATCH /api/tickets/<id>/asignar     → assign   (IsAdmin)
     PATCH /api/tickets/<id>/reasignar   → reassign (IsAdmin)
-    PATCH /api/tickets/<id>/estado      → update status (IsWorker)
+    PATCH /api/tickets/<id>/estado      → update status (IsStaff)
     POST  /api/tickets/<id>/comentario  → add comment
 """
 

@@ -97,7 +97,7 @@ function mapDetail(t: BeDetail): TicketDetail {
 class TicketService implements ITicketClientActions {
   /** H#3 (cliente): Cambiar estado de ticket con observación (worker/admin). */
   async updateStatus(id: string, newStatus: TicketEstado, comment: string): Promise<TicketDetail> {
-    const data = await apiClient.post<BeDetail>(`/tickets/${id}/status`, {
+    const data = await apiClient.patch<BeDetail>(`/tickets/${id}/estado`, {
       estado: newStatus,
       comentario: comment,
     })
@@ -106,7 +106,7 @@ class TicketService implements ITicketClientActions {
 
   /** Agregar comentario sin cambiar estado (worker/admin). */
   async addComment(id: string, comment: string): Promise<TicketEvent> {
-    const data = await apiClient.post<BeEvent>(`/tickets/${id}/comments`, {
+    const data = await apiClient.post<BeEvent>(`/tickets/${id}/comentario`, {
       comentario: comment,
     })
     return mapEvent(data)

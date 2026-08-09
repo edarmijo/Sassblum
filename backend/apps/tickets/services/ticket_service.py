@@ -150,7 +150,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             ticket=ticket, autor=user,
             tipo_evento=TicketEvent.TipoEvento.COMENTARIO, comentario=comment,
         )
-        return {"id": event.id, "comentario": event.comentario}
+        return self._event_summary(event)
 
     def close_ticket(self, ticket_id: int, comment: str, user) -> dict:
         return self.update_status(ticket_id, Ticket.Estado.CERRADO, comment, user)
@@ -224,6 +224,22 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "creado_en": t.created_at.isoformat(),
         }
 
+    @staticmethod
+    def _event_summary(event: TicketEvent) -> dict:
+        """Return an event in the API shape shared by detail and comment actions."""
+        return {
+            "id": event.id,
+            "tipo_evento": event.tipo_evento,
+            "estado_anterior": event.estado_anterior,
+            "estado_nuevo": event.estado_nuevo,
+            "comentario": event.comentario,
+            "autor_nombre": (
+                f"{event.autor.first_name} {event.autor.last_name}".strip()
+                or event.autor.email
+            ),
+            "creado_en": event.created_at.isoformat(),
+        }
+
     @classmethod
     def _detail(cls, t: Ticket) -> dict:
         return {
@@ -240,12 +256,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
                 for a in t.adjuntos.all()
             ],
             "eventos": [
-                {"id": e.id, "tipo_evento": e.tipo_evento,
-                 "estado_anterior": e.estado_anterior, "estado_nuevo": e.estado_nuevo,
-                 "comentario": e.comentario,
-                 "autor_nombre": f"{e.autor.first_name} {e.autor.last_name}".strip()
-                                 or e.autor.email,
-                 "creado_en": e.created_at.isoformat()}
+                cls._event_summary(e)
                 for e in t.eventos.all().order_by("created_at")
             ],
             "actualizado_en": t.updated_at.isoformat(),

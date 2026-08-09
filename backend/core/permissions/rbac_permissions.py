@@ -39,6 +39,18 @@ class IsWorker(BasePermission):
         )
 
 
+class IsStaff(BasePermission):
+    """Grants access to active workers and administrators."""
+
+    def has_permission(self, request, view) -> bool:
+        user_model = _get_user_model()
+        return (
+            request.user.is_authenticated
+            and request.user.role in {user_model.Role.WORKER, user_model.Role.ADMIN}
+            and request.user.estado == user_model.Estado.ACTIVE
+        )
+
+
 class IsAdmin(BasePermission):
     """Grants access only to authenticated users with role == 'admin'."""
 

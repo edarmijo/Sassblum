@@ -1,3 +1,3 @@
-from .rbac_permissions import IsClient, IsWorker, IsAdmin
+from .rbac_permissions import IsAdmin, IsClient, IsStaff, IsWorker
 
-__all__ = ["IsClient", "IsWorker", "IsAdmin"]
+__all__ = ["IsClient", "IsWorker", "IsStaff", "IsAdmin"]

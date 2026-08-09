@@ -1,5 +1,5 @@
 """
-Ticket action DRF views — assignment (admin) + status/comment (worker).
+Ticket action DRF views — assignment (admin) + status/comment (staff).
 
 HTTP orchestration only (SRP + DIP + ISP). Each view depends on the role interface
 of TicketService (via get_ticket_service()) and declares only its RBAC permission.
@@ -7,7 +7,7 @@ of TicketService (via get_ticket_service()) and declares only its RBAC permissio
 Endpoints:
     PATCH /api/tickets/<id>/asignar     → AssignView      (IsAdmin)
     PATCH /api/tickets/<id>/reasignar   → ReassignView    (IsAdmin)
-    PATCH /api/tickets/<id>/estado      → UpdateStatusView (IsWorker)
+    PATCH /api/tickets/<id>/estado      → UpdateStatusView (IsStaff)
     POST  /api/tickets/<id>/comentario  → AddCommentView  (authenticated party)
 """
 
@@ -28,7 +28,7 @@ from core.exceptions.domain_exceptions import (
     InvalidTransitionError,
     CommentRequiredError,
 )
-from core.permissions import IsAdmin, IsWorker
+from core.permissions import IsAdmin, IsStaff
 
 
 def _handle_domain_errors(fn):
@@ -75,7 +75,7 @@ class ReassignView(APIView):
 
 
 class UpdateStatusView(APIView):
-    permission_classes = [IsWorker]
+    permission_classes = [IsStaff]
 
     def patch(self, request, ticket_id: int):
         serializer = StatusChangeSerializer(data=request.data)
