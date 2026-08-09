@@ -18,6 +18,19 @@ export interface BeService {
   descripcion_detalle?: string
 }
 
+type ServiceForm = Pick<BeService, 'nombre' | 'descripcion' | 'categoria' | 'imagen_url' | 'descripcion_detalle'>
+
+function toServiceFormData(form: ServiceForm, imagen?: File | null): FormData {
+  const formData = new FormData()
+  formData.append('nombre', form.nombre)
+  formData.append('descripcion', form.descripcion)
+  formData.append('categoria', form.categoria)
+  if (form.imagen_url) formData.append('imagen_url', form.imagen_url)
+  if (form.descripcion_detalle !== undefined) formData.append('descripcion_detalle', form.descripcion_detalle)
+  if (imagen) formData.append('imagen', imagen)
+  return formData
+}
+
 /**
  * DIP seam for CatalogAdminPanel — encapsulates all API calls.
  * Components depend on this hook's return type, not on apiClient directly.
@@ -41,24 +54,10 @@ export function useCatalogAdmin() {
 
   const createService = useCallback(
     async (
-      form: {
-        nombre: string
-        descripcion: string
-        categoria: string
-        imagen_url?: string
-        descripcion_detalle?: string
-      },
+      form: ServiceForm,
       imagen?: File | null,
     ) => {
-      const fd = new FormData()
-      fd.append('nombre', form.nombre)
-      fd.append('descripcion', form.descripcion)
-      fd.append('categoria', form.categoria)
-      if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
-      if (form.descripcion_detalle !== undefined)
-        fd.append('descripcion_detalle', form.descripcion_detalle)
-      if (imagen) fd.append('imagen', imagen)
-      await apiClient.post('/servicios/admin/', fd, {
+      await apiClient.post('/servicios/admin/', toServiceFormData(form, imagen), {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
     },
@@ -68,24 +67,10 @@ export function useCatalogAdmin() {
   const editService = useCallback(
     async (
       id: number,
-      form: {
-        nombre: string
-        descripcion: string
-        categoria: string
-        imagen_url?: string
-        descripcion_detalle?: string
-      },
+      form: ServiceForm,
       imagen?: File | null,
     ) => {
-      const fd = new FormData()
-      fd.append('nombre', form.nombre)
-      fd.append('descripcion', form.descripcion)
-      fd.append('categoria', form.categoria)
-      if (form.imagen_url) fd.append('imagen_url', form.imagen_url)
-      if (form.descripcion_detalle !== undefined)
-        fd.append('descripcion_detalle', form.descripcion_detalle)
-      if (imagen) fd.append('imagen', imagen)
-      await apiClient.patch(`/servicios/admin/${id}`, fd, {
+      await apiClient.patch(`/servicios/admin/${id}`, toServiceFormData(form, imagen), {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
     },

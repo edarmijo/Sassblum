@@ -34,6 +34,24 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def safe_child(directory: Path, candidate: Path) -> Path:
+    """Resolve a constructed path and reject paths outside its declared directory."""
+    resolved_directory = directory.resolve(strict=True)
+    resolved_candidate = candidate.resolve(strict=True)
+    if not resolved_candidate.is_relative_to(resolved_directory):
+        raise ValueError(f"Path outside the declared directory: {candidate}")
+    return resolved_candidate
+
+
+def safe_output(directory: Path, filename: str) -> Path:
+    """Return a validated output path that cannot escape the output directory."""
+    resolved_directory = directory.resolve()
+    output = (resolved_directory / filename).resolve()
+    if not output.is_relative_to(resolved_directory):
+        raise ValueError(f"Invalid output filename: {filename}")
+    return output
+
+
 def within_tolerance(pixel: tuple[int, int, int, int], background: tuple[int, int, int, int], tolerance: int) -> bool:
     return max(abs(pixel[index] - background[index]) for index in range(3)) <= tolerance
 
@@ -68,13 +86,18 @@ def remove_connected_background(image: Image.Image, tolerance: int) -> Image.Ima
 
 def main() -> int:
     args = parse_args()
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    input_dir = args.input_dir.resolve(strict=True)
+    if not input_dir.is_dir():
+        raise NotADirectoryError(f"Input directory not found: {args.input_dir}")
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
     for output_name, (pattern, tolerance) in ASSETS.items():
-        matches = sorted(args.input_dir.glob(pattern))
+        matches = sorted(input_dir.glob(pattern))
         if len(matches) != 1:
             raise FileNotFoundError(f"Expected exactly one source for {output_name}: {pattern}")
-        transparent = remove_connected_background(Image.open(matches[0]), tolerance)
-        output = args.output_dir / output_name
+        source = safe_child(input_dir, matches[0])
+        output = safe_output(output_dir, output_name)
+        transparent = remove_connected_background(Image.open(source), tolerance)
         transparent.save(output, "PNG")
         print(f"Wrote {output}")
     return 0

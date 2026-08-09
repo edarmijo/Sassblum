@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import { Star, Quote } from 'lucide-react'
-import { LogoMarquee, type Brand } from '../../../core/ui/LogoMarquee'
 import { GlowCard } from '../../../core/ui/GlowCard'
 import { PageHero } from '../../../core/ui/layout/PageHero'
 import { Reveal, FocusReveal } from '../../../core/ui/motion'
@@ -14,13 +13,6 @@ const TESTIMONIALS = [
   { name: 'María González', company: 'Distribuidora Andina', text: 'SASS BLUM transformó nuestra infraestructura de red. El soporte es excelente y siempre responden a tiempo.' },
   { name: 'Carlos Mendoza', company: 'Clínica San Rafael', text: 'Instalaron todo nuestro sistema de CCTV y domótica. Profesionalismo de principio a fin.' },
   { name: 'Ana Vélez', company: 'Corporación Litoral', text: 'El equipo de soporte técnico es de primera. Resolvieron problemas que otros proveedores no pudieron.' },
-]
-
-const PARTNERS: Brand[] = [
-  { name: 'Hikvision', domain: 'hikvision.com' },
-  { name: 'Ubiquiti', domain: 'ui.com' },
-  { name: 'Grandstream', domain: 'grandstream.com' },
-  { name: 'ZKTeco', domain: 'zkteco.com' },
 ]
 
 const cardStyle: CSSProperties = {
@@ -74,20 +66,6 @@ export function Clients() {
         <PublicClientLogosSection />
       </ClientLogoProvider>
 
-      <section className="relative z-10 py-20 md:py-28 overflow-hidden" style={{ background: 'rgba(0,0,0,0.32)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Reveal className="text-center mb-12">
-            <p className="uppercase tracking-[0.3em] mb-3 text-sm" style={{ color: '#00c4e0' }}>Aliados tecnológicos</p>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ color: '#eef4f8' }}>
-              Marcas que integramos
-            </h2>
-            <p className="mt-3 max-w-2xl mx-auto" style={{ color: '#5c7a94' }}>
-              Somos integradores autorizados de las marcas líderes en seguridad, redes y control de acceso.
-            </p>
-          </Reveal>
-        </div>
-        <LogoMarquee brands={PARTNERS} durationSec={28} />
-      </section>
     </div>
   )
 }

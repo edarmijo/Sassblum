@@ -41,7 +41,7 @@ def _status(url: str) -> int:
     try:
         with urlopen(url, timeout=8) as response:  # noqa: S310 - see above.
             return response.status
-    except (HTTPError, URLError) as error:
+    except URLError as error:
         return getattr(error, "code", 0)
 
 

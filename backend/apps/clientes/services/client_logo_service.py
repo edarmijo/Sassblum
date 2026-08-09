@@ -12,6 +12,9 @@ from apps.tickets.services.storage_name import storage_filename
 from core.exceptions.domain_exceptions import DomainException
 
 
+CLIENT_LOGO_NOT_FOUND_MESSAGE = "El logotipo de cliente no existe."
+
+
 class ClientLogoNotFound(DomainException):
     """Raised when an administrator addresses a logo that does not exist."""
 
@@ -44,7 +47,7 @@ class ClientLogoService(IClientLogoPublicView, IClientLogoAdminView):
 
     def edit_logo(self, logo_id: int, data: dict) -> dict:
         if self._repo.get_by_id(logo_id) is None:
-            raise ClientLogoNotFound("El logotipo de cliente no existe.")
+            raise ClientLogoNotFound(CLIENT_LOGO_NOT_FOUND_MESSAGE)
         payload = dict(data)
         file = payload.pop("logo", None)
         logo = self._repo.update(logo_id, payload) if payload else self._repo.get_by_id(logo_id)
@@ -54,13 +57,13 @@ class ClientLogoService(IClientLogoPublicView, IClientLogoAdminView):
     def toggle_active(self, logo_id: int) -> dict:
         logo = self._repo.get_by_id(logo_id)
         if logo is None:
-            raise ClientLogoNotFound("El logotipo de cliente no existe.")
+            raise ClientLogoNotFound(CLIENT_LOGO_NOT_FOUND_MESSAGE)
         return self._detail(self._repo.update(logo_id, {"activo": not logo.activo}))
 
     def delete_logo(self, logo_id: int) -> None:
         logo = self._repo.get_by_id(logo_id)
         if logo is None:
-            raise ClientLogoNotFound("El logotipo de cliente no existe.")
+            raise ClientLogoNotFound(CLIENT_LOGO_NOT_FOUND_MESSAGE)
         path = self._managed_storage_path(logo.logo_url)
         if path and self._storage is not None:
             self._storage.delete(path)

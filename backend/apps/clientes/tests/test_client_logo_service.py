@@ -85,5 +85,7 @@ def test_create_rejects_an_empty_logo_record_before_persistence():
         def create(self, data):
             raise AssertionError("No debe persistir un logo sin origen visual.")
 
+    service = ClientLogoService(repository=Repository())
+
     with pytest.raises(ValueError, match="Adjunta un archivo"):
-        ClientLogoService(repository=Repository()).create_logo({"nombre": "Vacío"})
+        service.create_logo({"nombre": "Vacío"})

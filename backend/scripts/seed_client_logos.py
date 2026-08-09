@@ -50,6 +50,50 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def collect_records(assets_dir: Path, execute: bool) -> list[tuple[int, str, Path, ClientLogo | None]]:
+    records: list[tuple[int, str, Path, ClientLogo | None]] = []
+    for order, (name, filename) in enumerate(LOGOS, start=1):
+        file_path = assets_dir / filename
+        if not file_path.is_file():
+            print(f"Image missing (skipped): {file_path}", file=sys.stderr)
+            continue
+        existing = ClientLogo.objects.filter(nombre=name).first() if execute else None
+        records.append((order, name, file_path, existing))
+        action = "update" if records[-1][3] else "create"
+        print(f"Would {action} client logo: {name} ({filename})")
+    return records
+
+
+def configured_storage() -> StorageService | None:
+    storage = StorageService()
+    if not storage._enabled:  # noqa: SLF001 - explicit guard before mutations
+        print("Supabase Storage is not configured.", file=sys.stderr)
+        return None
+    return storage
+
+
+def publish_logo(
+    service: ClientLogoService,
+    order: int,
+    name: str,
+    file_path: Path,
+    existing: ClientLogo | None,
+) -> None:
+    if existing and existing.logo_url:
+        service.edit_logo(existing.id, {"orden": order, "activo": True})
+        print(f"Updated order for existing logo: {name}")
+        return
+    with file_path.open("rb") as image_file:
+        payload = {"nombre": name, "orden": order, "activo": True}
+        uploaded = File(image_file, name=file_path.name)
+        if existing:
+            service.edit_logo(existing.id, {**payload, "logo": uploaded})
+            print(f"Uploaded missing image for existing logo: {name}")
+            return
+        service.create_logo({**payload, "logo": uploaded})
+        print(f"Created and uploaded client logo: {name}")
+
+
 def main() -> int:
     args = parse_args()
     assets_dir: Path = args.assets_dir
@@ -57,40 +101,16 @@ def main() -> int:
         print(f"Assets directory not found: {assets_dir}", file=sys.stderr)
         return 2
 
-    records: list[tuple[int, str, Path, ClientLogo | None]] = []
-    for order, (name, filename) in enumerate(LOGOS, start=1):
-        file_path = assets_dir / filename
-        if not file_path.is_file():
-            print(f"Image missing (skipped): {file_path}", file=sys.stderr)
-            continue
-        existing = ClientLogo.objects.filter(nombre=name).first() if args.execute else None
-        records.append((order, name, file_path, existing))
-        action = "update" if records[-1][3] else "create"
-        print(f"Would {action} client logo: {name} ({filename})")
-
+    records = collect_records(assets_dir, args.execute)
     if not args.execute:
         return 0
 
-    storage = StorageService()
-    if not storage._enabled:  # noqa: SLF001 - explicit guard before mutations
-        print("Supabase Storage is not configured.", file=sys.stderr)
+    storage = configured_storage()
+    if storage is None:
         return 3
     service = ClientLogoService(storage=storage)
-
-    for order, name, file_path, existing in records:
-        if existing and existing.logo_url:
-            service.edit_logo(existing.id, {"orden": order, "activo": True})
-            print(f"Updated order for existing logo: {name}")
-            continue
-        with file_path.open("rb") as image_file:
-            payload = {"nombre": name, "orden": order, "activo": True}
-            uploaded = File(image_file, name=file_path.name)
-            if existing:
-                service.edit_logo(existing.id, {**payload, "logo": uploaded})
-                print(f"Uploaded missing image for existing logo: {name}")
-            else:
-                service.create_logo({**payload, "logo": uploaded})
-                print(f"Created and uploaded client logo: {name}")
+    for record in records:
+        publish_logo(service, *record)
     return 0
 
 

@@ -22,6 +22,9 @@ from apps.tickets.services.storage_name import storage_filename
 from core.exceptions.domain_exceptions import ServiceNotFound
 
 
+SERVICE_NOT_FOUND_MESSAGE = "El servicio no existe."
+
+
 class CatalogService(ICatalogClientView, ICatalogAdminView):
 
     def __init__(
@@ -59,7 +62,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
 
     def edit_service(self, service_id: int, data: dict) -> dict:
         if self._repo.get_by_id(service_id) is None:
-            raise ServiceNotFound("El servicio no existe.")
+            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
         data = dict(data)
         imagen = data.pop("imagen", None)
         if data:
@@ -72,7 +75,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
     def toggle_active(self, service_id: int) -> dict:
         service = self._repo.get_by_id(service_id)
         if service is None:
-            raise ServiceNotFound("El servicio no existe.")
+            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
         service = self._repo.update(service_id, {"activo": not service.activo})
         return self._detail(service)
 
@@ -81,7 +84,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
     def add_service_image(self, service_id: int, file) -> dict:
         service = self._repo.get_by_id(service_id)
         if service is None:
-            raise ServiceNotFound("El servicio no existe.")
+            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
         orden = self._repo.get_next_order(service_id)
         path = f"services/{service_id}/gallery/{storage_filename(getattr(file, 'name', 'imagen'))}"
         url = self._storage.upload(file, path) if self._storage is not None else ""

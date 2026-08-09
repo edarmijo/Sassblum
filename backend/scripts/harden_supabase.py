@@ -36,7 +36,7 @@ STATEMENTS = (
 )
 
 
-def main() -> int:
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true", help="Apply the listed statements.")
     args = parser.parse_args()
@@ -44,7 +44,7 @@ def main() -> int:
     for statement in STATEMENTS:
         print(statement + ";")
     if not args.execute:
-        return 0
+        return
 
     with connection.cursor() as cursor:
         for statement in STATEMENTS:
@@ -61,8 +61,5 @@ def main() -> int:
         print(f"function search paths: {cursor.fetchall()}")
         cursor.execute("SELECT extnamespace::regnamespace FROM pg_extension WHERE extname = 'citext'")
         print(f"citext schema: {cursor.fetchone()[0]}")
-    return 0
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
