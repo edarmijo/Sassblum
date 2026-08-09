@@ -36,6 +36,16 @@ class SocketClient {
   private backoff = 1_000
   private retries = 0
   private shouldReconnect = false
+  private isPageFrozen = false
+  private reconnectTimer: number | null = null
+
+  constructor() {
+    // A WebSocket keeps a page out of the Back-Forward Cache unless it is
+    // explicitly closed. Close it while the page is frozen and create a fresh
+    // transport when the user returns with the browser navigation controls.
+    window.addEventListener('pagehide', this.handlePageHide)
+    window.addEventListener('pageshow', this.handlePageShow)
+  }
 
   /** Open the connection with the user's access token. Idempotent. */
   connect(token: string): void {
@@ -46,6 +56,7 @@ class SocketClient {
   }
 
   private open(): void {
+    if (this.isPageFrozen) return
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return
 
     const urlObj = new URL('/ws/notifications/', WS_BASE)
@@ -69,7 +80,7 @@ class SocketClient {
 
     this.socket.onclose = () => {
       this.socket = null
-      if (!this.shouldReconnect) return
+      if (!this.shouldReconnect || this.isPageFrozen) return
       this.retries += 1
       if (this.retries >= MAX_RETRIES) {
         // El servidor no ofrece WS ahora mismo (p. ej. sin Redis). La app sigue
@@ -77,7 +88,10 @@ class SocketClient {
         this.shouldReconnect = false
         return
       }
-      setTimeout(() => this.open(), this.backoff)
+      this.reconnectTimer = window.setTimeout(() => {
+        this.reconnectTimer = null
+        this.open()
+      }, this.backoff)
       this.backoff = Math.min(this.backoff * 2, MAX_BACKOFF_MS)
     }
 
@@ -89,8 +103,32 @@ class SocketClient {
   /** Close the connection and stop reconnecting. */
   disconnect(): void {
     this.shouldReconnect = false
+    this.clearReconnectTimer()
     this.socket?.close()
     this.socket = null
+  }
+
+  private handlePageHide = (event: PageTransitionEvent): void => {
+    if (!event.persisted) return
+    this.isPageFrozen = true
+    this.clearReconnectTimer()
+    this.socket?.close()
+    this.socket = null
+  }
+
+  private handlePageShow = (event: PageTransitionEvent): void => {
+    if (!event.persisted) return
+    this.isPageFrozen = false
+    if (this.shouldReconnect && this.token) {
+      this.retries = 0
+      this.open()
+    }
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer === null) return
+    window.clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = null
   }
 
   /** Subscribe to a server event. Returns an unsubscribe function. */
