@@ -10,6 +10,7 @@ SOLID: DIP · SRP · LSP · OCP
 from __future__ import annotations
 
 import threading
+from urllib.parse import urlparse
 
 from apps.gallery.repositories import ProjectRepository
 from apps.tickets.interfaces import IStorageService
@@ -67,6 +68,13 @@ class GalleryService:
         project = self._repo.update(project_id, {"activo": not project.activo})
         return self._detail(project)
 
+    def delete_project(self, project_id: int) -> None:
+        project = self._repo.get_by_id(project_id)
+        if project is None:
+            raise ProjectNotFound("El proyecto no existe.")
+        self._delete_managed_file(project.imagen_url, f"gallery/{project_id}/")
+        self._repo.delete(project_id)
+
     # ── Image upload (Strategy via IStorageService) ────────────────────────────
 
     def _maybe_attach_image(self, project, imagen):
@@ -77,6 +85,25 @@ class GalleryService:
         if not url:
             return project
         return self._repo.update(project.id, {"imagen_url": url})
+
+    def _delete_managed_file(self, url: str, allowed_prefix: str) -> None:
+        if self._storage is None:
+            return
+        path = self._managed_storage_path(url, allowed_prefix)
+        if path is not None:
+            self._storage.delete(path)
+
+    @staticmethod
+    def _managed_storage_path(url: str, allowed_prefix: str) -> str | None:
+        public_marker = "/object/public/"
+        storage_path = urlparse(url).path
+        if public_marker not in storage_path:
+            return None
+        _, _, bucket_and_object = storage_path.partition(public_marker)
+        _, separator, object_path = bucket_and_object.partition("/")
+        if not separator or not object_path.startswith(allowed_prefix):
+            return None
+        return object_path
 
     # ── Serialization helpers ──────────────────────────────────────────────────
 

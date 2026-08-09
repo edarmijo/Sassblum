@@ -58,6 +58,11 @@ class ICatalogAdminView(ABC):
         ...
 
     @abstractmethod
+    def delete_service(self, service_id: int) -> None:
+        """Delete an existing service and its managed media."""
+        ...
+
+    @abstractmethod
     def add_service_image(self, service_id: int, file) -> dict:
         """
         Upload a gallery image for a service via IStorageService.

@@ -11,6 +11,7 @@ Endpoints:
     POST   /api/servicios/admin                        → ServiceAdminView.post   (IsAdmin)
     PATCH  /api/servicios/admin/<id>                   → ServiceAdminView.patch  (IsAdmin)
     PATCH  /api/servicios/admin/<id>?action=toggle     → toggle           (IsAdmin)
+    DELETE /api/servicios/admin/<id>                   → ServiceAdminView.delete (IsAdmin)
     POST   /api/servicios/admin/<id>/imagenes/         → ServiceImageAdminView.post   (IsAdmin)
     DELETE /api/servicios/admin/imagenes/<img_id>/     → ServiceImageAdminView.delete (IsAdmin)
 
@@ -26,7 +27,7 @@ from rest_framework.views import APIView
 
 from apps.catalog.serializers import ServiceCreateSerializer, ServiceEditSerializer
 from apps.catalog.services import get_catalog_service
-from core.exceptions.domain_exceptions import ServiceNotFound
+from core.exceptions.domain_exceptions import ServiceHasTickets, ServiceNotFound
 from core.permissions import IsAdmin
 
 
@@ -91,6 +92,15 @@ class ServiceAdminView(APIView):
         except ServiceNotFound as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(updated, status=status.HTTP_200_OK)
+
+    def delete(self, request, service_id: int):
+        try:
+            get_catalog_service().delete_service(service_id)
+        except ServiceNotFound as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        except ServiceHasTickets as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _toggle(self, service_id: int):
         try:

@@ -1,4 +1,4 @@
-import { Pencil, Power } from 'lucide-react'
+import { Pencil, Power, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './card'
 import { Button } from './button'
 import { Badge } from './badge'
@@ -11,8 +11,10 @@ interface AdminEntityCardProps {
   imagenUrl?: string
   activo: boolean
   resaltada?: boolean
+  actionPending?: boolean
   onEdit: () => void
   onToggle: () => void
+  onDelete: () => void
 }
 
 /**
@@ -21,7 +23,7 @@ interface AdminEntityCardProps {
  * DRY: compartida por CatalogAdminPanel y GalleryAdminPanel (eran espejos).
  */
 export function AdminEntityCard({
-  titulo, descripcion, etiqueta, imagenUrl, activo, resaltada = false, onEdit, onToggle,
+  titulo, descripcion, etiqueta, imagenUrl, activo, resaltada = false, actionPending = false, onEdit, onToggle, onDelete,
 }: Readonly<AdminEntityCardProps>) {
   return (
     <Card className={`overflow-hidden transition-opacity ${resaltada ? 'ring-2 ring-brand-cyan' : ''}`}>
@@ -38,13 +40,14 @@ export function AdminEntityCard({
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-widest text-brand-cyan">{etiqueta}</span>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap justify-end gap-1.5">
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="h-7 px-2 text-xs"
               onClick={onEdit}
+              disabled={actionPending}
               aria-label={`Editar ${titulo}`}
             >
               <Pencil className="h-3 w-3 mr-1" />Editar
@@ -53,11 +56,23 @@ export function AdminEntityCard({
               type="button"
               variant="outline"
               size="sm"
-              className={`h-7 px-2 text-xs ${activo ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
+              className="h-7 px-2 text-xs"
               onClick={onToggle}
-              aria-label={activo ? `Desactivar ${titulo}` : `Activar ${titulo}`}
+              disabled={actionPending}
+              aria-label={activo ? `Ocultar ${titulo}` : `Mostrar ${titulo}`}
             >
-              <Power className="h-3 w-3 mr-1" />{activo ? 'Off' : 'On'}
+              <Power className="h-3 w-3 mr-1" />{activo ? 'Ocultar' : 'Mostrar'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+              onClick={onDelete}
+              disabled={actionPending}
+              aria-label={`Eliminar ${titulo}`}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />Eliminar
             </Button>
           </div>
         </div>

@@ -31,6 +31,14 @@ class ServiceNotFound(DomainException):
     """
 
 
+class ServiceHasTickets(DomainException):
+    """Raised when an admin tries to remove a service referenced by tickets.
+
+    The historical ticket record must be preserved, so the administrator can
+    hide the service instead of deleting it.
+    """
+
+
 class InvalidTransitionError(DomainException):
     """
     Raised by TicketStateMachine when an attempted state transition is not in TRANSITIONS.

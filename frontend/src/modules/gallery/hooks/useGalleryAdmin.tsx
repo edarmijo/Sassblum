@@ -60,7 +60,11 @@ export function useGalleryAdmin() {
     await apiClient.patch(`/proyectos/admin/${id}?action=toggle`)
   }, [])
 
+  const deleteProject = useCallback(async (id: number) => {
+    await apiClient.delete(`/proyectos/admin/${id}`)
+  }, [])
+
   useEffect(() => { load().catch(console.error) }, [load])
 
-  return { projects, loading, load, createProject, editProject, toggleProject }
+  return { projects, loading, load, createProject, editProject, toggleProject, deleteProject }
 }

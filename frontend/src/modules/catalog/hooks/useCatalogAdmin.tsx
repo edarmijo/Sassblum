@@ -70,7 +70,7 @@ export function useCatalogAdmin() {
       form: ServiceForm,
       imagen?: File | null,
     ) => {
-      await apiClient.patch(`/servicios/admin/${id}`, toServiceFormData(form, imagen), {
+      await apiClient.patch(`/servicios/admin/${id}/`, toServiceFormData(form, imagen), {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
     },
@@ -78,7 +78,11 @@ export function useCatalogAdmin() {
   )
 
   const toggleService = useCallback(async (id: number) => {
-    await apiClient.patch(`/servicios/admin/${id}?action=toggle`)
+    await apiClient.patch(`/servicios/admin/${id}/?action=toggle`)
+  }, [])
+
+  const deleteService = useCallback(async (id: number) => {
+    await apiClient.delete(`/servicios/admin/${id}/`)
   }, [])
 
   const addServiceImage = useCallback(async (serviceId: number, file: File) => {
@@ -107,6 +111,7 @@ export function useCatalogAdmin() {
     createService,
     editService,
     toggleService,
+    deleteService,
     addServiceImage,
     deleteServiceImage,
   }

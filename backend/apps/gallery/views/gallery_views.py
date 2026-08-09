@@ -68,6 +68,13 @@ class ProjectAdminView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(updated, status=status.HTTP_200_OK)
 
+    def delete(self, request, project_id: int):
+        try:
+            get_gallery_service().delete_project(project_id)
+        except ProjectNotFound as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def _toggle(self, project_id: int):
         try:
             updated = get_gallery_service().toggle_active(project_id)

@@ -20,10 +20,11 @@ const EMPTY_FORM = {
 }
 
 export function CatalogAdminPanel() {
-  const { services, loading, load, createService, editService, toggleService, addServiceImage, deleteServiceImage } =
+  const { services, loading, load, createService, editService, toggleService, deleteService, addServiceImage, deleteServiceImage } =
     useCatalogAdmin()
 
   const [galleryLoading, setGalleryLoading] = useState(false)
+  const [actionServiceId, setActionServiceId] = useState<number | null>(null)
 
   const {
     submitting,
@@ -36,7 +37,6 @@ export function CatalogAdminPanel() {
     resetForm,
     startEdit,
     handleSubmit,
-    handleToggle,
   } = useAdminEntityPanel<typeof EMPTY_FORM, BeService>({
     emptyForm: EMPTY_FORM,
     formFromEntity: (s) => ({
@@ -70,7 +70,6 @@ export function CatalogAdminPanel() {
       toast.error('No se pudo agregar la imagen')
     } finally {
       setGalleryLoading(false)
-      // reset the file input so the same file can be uploaded again if needed
       e.target.value = ''
     }
   }
@@ -101,11 +100,38 @@ export function CatalogAdminPanel() {
     </>
   )
 
-  // Determine which service is currently being edited (for the gallery section)
   const serviceBeingEdited: BeService | undefined =
-    isEditing && editingId !== null ? services.find((s) => s.id === editingId) : undefined
-
+    isEditing && editingId !== null ? services.find((service) => service.id === editingId) : undefined
   const galleryImages: BeServiceImage[] = serviceBeingEdited?.imagenes ?? []
+
+  const handleServiceToggle = async (service: BeService) => {
+    setActionServiceId(service.id)
+    try {
+      await toggleService(service.id)
+      await load()
+      toast.success(service.activo ? 'Servicio ocultado' : 'Servicio publicado', { description: service.nombre })
+    } catch {
+      toast.error('No se pudo cambiar la visibilidad del servicio')
+    } finally {
+      setActionServiceId(null)
+    }
+  }
+
+  const handleServiceDelete = async (service: BeService) => {
+    if (!window.confirm(`¿Eliminar el servicio "${service.nombre}"? Esta acción no se puede deshacer.`)) return
+
+    setActionServiceId(service.id)
+    try {
+      await deleteService(service.id)
+      if (editingId === service.id) resetForm()
+      await load()
+      toast.success('Servicio eliminado', { description: service.nombre })
+    } catch {
+      toast.error('No se pudo eliminar el servicio')
+    } finally {
+      setActionServiceId(null)
+    }
+  }
 
   let servicesList: ReactNode
   if (loading) {
@@ -125,8 +151,10 @@ export function CatalogAdminPanel() {
               imagenUrl={s.imagen_url}
               activo={s.activo}
               resaltada={editingId === s.id}
+              actionPending={actionServiceId !== null}
               onEdit={() => startEdit(s)}
-              onToggle={() => void handleToggle(s.id)}
+              onToggle={() => void handleServiceToggle(s)}
+              onDelete={() => void handleServiceDelete(s)}
             />
           ))}
         </div>

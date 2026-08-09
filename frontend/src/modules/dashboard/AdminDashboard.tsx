@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket as TicketIcon, Users, BarChart3, Package, FileText, Images, BadgeCheck } from 'lucide-react'
+import { Ticket as TicketIcon, Users, BarChart3, Package, Images, BadgeCheck, ImagePlus } from 'lucide-react'
 import { DashboardTabs, DashboardTabsList, DashboardTabsTrigger, DashboardTabsContent, DashboardTabsStyle } from '../../core/ui/DashboardTabs'
 import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDescription, DashboardCardContent } from '../../core/ui/DashboardCard'
 import { Skeleton } from '../../core/ui/skeleton'
@@ -16,7 +16,7 @@ import { reportsService } from '../reports/services/ReportsService'
 import { CatalogAdminPanel } from '../catalog/components/CatalogAdminPanel'
 import { GalleryAdminPanel } from '../gallery/components/GalleryAdminPanel'
 import { ClientLogosAdminPage } from '../clients/pages/ClientLogosAdminPage'
-import { ContractTemplate } from '../contracts/components/ContractTemplate'
+import { ServiceDetailAdminPanel } from '../catalog/components/ServiceDetailAdminPanel'
 import type { TicketFilterOptions } from '../tickets/interfaces/ITicketService'
 
 export function AdminDashboard() {
@@ -46,7 +46,7 @@ export function AdminDashboard() {
               <DashboardTabsTrigger value="gallery"><Images className="h-4 w-4 mr-2" />Galería</DashboardTabsTrigger>
               <DashboardTabsTrigger value="clients"><BadgeCheck className="h-4 w-4 mr-2" />Clientes</DashboardTabsTrigger>
               <DashboardTabsTrigger value="reports"><BarChart3 className="h-4 w-4 mr-2" />Reportes</DashboardTabsTrigger>
-              <DashboardTabsTrigger value="contracts"><FileText className="h-4 w-4 mr-2" />Contratos</DashboardTabsTrigger>
+              <DashboardTabsTrigger value="service-details"><ImagePlus className="h-4 w-4 mr-2" />Detalle de servicios</DashboardTabsTrigger>
             </DashboardTabsList>
 
             <DashboardTabsContent value="tickets">
@@ -81,12 +81,8 @@ export function AdminDashboard() {
               </ReportsProvider>
             </DashboardTabsContent>
 
-            <DashboardTabsContent value="contracts">
-              <DashboardCard>
-                <DashboardCardContent className="pt-6">
-                  <ContractTemplate />
-                </DashboardCardContent>
-              </DashboardCard>
+            <DashboardTabsContent value="service-details">
+              <ServiceDetailAdminPanel />
             </DashboardTabsContent>
           </DashboardTabs>
         </FocusReveal>

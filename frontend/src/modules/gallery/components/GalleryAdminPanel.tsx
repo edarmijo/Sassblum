@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Plus, Pencil } from 'lucide-react'
+import { toast } from 'sonner'
 import { useGalleryAdmin, type BeProject } from '../hooks/useGalleryAdmin'
 import { useAdminEntityPanel } from '../../../core/hooks/useAdminEntityPanel'
 import { Input } from '../../../core/ui/input'
@@ -11,9 +13,10 @@ import { AdminImagePicker, AdminFormActions, AdminFormCard, AdminEntityLayout } 
 const EMPTY_FORM = { titulo: '', descripcion: '', tag: '', imagen_url: '' }
 
 export function GalleryAdminPanel() {
-  const { projects, loading, load, createProject, editProject, toggleProject } = useGalleryAdmin()
+  const { projects, loading, load, createProject, editProject, toggleProject, deleteProject } = useGalleryAdmin()
+  const [actionProjectId, setActionProjectId] = useState<number | null>(null)
 
-  const { submitting, form, setForm, imagen, setImagen, editingId, isEditing, resetForm, startEdit, handleSubmit, handleToggle } =
+  const { submitting, form, setForm, imagen, setImagen, editingId, isEditing, resetForm, startEdit, handleSubmit } =
     useAdminEntityPanel<typeof EMPTY_FORM, BeProject>({
       emptyForm: EMPTY_FORM,
       formFromEntity: (p) => ({ titulo: p.titulo, descripcion: p.descripcion, tag: p.tag, imagen_url: p.imagen_url ?? '' }),
@@ -29,6 +32,35 @@ export function GalleryAdminPanel() {
   const submitContent = isEditing
     ? <><Pencil className="h-4 w-4 mr-2" />Actualizar</>
     : <><Plus className="h-4 w-4 mr-2" />Crear proyecto</>
+
+  const handleProjectToggle = async (project: BeProject) => {
+    setActionProjectId(project.id)
+    try {
+      await toggleProject(project.id)
+      await load()
+      toast.success(project.activo ? 'Proyecto ocultado' : 'Proyecto publicado', { description: project.titulo })
+    } catch {
+      toast.error('No se pudo cambiar la visibilidad del proyecto')
+    } finally {
+      setActionProjectId(null)
+    }
+  }
+
+  const handleProjectDelete = async (project: BeProject) => {
+    if (!window.confirm(`¿Eliminar el proyecto "${project.titulo}"? Esta acción no se puede deshacer.`)) return
+
+    setActionProjectId(project.id)
+    try {
+      await deleteProject(project.id)
+      if (editingId === project.id) resetForm()
+      await load()
+      toast.success('Proyecto eliminado', { description: project.titulo })
+    } catch {
+      toast.error('No se pudo eliminar el proyecto')
+    } finally {
+      setActionProjectId(null)
+    }
+  }
 
   let projectsList: ReactNode
   if (loading) {
@@ -47,8 +79,10 @@ export function GalleryAdminPanel() {
             imagenUrl={p.imagen_url}
             activo={p.activo}
             resaltada={editingId === p.id}
+            actionPending={actionProjectId !== null}
             onEdit={() => startEdit(p)}
-            onToggle={() => void handleToggle(p.id)}
+            onToggle={() => void handleProjectToggle(p)}
+            onDelete={() => void handleProjectDelete(p)}
           />
         ))}
       </div>

@@ -12,14 +12,14 @@ SOLID: DIP · SRP · LSP · ISP · OCP
 
 from __future__ import annotations
 
-import re
 import threading
+from urllib.parse import urlparse
 
 from apps.catalog.interfaces import ICatalogClientView, ICatalogAdminView
 from apps.catalog.repositories import ServiceRepository
 from apps.tickets.interfaces import IStorageService
 from apps.tickets.services.storage_name import storage_filename
-from core.exceptions.domain_exceptions import ServiceNotFound
+from core.exceptions.domain_exceptions import ServiceHasTickets, ServiceNotFound
 
 
 SERVICE_NOT_FOUND_MESSAGE = "El servicio no existe."
@@ -79,6 +79,22 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         service = self._repo.update(service_id, {"activo": not service.activo})
         return self._detail(service)
 
+    def delete_service(self, service_id: int) -> None:
+        service = self._repo.get_by_id(service_id)
+        if service is None:
+            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
+        if service.tickets.exists():
+            raise ServiceHasTickets(
+                "No se puede eliminar un servicio con tickets asociados. "
+                "OcÃºltalo para conservar el historial."
+            )
+
+        urls = [service.imagen_url, *(image.imagen_url for image in service.imagenes.all())]
+        self._delete_managed_files(urls, f"services/{service_id}/")
+        # ServiceImage uses CASCADE, so dependent gallery rows are deleted with
+        # the parent service in a single database operation.
+        self._repo.delete(service_id)
+
     # ── Gallery image management (ICatalogAdminView) ───────────────────────────
 
     def add_service_image(self, service_id: int, file) -> dict:
@@ -97,10 +113,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         img = self._repo.get_image_by_id(image_id)
         if img is None:
             return
-        if self._storage is not None:
-            m = re.search(r'/object/public/[^/]+/(.+)$', img.imagen_url)
-            if m:
-                self._storage.delete(m.group(1))
+        self._delete_managed_files([img.imagen_url], f"services/{img.servicio_id}/")
         self._repo.delete_image(image_id)
 
     # ── Image upload (Strategy via IStorageService) ────────────────────────────
@@ -113,6 +126,27 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         if not url:
             return service
         return self._repo.update(service.id, {"imagen_url": url})
+
+    def _delete_managed_files(self, urls: list[str], allowed_prefix: str) -> None:
+        """Delete only Supabase objects owned by this service."""
+        if self._storage is None:
+            return
+        for url in urls:
+            path = self._managed_storage_path(url, allowed_prefix)
+            if path is not None:
+                self._storage.delete(path)
+
+    @staticmethod
+    def _managed_storage_path(url: str, allowed_prefix: str) -> str | None:
+        public_marker = "/object/public/"
+        storage_path = urlparse(url).path
+        if public_marker not in storage_path:
+            return None
+        _, _, bucket_and_object = storage_path.partition(public_marker)
+        _, separator, object_path = bucket_and_object.partition("/")
+        if not separator or not object_path.startswith(allowed_prefix):
+            return None
+        return object_path
 
     # ── Serialization helpers ──────────────────────────────────────────────────
 
