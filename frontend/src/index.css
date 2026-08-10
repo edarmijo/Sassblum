@@ -235,10 +235,13 @@ html {
 ::-webkit-scrollbar-track { background: var(--brand-bg); }
 ::-webkit-scrollbar-thumb { background: var(--brand-accent); border-radius: 3px; }
 
-/* Oculta el cursor nativo solo en equipos con mouse real (donde se muestra el
-   cursor personalizado de CustomCursor); en táctil no afecta. */
-@media (hover: hover) and (pointer: fine) {
-  *, *::before, *::after { cursor: none !important; }
+/* El cursor nativo solo se oculta cuando CustomCursor confirma que su reemplazo
+   está activo. Si JS pierde foco, se desmonta o falla, este queda como fallback. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html.custom-cursor-active,
+  html.custom-cursor-active *,
+  html.custom-cursor-active *::before,
+  html.custom-cursor-active *::after { cursor: none !important; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
