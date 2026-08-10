@@ -40,6 +40,16 @@ class TicketRepository(BaseRepository[Ticket]):
             .first()
         )
 
+    def get_by_id_for_update(self, entity_id: int) -> Optional[Ticket]:
+        """Lock a ticket row while an assignment transaction decides its outcome."""
+        return (
+            Ticket.objects
+            .select_for_update(of=("self",))
+            .select_related("servicio", "cliente", "asignado")
+            .filter(pk=entity_id)
+            .first()
+        )
+
     def get_all(self, filters: dict | None = None) -> list[Ticket]:
         qs = Ticket.objects.select_related("servicio", "cliente", "asignado")
         if filters:

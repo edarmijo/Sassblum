@@ -48,6 +48,15 @@ class TicketEvent(models.Model):
         verbose_name="autor",
         help_text="Null = evento del sistema (p. ej. migración de datos legados).",
     )
+    asignado_anterior = models.ForeignKey(
+        "authentication.User",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="reasignaciones_salientes",
+        verbose_name="trabajador anterior",
+        help_text="Solo se completa para conservar la auditoría de una reasignación.",
+    )
 
     # ── Event data ────────────────────────────────────────────────────────────
     tipo_evento = models.CharField(

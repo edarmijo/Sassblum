@@ -11,9 +11,11 @@ import { Alert, AlertDescription } from '../../../../core/ui/alert'
 import {
   Dialog, DialogContent, DialogTitle, DialogDescription,
 } from '../../../../core/ui/dialog'
+import { executeAssignment, type AssignmentMode } from './assignmentOperation'
 
 interface AssignModalProps {
   ticketId: string
+  mode: AssignmentMode
   onClose: () => void
   onAssigned?: (ticket: TicketDetail) => void
 }
@@ -23,11 +25,12 @@ interface AssignModalProps {
  * DIP: ITicketAdminActions (assign) + IUserAdminActions (worker list).
  * H#8 (audit): Uses Radix Dialog for automatic focus trap + keyboard handling.
  */
-export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignModalProps>) {
+export function AssignModal({ ticketId, mode, onClose, onAssigned }: Readonly<AssignModalProps>) {
   const [workers, setWorkers] = useState<AdminUser[]>([])
   const [workerId, setWorkerId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isReassignment = mode === 'reassign'
 
   useEffect(() => {
     void userAdminService.listUsers({ role: 'worker', estado: 'activo' }).then(setWorkers)
@@ -38,12 +41,17 @@ export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignMo
     setBusy(true)
     setError(null)
     try {
-      const updatedTicket = await ticketAdminService.assignTicket(ticketId, workerId)
+      const updatedTicket = await executeAssignment(
+        ticketAdminService,
+        mode,
+        ticketId,
+        workerId,
+      )
       onAssigned?.(updatedTicket)
       onClose()
     } catch (err: unknown) {
       const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setError(d ?? 'No se pudo asignar.')
+      setError(d ?? `No se pudo ${isReassignment ? 'reasignar' : 'asignar'}.`)
     } finally {
       setBusy(false)
     }
@@ -52,8 +60,10 @@ export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignMo
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-sm">
-        <DialogTitle>Asignar ticket</DialogTitle>
-        <DialogDescription>Selecciona un trabajador activo para este ticket.</DialogDescription>
+        <DialogTitle>{isReassignment ? 'Reasignar ticket' : 'Asignar ticket'}</DialogTitle>
+        <DialogDescription>
+          Selecciona el trabajador activo que se hará cargo de este ticket.
+        </DialogDescription>
 
         <div className="space-y-4 py-2">
           <Select value={workerId} onValueChange={setWorkerId}>
@@ -74,7 +84,9 @@ export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignMo
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
             <Button type="button" variant="brand" disabled={!workerId || busy} onClick={() => void assign()}>
-              {busy ? 'Asignando…' : 'Asignar'}
+              {busy
+                ? (isReassignment ? 'Reasignando…' : 'Asignando…')
+                : (isReassignment ? 'Reasignar' : 'Asignar')}
             </Button>
           </div>
         </div>

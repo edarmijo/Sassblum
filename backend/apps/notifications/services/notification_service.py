@@ -77,6 +77,9 @@ def _resolve_recipients(event: dict) -> list:
     if tipo in ("asignacion", "reasignacion", "cambio_estado", "comentario"):
         _add_user_by_id(recipients, event.get("asignado_id"))
 
+    if tipo == "reasignacion":
+        _add_user_by_id(recipients, event.get("asignado_anterior_id"))
+
     # Assignment actions need an explicit confirmation for the administrator
     # who performed them. The set keeps the recipient list deduplicated.
     if tipo in ("asignacion", "reasignacion"):

@@ -161,3 +161,32 @@ class TestResolveRecipients:
             recipients = mod._resolve_recipients(event)
 
         assert {r.id for r in recipients} == {5, 7, 9}
+
+    def test_reasignacion_includes_previous_and_new_workers(self):
+        """Reassignment informs every participant, including the displaced worker."""
+        from apps.notifications.services import notification_service as mod
+
+        cliente = make_user(5)
+        previous_worker = make_user(6)
+        new_worker = make_user(7)
+        admin = make_user(9)
+
+        fake_user_model = MagicMock()
+        users = {5: cliente, 6: previous_worker, 7: new_worker, 9: admin}
+        fake_user_model.objects.get.side_effect = lambda id: users[id]
+        fake_user_model.objects.filter.return_value = []
+        fake_user_model.Role.ADMIN = "admin"
+        fake_user_model.Estado.ACTIVE = "activo"
+
+        patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
+        with patch.dict("sys.modules", patched):
+            event = {
+                "tipo_evento": "reasignacion",
+                "cliente_id": 5,
+                "asignado_anterior_id": 6,
+                "asignado_id": 7,
+                "autor_id": 9,
+            }
+            recipients = mod._resolve_recipients(event)
+
+        assert {recipient.id for recipient in recipients} == {5, 6, 7, 9}

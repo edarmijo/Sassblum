@@ -116,7 +116,7 @@ export interface ITicketService {
   /** Assign a Nuevo ticket to a worker (transitions to EnProceso). */
   assignTicket(id: string, workerId: string): Promise<TicketDetail>
 
-  /** Reassign an EnProceso ticket to a different worker. */
+  /** Reassign a ticket without changing its current operational state. */
   reassignTicket(id: string, newWorkerId: string): Promise<TicketDetail>
 
   /** Return all tickets in the system (admin view). */

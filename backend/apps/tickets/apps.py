@@ -67,6 +67,7 @@ class TicketsConfig(AppConfig):
                 "autor_id":        instance.autor_id,
                 "cliente_id":      ticket.cliente_id,
                 "asignado_id":     ticket.asignado_id,
+                "asignado_anterior_id": instance.asignado_anterior_id,
             }
 
             try:

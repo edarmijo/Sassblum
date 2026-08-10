@@ -13,103 +13,32 @@ import type {
   TicketEvent,
   TicketFilterOptions,
   TicketEstado,
-  TicketPrioridad,
-  AttachmentMeta,
 } from '../interfaces/ITicketService'
-
-interface BeSummary {
-  id: number
-  numero: string
-  asunto: string
-  estado: string
-  prioridad: string
-  servicio_nombre: string
-  creado_en: string
-}
-interface BeEvent {
-  id: number
-  tipo_evento: string
-  estado_anterior: string | null
-  estado_nuevo: string | null
-  comentario: string
-  autor_nombre: string
-  creado_en: string
-}
-interface BeAttachment {
-  id: number
-  nombre_archivo: string
-  url: string
-  tamaño_bytes: number
-  mime_type: string
-}
-interface BeDetail extends BeSummary {
-  descripcion: string
-  cliente_nombre: string
-  asignado_nombre: string | null
-  adjuntos: BeAttachment[]
-  eventos: BeEvent[]
-  actualizado_en: string
-}
-
-function mapSummary(t: BeSummary): TicketSummary {
-  return {
-    id: String(t.id),
-    numero: t.numero,
-    asunto: t.asunto,
-    estado: t.estado as TicketEstado,
-    prioridad: t.prioridad as TicketPrioridad,
-    servicioNombre: t.servicio_nombre,
-    creadoEn: t.creado_en,
-  }
-}
-function mapEvent(e: BeEvent): TicketEvent {
-  return {
-    id: String(e.id),
-    tipoEvento: e.tipo_evento,
-    estadoAnterior: (e.estado_anterior || null) as TicketEstado | null,
-    estadoNuevo: (e.estado_nuevo || null) as TicketEstado | null,
-    comentario: e.comentario,
-    autorNombre: e.autor_nombre,
-    creadoEn: e.creado_en,
-  }
-}
-function mapAttachment(a: BeAttachment): AttachmentMeta {
-  return {
-    id: String(a.id),
-    nombreArchivo: a.nombre_archivo,
-    url: a.url,
-    tamañoBytes: a.tamaño_bytes,
-    mimeType: a.mime_type,
-  }
-}
-function mapDetail(t: BeDetail): TicketDetail {
-  return {
-    ...mapSummary(t),
-    descripcion: t.descripcion,
-    clienteNombre: t.cliente_nombre,
-    asignadoNombre: t.asignado_nombre,
-    adjuntos: (t.adjuntos ?? []).map(mapAttachment),
-    eventos: (t.eventos ?? []).map(mapEvent),
-    actualizadoEn: t.actualizado_en,
-  }
-}
+import {
+  mapTicketDetail,
+  mapTicketEvent,
+  mapTicketSummary,
+  type BackendTicketDetail,
+  type BackendTicketEvent,
+  type BackendTicketSummary,
+} from './ticketMappers'
 
 class TicketService implements ITicketClientActions {
   /** H#3 (cliente): Cambiar estado de ticket con observación (worker/admin). */
   async updateStatus(id: string, newStatus: TicketEstado, comment: string): Promise<TicketDetail> {
-    const data = await apiClient.patch<BeDetail>(`/tickets/${id}/estado`, {
+    const data = await apiClient.patch<BackendTicketDetail>(`/tickets/${id}/estado`, {
       estado: newStatus,
       comentario: comment,
     })
-    return mapDetail(data)
+    return mapTicketDetail(data)
   }
 
   /** Agregar comentario sin cambiar estado (worker/admin). */
   async addComment(id: string, comment: string): Promise<TicketEvent> {
-    const data = await apiClient.post<BeEvent>(`/tickets/${id}/comentario`, {
+    const data = await apiClient.post<BackendTicketEvent>(`/tickets/${id}/comentario`, {
       comentario: comment,
     })
-    return mapEvent(data)
+    return mapTicketEvent(data)
   }
 
   async createTicket(payload: TicketCreatePayload): Promise<TicketDetail> {
@@ -120,10 +49,10 @@ class TicketService implements ITicketClientActions {
     form.append('prioridad', payload.prioridad)
     for (const file of payload.adjuntos ?? []) form.append('adjuntos', file)
 
-    const data = await apiClient.post<BeDetail>('/tickets/', form, {
+    const data = await apiClient.post<BackendTicketDetail>('/tickets/', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    return mapDetail(data)
+    return mapTicketDetail(data)
   }
 
   async getMyTickets(filters?: TicketFilterOptions): Promise<TicketSummary[]> {
@@ -135,13 +64,13 @@ class TicketService implements ITicketClientActions {
     if (filters?.fechaHasta) params.set('fecha_hasta', filters.fechaHasta)
     if (filters?.clienteId) params.set('cliente_id', filters.clienteId)
     if (filters?.asignadoId) params.set('asignado_id', filters.asignadoId)
-    const data = await apiClient.get<{ items: BeSummary[] }>(`/tickets/${querySuffix(params)}`)
-    return data.items.map(mapSummary)
+    const data = await apiClient.get<{ items: BackendTicketSummary[] }>(`/tickets/${querySuffix(params)}`)
+    return data.items.map(mapTicketSummary)
   }
 
   async getTicketDetail(id: string): Promise<TicketDetail> {
-    const data = await apiClient.get<BeDetail>(`/tickets/${id}`)
-    return mapDetail(data)
+    const data = await apiClient.get<BackendTicketDetail>(`/tickets/${id}`)
+    return mapTicketDetail(data)
   }
 }
 
