@@ -40,25 +40,25 @@ class TicketStateMachine:
     Encapsulates the ticket lifecycle.
 
     States: Nuevo · EnProceso · EnEspera · Resuelto · Cerrado
-    Terminal state: Cerrado (empty list → no outgoing transitions)
+
+    Nuevo is the pre-assignment state. Once assigned, staff can move freely
+    between the four operational states, including reopening Cerrado tickets.
     """
 
     # ── Transition map ────────────────────────────────────────────────────────
     # Key   = current state
-    # Value = list of reachable states (empty = terminal)
+    # Value = list of reachable states.
     #
     # Business rules encoded here:
     #   Nuevo     → EnProceso  (requires prior assignment — enforced in TicketService)
-    #   EnProceso → EnEspera | Resuelto
-    #   EnEspera  → EnProceso  (reactivated after client response)
-    #   Resuelto  → Cerrado    (client or worker confirms resolution)
-    #   Cerrado   → (none)     terminal — no further changes allowed
+    #   Operational states are freely interchangeable by worker/admin.
+    #   Self-transitions are accepted so saving a new audit comment does not fail.
     TRANSITIONS: dict[str, list[str]] = {
         "Nuevo":     ["EnProceso"],
-        "EnProceso": ["EnEspera", "Resuelto"],
-        "EnEspera":  ["EnProceso"],
-        "Resuelto":  ["Cerrado"],
-        "Cerrado":   [],
+        "EnProceso": ["EnProceso", "EnEspera", "Resuelto", "Cerrado"],
+        "EnEspera":  ["EnProceso", "EnEspera", "Resuelto", "Cerrado"],
+        "Resuelto":  ["EnProceso", "EnEspera", "Resuelto", "Cerrado"],
+        "Cerrado":   ["EnProceso", "EnEspera", "Resuelto", "Cerrado"],
     }
 
     # ── Public API ────────────────────────────────────────────────────────────
@@ -114,5 +114,5 @@ class TicketStateMachine:
 
     @classmethod
     def is_terminal(cls, state: str) -> bool:
-        """Return True if state has no outgoing transitions (i.e. Cerrado)."""
+        """Return True if a configured state has no outgoing transitions."""
         return cls.TRANSITIONS.get(state, None) == []

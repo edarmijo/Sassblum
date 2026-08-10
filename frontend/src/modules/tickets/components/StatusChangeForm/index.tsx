@@ -4,17 +4,12 @@ import { Loader2, MessageSquare } from 'lucide-react'
 import { Button } from '../../../../core/ui/button'
 import { Label } from '../../../../core/ui/label'
 import { Textarea } from '../../../../core/ui/textarea'
+import { apiError } from '../../../../infrastructure/http/apiError'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../../../../core/ui/select'
 import type { TicketEstado } from '../../interfaces/ITicketService'
-
-const AVAILABLE_STATES: { value: TicketEstado; label: string }[] = [
-  { value: 'EnProceso', label: 'En Proceso' },
-  { value: 'EnEspera', label: 'En Espera' },
-  { value: 'Resuelto', label: 'Resuelto' },
-  { value: 'Cerrado', label: 'Cerrado' },
-]
+import { getStatusOptions } from './statusOptions'
 
 interface StatusChangeFormProps {
   currentStatus: TicketEstado
@@ -33,6 +28,7 @@ export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: Readonly
   const [newStatus, setNewStatus] = useState<TicketEstado | ''>('')
   const [comment, setComment] = useState('')
   const [busy, setBusy] = useState(false)
+  const availableStates = getStatusOptions(currentStatus)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,8 +46,8 @@ export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: Readonly
       toast.success(`Estado cambiado a ${newStatus}`)
       setNewStatus('')
       setComment('')
-    } catch {
-      toast.error('No se pudo cambiar el estado')
+    } catch (err: unknown) {
+      toast.error(apiError(err, 'No se pudo cambiar el estado.'))
     } finally {
       setBusy(false)
     }
@@ -71,7 +67,7 @@ export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: Readonly
             <SelectValue placeholder="Selecciona un estado…" />
           </SelectTrigger>
           <SelectContent>
-            {AVAILABLE_STATES.filter((s) => s.value !== currentStatus).map((s) => (
+            {availableStates.map((s) => (
               <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
             ))}
           </SelectContent>

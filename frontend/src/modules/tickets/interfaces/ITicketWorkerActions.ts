@@ -29,6 +29,6 @@ export interface ITicketWorkerActions {
   /** HU-11: Add a comment without changing state. Returns the new TicketEvent. */
   addComment(id: string, comment: string): Promise<TicketEvent>
 
-  /** HU-12: Transition Resuelto → Cerrado (terminal). Requires comment (BR-35). */
+  /** HU-12: Set the ticket to Cerrado. It may be reopened later. Requires a comment. */
   closeTicket(id: string, comment: string): Promise<TicketDetail>
 }

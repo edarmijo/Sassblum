@@ -132,7 +132,7 @@ class TicketRepository(BaseRepository[Ticket]):
     def find_active_duplicate(self, cliente_id: int, asunto: str, servicio_id: int):
         """
         Return an existing active ticket with the same client + subject + service,
-        or None. An active ticket is one not in the terminal 'Cerrado' state.
+        or None. For reporting, an active ticket is one not currently in 'Cerrado'.
         """
         return (
             Ticket.objects

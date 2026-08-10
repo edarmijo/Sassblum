@@ -108,7 +108,7 @@ export interface ITicketService {
   /** Add a comment without changing state. */
   addComment(id: string, comment: string): Promise<TicketEvent>
 
-  /** Transition Resuelto → Cerrado. Requires comment. */
+  /** Set the ticket to Cerrado. It may be reopened later. Requires a comment. */
   closeTicket(id: string, comment: string): Promise<TicketDetail>
 
   // ── Administración (admin) — contratos para Sprint 4 ──────────────────────

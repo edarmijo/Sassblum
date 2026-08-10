@@ -7,10 +7,8 @@
  * Pattern: Strategy — TRANSITIONS map is a named policy; the whole object is injectable.
  * SOLID: DIP · OCP · LSP · SRP
  *
- * OCP extension (Sprint 4 — state 'Reabierto'):
- *   TRANSITIONS['Cerrado'] = ['Reabierto']
- *   TRANSITIONS['Reabierto'] = ['EnProceso']
- *   → existing transitions are NEVER modified, only new keys are added.
+ * Nuevo is reserved for the assignment flow. After assignment, workers and
+ * administrators can move freely between the four operational states.
  *
  * Usage:
  *   const machine = new TicketStateMachine()
@@ -26,14 +24,14 @@ export class TicketStateMachine {
   /**
    * Transition map.
    * Key   = current state
-   * Value = array of reachable states (empty array = terminal state)
+   * Value = array of reachable states.
    */
   static readonly TRANSITIONS: Record<TicketEstado, TicketEstado[]> = {
     Nuevo:     ['EnProceso'],
-    EnProceso: ['EnEspera', 'Resuelto'],
-    EnEspera:  ['EnProceso'],
-    Resuelto:  ['Cerrado'],
-    Cerrado:   [],
+    EnProceso: ['EnProceso', 'EnEspera', 'Resuelto', 'Cerrado'],
+    EnEspera:  ['EnProceso', 'EnEspera', 'Resuelto', 'Cerrado'],
+    Resuelto:  ['EnProceso', 'EnEspera', 'Resuelto', 'Cerrado'],
+    Cerrado:   ['EnProceso', 'EnEspera', 'Resuelto', 'Cerrado'],
   }
 
   /**
@@ -79,7 +77,7 @@ export class TicketStateMachine {
     return TicketStateMachine.TRANSITIONS[fromState] ?? []
   }
 
-  /** Return true if the state has no outgoing transitions (i.e. Cerrado). */
+  /** Return true if a configured state has no outgoing transitions. */
   isTerminal(state: TicketEstado): boolean {
     return TicketStateMachine.TRANSITIONS[state]?.length === 0
   }

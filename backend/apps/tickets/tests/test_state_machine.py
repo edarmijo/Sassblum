@@ -32,6 +32,13 @@ class TestValidTransitions:
     def test_resuelto_to_cerrado(self, machine):
         assert machine.transition("Resuelto", "Cerrado", "Cliente confirmó.") == "Cerrado"
 
+    @pytest.mark.parametrize("from_state", ["EnProceso", "EnEspera", "Resuelto", "Cerrado"])
+    @pytest.mark.parametrize("to_state", ["EnProceso", "EnEspera", "Resuelto", "Cerrado"])
+    def test_staff_can_move_freely_between_operational_states(
+        self, machine, from_state, to_state
+    ):
+        assert machine.transition(from_state, to_state, "Actualización operativa.") == to_state
+
 
 # ── Invalid transitions ────────────────────────────────────────────────────────
 
@@ -41,14 +48,9 @@ class TestInvalidTransitions:
         ("Nuevo",     "Resuelto"),
         ("Nuevo",     "Cerrado"),
         ("EnProceso", "Nuevo"),
-        ("EnEspera",  "Resuelto"),
-        ("EnEspera",  "Cerrado"),
+        ("EnEspera",  "Nuevo"),
         ("Resuelto",  "Nuevo"),
-        ("Resuelto",  "EnProceso"),
         ("Cerrado",   "Nuevo"),
-        ("Cerrado",   "EnProceso"),
-        ("Cerrado",   "EnEspera"),
-        ("Cerrado",   "Resuelto"),
     ])
     def test_invalid_transition_raises(self, machine, from_state, to_state):
         with pytest.raises(InvalidTransitionError) as exc_info:
@@ -56,13 +58,8 @@ class TestInvalidTransitions:
         assert exc_info.value.from_state == from_state
         assert exc_info.value.to_state == to_state
 
-    def test_cerrado_is_fully_terminal(self, machine):
-        """Cerrado has zero outgoing transitions."""
-        assert machine.TRANSITIONS["Cerrado"] == []
-        assert machine.is_terminal("Cerrado") is True
-
-    def test_non_terminal_states_are_not_terminal(self, machine):
-        for state in ["Nuevo", "EnProceso", "EnEspera", "Resuelto"]:
+    def test_no_configured_state_is_terminal(self, machine):
+        for state in ["Nuevo", "EnProceso", "EnEspera", "Resuelto", "Cerrado"]:
             assert machine.is_terminal(state) is False
 
 
@@ -91,6 +88,9 @@ class TestHelperMethods:
     def test_can_transition_false(self, machine):
         assert machine.can_transition("Cerrado", "Nuevo") is False
         assert machine.can_transition("Nuevo", "Cerrado") is False
+
+    def test_closed_ticket_can_be_reopened(self, machine):
+        assert machine.can_transition("Cerrado", "EnProceso") is True
 
     def test_all_states_returns_five(self, machine):
         states = TicketStateMachine.all_states()

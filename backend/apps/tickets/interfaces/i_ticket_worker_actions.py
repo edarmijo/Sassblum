@@ -57,7 +57,7 @@ class ITicketWorkerActions(ABC):
     @abstractmethod
     def close_ticket(self, ticket_id: int, comment: str, user) -> dict:
         """
-        HU-12: Transition Resuelto → Cerrado (terminal state).
+        HU-12: Set the ticket to Cerrado. Staff may reopen it later.
         BR-35: comment required.
         Returns: updated TicketDetail dict.
         Raises: TicketNotFound, InvalidTransitionError (if not in Resuelto state).

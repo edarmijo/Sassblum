@@ -70,7 +70,7 @@ Every module must follow:
 | Observer | Django Signals: post_save(TicketEvent) → notifications + realtime |
 | Singleton | AuthService, TicketService, NotificationService (thread-safe with Lock) |
 | Chain of Responsibility | EmailValidator → PasswordValidator; BasicFieldValidator → FileValidator → BusinessRuleValidator |
-| State Machine | TicketStateMachine: Nuevo → EnProceso → EnEspera → Resuelto → Cerrado |
+| State Machine | TicketStateMachine: Nuevo → EnProceso; staff can freely change operational states |
 
 ---
 
@@ -101,13 +101,13 @@ Every module must follow:
 ## Ticket State Machine
 
 ```
-[Nuevo] → [EnProceso] → [EnEspera] → [EnProceso] → [Resuelto] → [Cerrado]
-                                                         ↑
-                                                    (terminal)
+[Nuevo] --assignment--> [EnProceso | EnEspera | Resuelto | Cerrado]
+                              ↕ free staff transitions ↕
 ```
 
 - Every transition requires a non-empty comment (BR-35)
-- `Cerrado` is terminal — no outgoing transitions
+- Administrators and workers can freely interchange the four operational states
+- `Cerrado` can be reopened and is not terminal
 - `Nuevo → EnProceso` requires assignment to a worker
 
 ---

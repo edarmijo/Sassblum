@@ -117,5 +117,5 @@ class Ticket(models.Model):
 
     @property
     def is_closed(self) -> bool:
-        """True if ticket has reached the terminal Cerrado state."""
+        """True while the ticket is currently in Cerrado; it may still be reopened."""
         return self.estado == self.Estado.CERRADO

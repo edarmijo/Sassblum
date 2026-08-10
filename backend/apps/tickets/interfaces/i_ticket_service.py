@@ -121,7 +121,7 @@ class ITicketService(ABC):
     @abstractmethod
     def close_ticket(self, ticket_id: int, comment: str, user) -> dict:
         """
-        Transition ticket from 'Resuelto' → 'Cerrado' (terminal state).
+        Set the ticket to 'Cerrado'. Staff may reopen it later.
         BR-35: comment required.
         Raises: InvalidTransitionError if current state is not 'Resuelto'.
         """

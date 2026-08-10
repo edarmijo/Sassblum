@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ticketAdminService } from '../../services/TicketAdminService'
 import { userAdminService } from '../../../auth/services/UserAdminService'
 import type { AdminUser } from '../../../auth/interfaces/IUserAdminActions'
+import type { TicketDetail } from '../../interfaces/ITicketService'
 import { Button } from '../../../../core/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,7 +15,7 @@ import {
 interface AssignModalProps {
   ticketId: string
   onClose: () => void
-  onAssigned?: () => void
+  onAssigned?: (ticket: TicketDetail) => void
 }
 
 /**
@@ -37,8 +38,8 @@ export function AssignModal({ ticketId, onClose, onAssigned }: Readonly<AssignMo
     setBusy(true)
     setError(null)
     try {
-      await ticketAdminService.assignTicket(ticketId, workerId)
-      onAssigned?.()
+      const updatedTicket = await ticketAdminService.assignTicket(ticketId, workerId)
+      onAssigned?.(updatedTicket)
       onClose()
     } catch (err: unknown) {
       const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail

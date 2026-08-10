@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, UserPlus } from 'lucide-react'
 import { Reveal, FocusReveal } from '../../../../core/ui/motion'
 import { Button } from '../../../../core/ui/button'
@@ -8,7 +8,8 @@ import { AssignModal } from '../../components/AssignModal'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { ticketService } from '../../services/TicketService'
 import { useTicketDetail } from '../../hooks/useTickets'
-import type { TicketEstado } from '../../interfaces/ITicketService'
+import type { TicketDetail as TicketDetailData, TicketEstado } from '../../interfaces/ITicketService'
+import { TicketStateMachine } from '../../state_machine'
 
 interface TicketDetailPageProps {
   ticketId: string
@@ -26,15 +27,30 @@ interface TicketDetailPageProps {
 export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPageProps>) {
   const { user } = useAuth()
   const { ticket } = useTicketDetail(ticketId)
+  const [currentTicket, setCurrentTicket] = useState<TicketDetailData | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [showAssign, setShowAssign] = useState(false)
   const isStaff = user?.rol === 'TRABAJADOR' || user?.rol === 'ADMINISTRADOR'
   const isAdmin = user?.rol === 'ADMINISTRADOR'
+  const stateMachine = new TicketStateMachine()
+
+  useEffect(() => {
+    setCurrentTicket(ticket)
+  }, [ticket])
 
   const handleStatusChange = async (newStatus: TicketEstado, comment: string) => {
-    await ticketService.updateStatus(ticketId, newStatus, comment)
+    const updatedTicket = await ticketService.updateStatus(ticketId, newStatus, comment)
+    setCurrentTicket(updatedTicket)
     setRefreshKey((k) => k + 1) // Trigger re-render to show new event
   }
+
+  const canChangeStatus = Boolean(
+    isStaff
+    && currentTicket
+    // Nuevo advances through assignment, which also selects the required worker.
+    && currentTicket.estado !== 'Nuevo'
+    && stateMachine.nextStates(currentTicket.estado).length > 0,
+  )
 
   return (
     <section className="max-w-3xl mx-auto px-4 py-8 space-y-5">
@@ -56,12 +72,12 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
       </FocusReveal>
 
       {/* HU-05/HU-08: asignación y reasignación — solo administradores */}
-      {isAdmin && ticket && (
+      {isAdmin && currentTicket && (
         <FocusReveal delay={0.05}>
           <div className="flex justify-end">
             <Button type="button" variant="brand" onClick={() => setShowAssign(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
-              {ticket.asignadoNombre ? 'Reasignar técnico' : 'Asignar técnico'}
+              {currentTicket.asignadoNombre ? 'Reasignar técnico' : 'Asignar técnico'}
             </Button>
           </div>
         </FocusReveal>
@@ -70,15 +86,18 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
         <AssignModal
           ticketId={ticketId}
           onClose={() => setShowAssign(false)}
-          onAssigned={() => setRefreshKey((k) => k + 1)}
+          onAssigned={(updatedTicket) => {
+            setCurrentTicket(updatedTicket)
+            setRefreshKey((k) => k + 1)
+          }}
         />
       )}
 
       {/* H#3 (cliente): Status change with observations for staff */}
-      {isStaff && ticket && (
+      {canChangeStatus && currentTicket && (
         <FocusReveal delay={0.1}>
           <StatusChangeForm
-            currentStatus={ticket.estado}
+            currentStatus={currentTicket.estado}
             onSubmit={handleStatusChange}
           />
         </FocusReveal>

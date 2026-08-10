@@ -19,7 +19,17 @@ def admin(db) -> User:
 
 
 @pytest.fixture
-def ticket(db) -> Ticket:
+def worker(db) -> User:
+    return User.objects.create_user(
+        email="worker-actions@test.com",
+        role=User.Role.WORKER,
+        estado=User.Estado.ACTIVE,
+        email_verificado=True,
+    )
+
+
+@pytest.fixture
+def ticket(db, worker) -> Ticket:
     cliente = User.objects.create_user(
         email="client-actions@test.com",
         role=User.Role.CLIENT,
@@ -37,6 +47,7 @@ def ticket(db) -> Ticket:
         descripcion="Descripción suficiente para una prueba de integración.",
         servicio=service,
         cliente=cliente,
+        asignado=worker,
         estado=Ticket.Estado.EN_PROCESO,
     )
 
@@ -61,6 +72,38 @@ class TestTicketActionsAPI:
             tipo_evento=TicketEvent.TipoEvento.CAMBIO_ESTADO,
             autor=admin,
         ).exists()
+
+    def test_admin_can_reopen_a_closed_ticket(self, admin, ticket) -> None:
+        ticket.estado = Ticket.Estado.CERRADO
+        ticket.save(update_fields=["estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/estado",
+            {"estado": Ticket.Estado.EN_PROCESO, "comentario": "Ticket reabierto."},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.estado == Ticket.Estado.EN_PROCESO
+
+    def test_worker_can_skip_the_previous_sequential_flow(self, worker, ticket) -> None:
+        ticket.estado = Ticket.Estado.EN_ESPERA
+        ticket.save(update_fields=["estado"])
+        client = APIClient()
+        client.force_authenticate(user=worker)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/estado",
+            {"estado": Ticket.Estado.CERRADO, "comentario": "Cierre operativo directo."},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.estado == Ticket.Estado.CERRADO
 
     def test_admin_can_add_comment_at_registered_endpoint(self, admin, ticket) -> None:
         client = APIClient()
