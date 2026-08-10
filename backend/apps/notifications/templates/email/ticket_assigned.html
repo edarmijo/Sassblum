@@ -2,10 +2,16 @@
 
 {% block subject %}Ticket asignado{% endblock %}
 
-{% block titulo %}Tu ticket ha sido asignado{% endblock %}
+{% block titulo %}{% if recipient_role == "worker" %}Tienes un nuevo ticket asignado{% elif recipient_role == "admin" %}Asignación confirmada{% else %}Tu ticket ha sido asignado{% endif %}{% endblock %}
 
 {% block contenido %}
-  <p>El ticket <strong>{{ ticket_numero }}</strong> ha sido asignado a un trabajador y comenzará a ser atendido.</p>
+  {% if recipient_role == "worker" %}
+    <p>El ticket <strong>{{ ticket_numero }}</strong> fue asignado a ti y ya está disponible para su atención.</p>
+  {% elif recipient_role == "admin" %}
+    <p>La asignación del ticket <strong>{{ ticket_numero }}</strong> se registró correctamente.</p>
+  {% else %}
+    <p>El ticket <strong>{{ ticket_numero }}</strong> ha sido asignado a un trabajador y comenzará a ser atendido.</p>
+  {% endif %}
   <table role="presentation" style="border-collapse: collapse; width: 100%; margin: 0 auto; text-align: center;"    style="margin:16px 0;width:100%;border-collapse:collapse;">
     <tr>
       <td style="padding:8px 0;font-size:13px;color:#6f6e68;width:140px;">Número</td>

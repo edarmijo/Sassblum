@@ -43,14 +43,15 @@ def _add_user_by_id(recipients: set, user_id) -> None:
 
 def _exclude_author(recipients: set, event: dict, tipo: str) -> set:
     """
-    Regla "sin auto-notificaciones", con UNA excepción: en 'creacion' el
-    cliente-autor SÍ recibe su email de confirmación con el número de ticket
-    (paridad LN-3 con el sistema legado).
+    Regla "sin auto-notificaciones", salvo para eventos operativos que requieren
+    confirmación a todas las partes involucradas en el ticket.
     """
     autor_id = event.get("autor_id")
     if not autor_id:
         return recipients
     if tipo == "creacion" and autor_id == event.get("cliente_id"):
+        return recipients
+    if tipo in ("asignacion", "reasignacion", "cambio_estado", "comentario"):
         return recipients
     return {r for r in recipients if r.id != autor_id}
 
@@ -65,7 +66,7 @@ def _resolve_recipients(event: dict) -> list:
     tipo = event.get("tipo_evento", "")
     recipients: set = set()
 
-    if tipo == "creacion":
+    if tipo in ("creacion", "cambio_estado", "comentario"):
         recipients.update(
             User.objects.filter(role=User.Role.ADMIN, estado=User.Estado.ACTIVE)
         )
@@ -73,8 +74,13 @@ def _resolve_recipients(event: dict) -> list:
     if tipo in ("cambio_estado", "comentario", "asignacion", "reasignacion", "creacion"):
         _add_user_by_id(recipients, event.get("cliente_id"))
 
-    if tipo in ("asignacion", "reasignacion", "comentario"):
+    if tipo in ("asignacion", "reasignacion", "cambio_estado", "comentario"):
         _add_user_by_id(recipients, event.get("asignado_id"))
+
+    # Assignment actions need an explicit confirmation for the administrator
+    # who performed them. The set keeps the recipient list deduplicated.
+    if tipo in ("asignacion", "reasignacion"):
+        _add_user_by_id(recipients, event.get("autor_id"))
 
     return list(_exclude_author(recipients, event, tipo))
 
@@ -208,8 +214,13 @@ class NotificationService(INotificationService):
             "estado_nuevo":    event.get("estado_nuevo", ""),
             "comentario":      event.get("comentario", ""),
             "titulo":          self._make_title(tipo, event),
-            "cuerpo":          event.get("comentario", "") or self._format_message(event),
+            "cuerpo":          (
+                self._format_message(event)
+                if tipo == "cambio_estado"
+                else event.get("comentario", "") or self._format_message(event)
+            ),
             "recipient_nombre": getattr(recipient, "first_name", ""),
+            "recipient_role":   getattr(recipient, "role", ""),
         }
 
     @staticmethod

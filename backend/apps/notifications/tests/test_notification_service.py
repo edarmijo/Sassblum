@@ -61,28 +61,59 @@ class TestDispatchPreferenceGating:
 
 
 class TestResolveRecipients:
-    """_resolve_recipients excludes the author and selects by tipo_evento."""
+    """_resolve_recipients selects and deduplicates users by event type."""
 
-    def test_author_excluded(self):
+    def test_comment_includes_client_worker_and_active_admin(self):
         from apps.notifications.services import notification_service as mod
 
         cliente = make_user(5)
+        worker = make_user(7)
         autor = make_user(9)
 
         fake_user_model = MagicMock()
-        fake_user_model.objects.get.side_effect = lambda id: {5: cliente, 9: autor}[id]
-        fake_user_model.objects.filter.return_value = []
+        users = {5: cliente, 7: worker, 9: autor}
+        fake_user_model.objects.get.side_effect = lambda id: users[id]
+        fake_user_model.objects.filter.return_value = [autor]
         fake_user_model.Role.ADMIN = "admin"
         fake_user_model.Estado.ACTIVE = "activo"
 
         patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
         with patch.dict("sys.modules", patched):
-            event = {"tipo_evento": "comentario", "cliente_id": 5, "autor_id": 9}
+            event = {
+                "tipo_evento": "comentario",
+                "cliente_id": 5,
+                "asignado_id": 7,
+                "autor_id": 9,
+            }
             recipients = mod._resolve_recipients(event)
 
-        ids = {r.id for r in recipients}
-        assert 9 not in ids  # author excluded
-        assert 5 in ids
+        assert {r.id for r in recipients} == {5, 7, 9}
+
+    def test_status_change_includes_client_worker_and_active_admin(self):
+        from apps.notifications.services import notification_service as mod
+
+        cliente = make_user(5)
+        worker = make_user(7)
+        admin = make_user(9)
+
+        fake_user_model = MagicMock()
+        users = {5: cliente, 7: worker}
+        fake_user_model.objects.get.side_effect = lambda id: users[id]
+        fake_user_model.objects.filter.return_value = [admin]
+        fake_user_model.Role.ADMIN = "admin"
+        fake_user_model.Estado.ACTIVE = "activo"
+
+        patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
+        with patch.dict("sys.modules", patched):
+            event = {
+                "tipo_evento": "cambio_estado",
+                "cliente_id": 5,
+                "asignado_id": 7,
+                "autor_id": 7,
+            }
+            recipients = mod._resolve_recipients(event)
+
+        assert {r.id for r in recipients} == {5, 7, 9}
 
     def test_creacion_includes_client_author(self):
         """LN-3 (paridad legado): al crear su ticket, el cliente-autor SÍ recibe
@@ -103,3 +134,30 @@ class TestResolveRecipients:
             recipients = mod._resolve_recipients(event)
 
         assert 5 in {r.id for r in recipients}  # cliente-autor incluido en creacion
+
+    def test_asignacion_includes_client_worker_and_admin_author(self):
+        """Assignment notifies all three parties involved in the action."""
+        from apps.notifications.services import notification_service as mod
+
+        cliente = make_user(5)
+        worker = make_user(7)
+        admin = make_user(9)
+
+        fake_user_model = MagicMock()
+        users = {5: cliente, 7: worker, 9: admin}
+        fake_user_model.objects.get.side_effect = lambda id: users[id]
+        fake_user_model.objects.filter.return_value = []
+        fake_user_model.Role.ADMIN = "admin"
+        fake_user_model.Estado.ACTIVE = "activo"
+
+        patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
+        with patch.dict("sys.modules", patched):
+            event = {
+                "tipo_evento": "asignacion",
+                "cliente_id": 5,
+                "asignado_id": 7,
+                "autor_id": 9,
+            }
+            recipients = mod._resolve_recipients(event)
+
+        assert {r.id for r in recipients} == {5, 7, 9}

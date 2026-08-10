@@ -6,12 +6,14 @@ create → assign → update_status → close. Run: pytest apps/tickets/tests/te
 from core.testing import random_credential
 
 import pytest
+from django.core import mail
 
 # Generada por corrida (core.testing): sin credenciales hardcodeadas.
 TEST_PASSWORD = random_credential()
 
 from apps.authentication.models import User
 from apps.catalog.models import Service
+from apps.notifications.models import Notification
 from apps.tickets.models import Ticket, TicketEvent
 from apps.tickets.services.ticket_service import TicketService
 from core.exceptions.domain_exceptions import InvalidTransitionError
@@ -70,8 +72,51 @@ class TestTicketLifecycle:
         assert assigned["estado"] == "EnProceso"
         assert Ticket.objects.get(id=ticket_id).asignado_id == worker.id
 
+        assignment_notifications = Notification.objects.filter(tipo="asignacion")
+        assert set(assignment_notifications.values_list("usuario_id", flat=True)) == {
+            cliente.id,
+            worker.id,
+            admin.id,
+        }
+        assignment_recipients = {
+            address
+            for message in mail.outbox
+            if message.subject == "[SassBlum] Ticket asignado"
+            for address in message.to
+        }
+        assert assignment_recipients == {cliente.email, worker.email, admin.email}
+
         resolved = svc.update_status(ticket_id, "Resuelto", "Listo.", worker)
         assert resolved["estado"] == "Resuelto"
+
+        status_notifications = Notification.objects.filter(tipo="cambio_estado")
+        assert set(status_notifications.values_list("usuario_id", flat=True)) == {
+            cliente.id,
+            worker.id,
+            admin.id,
+        }
+        status_recipients = {
+            address
+            for message in mail.outbox
+            if message.subject == "[SassBlum] Ticket actualizado"
+            for address in message.to
+        }
+        assert status_recipients == {cliente.email, worker.email, admin.email}
+
+        svc.add_comment(ticket_id, "Validación final completada.", worker)
+        comment_notifications = Notification.objects.filter(tipo="comentario")
+        assert set(comment_notifications.values_list("usuario_id", flat=True)) == {
+            cliente.id,
+            worker.id,
+            admin.id,
+        }
+        comment_recipients = {
+            address
+            for message in mail.outbox
+            if message.subject == "[SassBlum] Nuevo comentario en tu ticket"
+            for address in message.to
+        }
+        assert comment_recipients == {cliente.email, worker.email, admin.email}
 
         closed = svc.close_ticket(ticket_id, "Confirmado por el cliente.", worker)
         assert closed["estado"] == "Cerrado"
