@@ -169,13 +169,18 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
                                      estado=User.Estado.ACTIVE).first()
         if worker is None:
             raise TicketValidationError("asignado", "Trabajador no válido o inactivo.")
-        self._repo.update(ticket_id, {"asignado": worker, "estado": Ticket.Estado.EN_PROCESO})
+        # The Observer reads ticket.asignado_id as soon as the event is created.
+        # Keep this instance synchronized so the worker is not omitted.
+        ticket = self._repo.update(
+            ticket_id,
+            {"asignado": worker, "estado": Ticket.Estado.EN_PROCESO},
+        )
         TicketEvent.objects.create(
             ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
             estado_anterior=Ticket.Estado.NUEVO, estado_nuevo=Ticket.Estado.EN_PROCESO,
             comentario=f"Asignado a {worker.email}.",
         )
-        return self._detail(self._repo.get_by_id(ticket_id))
+        return self._detail(ticket)
 
     @transaction.atomic
     def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
@@ -187,12 +192,13 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
                                      estado=User.Estado.ACTIVE).first()
         if worker is None:
             raise TicketValidationError("asignado", "Trabajador no válido o inactivo.")
-        self._repo.update(ticket_id, {"asignado": worker})
+        # Use the refreshed ticket so the Observer resolves the new worker.
+        ticket = self._repo.update(ticket_id, {"asignado": worker})
         TicketEvent.objects.create(
             ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
             comentario=f"Reasignado a {worker.email}.",
         )
-        return self._detail(self._repo.get_by_id(ticket_id))
+        return self._detail(ticket)
 
     def get_all_tickets(self, filters: dict | None = None) -> list:
         tickets = self._repo.get_all(filters or {})

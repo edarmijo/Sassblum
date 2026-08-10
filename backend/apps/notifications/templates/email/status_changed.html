@@ -1,11 +1,27 @@
 {% extends "email/base_email.html" %}
 
-{% block subject %}Ticket actualizado{% endblock %}
+{% block subject %}
+  {% if tipo == "comentario" %}Nuevo comentario{% else %}Ticket actualizado{% endif %}
+{% endblock %}
 
-{% block titulo %}El estado de tu ticket cambió{% endblock %}
+{% block titulo %}
+  {% if tipo == "comentario" %}
+    {% if recipient_role == "worker" %}Nuevo comentario en un ticket asignado{% elif recipient_role == "admin" %}Nuevo comentario registrado{% else %}Nuevo comentario en tu ticket{% endif %}
+  {% elif recipient_role == "worker" %}
+    Cambió el estado de un ticket asignado
+  {% elif recipient_role == "admin" %}
+    Cambio de estado registrado
+  {% else %}
+    El estado de tu ticket cambió
+  {% endif %}
+{% endblock %}
 
 {% block contenido %}
-  <p>El ticket <strong>{{ ticket_numero }}</strong> ha cambiado de estado:</p>
+  {% if tipo == "comentario" %}
+    <p>Se agregó un comentario al ticket <strong>{{ ticket_numero }}</strong>:</p>
+  {% else %}
+    <p>El ticket <strong>{{ ticket_numero }}</strong> ha cambiado de estado:</p>
+  {% endif %}
 
   <table role="presentation" style="border-collapse: collapse; width: 100%; margin: 0 auto; text-align: center;" style="margin:16px 0;width:100%;border-collapse:collapse;">
     <tbody>
