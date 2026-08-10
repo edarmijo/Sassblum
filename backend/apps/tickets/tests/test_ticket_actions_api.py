@@ -29,6 +29,16 @@ def worker(db) -> User:
 
 
 @pytest.fixture
+def replacement_worker(db) -> User:
+    return User.objects.create_user(
+        email="replacement-worker-actions@test.com",
+        role=User.Role.WORKER,
+        estado=User.Estado.ACTIVE,
+        email_verificado=True,
+    )
+
+
+@pytest.fixture
 def ticket(db, worker) -> Ticket:
     cliente = User.objects.create_user(
         email="client-actions@test.com",
@@ -54,6 +64,146 @@ def ticket(db, worker) -> Ticket:
 
 @pytest.mark.django_db
 class TestTicketActionsAPI:
+    def test_admin_initial_assignment_moves_new_ticket_to_in_progress(
+        self, admin, ticket, replacement_worker
+    ) -> None:
+        ticket.asignado = None
+        ticket.estado = Ticket.Estado.NUEVO
+        ticket.save(update_fields=["asignado", "estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/asignar",
+            {"worker_id": replacement_worker.id},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.asignado_id == replacement_worker.id
+        assert ticket.estado == Ticket.Estado.EN_PROCESO
+        assert TicketEvent.objects.filter(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
+            estado_anterior=Ticket.Estado.NUEVO,
+            estado_nuevo=Ticket.Estado.EN_PROCESO,
+            autor=admin,
+        ).exists()
+
+    @pytest.mark.parametrize(
+        "current_status",
+        [
+            Ticket.Estado.EN_PROCESO,
+            Ticket.Estado.EN_ESPERA,
+            Ticket.Estado.RESUELTO,
+            Ticket.Estado.CERRADO,
+        ],
+    )
+    def test_admin_reassignment_only_changes_the_worker(
+        self, admin, ticket, replacement_worker, current_status
+    ) -> None:
+        previous_worker_id = ticket.asignado_id
+        ticket.estado = current_status
+        ticket.save(update_fields=["estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/reasignar",
+            {"worker_id": replacement_worker.id},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.asignado_id == replacement_worker.id
+        assert ticket.estado == current_status
+        event = TicketEvent.objects.get(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
+            autor=admin,
+        )
+        assert event.estado_anterior == ""
+        assert event.estado_nuevo == ""
+        assert event.asignado_anterior_id == previous_worker_id
+
+    def test_initial_assignment_rejects_a_ticket_that_already_has_a_worker(
+        self, admin, ticket, replacement_worker
+    ) -> None:
+        ticket.estado = Ticket.Estado.NUEVO
+        ticket.save(update_fields=["estado"])
+        original_worker_id = ticket.asignado_id
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/asignar",
+            {"worker_id": replacement_worker.id},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        ticket.refresh_from_db()
+        assert ticket.asignado_id == original_worker_id
+        assert ticket.estado == Ticket.Estado.NUEVO
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
+    def test_reassignment_rejects_a_new_unassigned_ticket(
+        self, admin, ticket, replacement_worker
+    ) -> None:
+        ticket.asignado = None
+        ticket.estado = Ticket.Estado.NUEVO
+        ticket.save(update_fields=["asignado", "estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/reasignar",
+            {"worker_id": replacement_worker.id},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        ticket.refresh_from_db()
+        assert ticket.asignado_id is None
+        assert ticket.estado == Ticket.Estado.NUEVO
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
+    def test_reassignment_rejects_the_current_worker(self, admin, ticket) -> None:
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/reasignar",
+            {"worker_id": ticket.asignado_id},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
+    def test_status_endpoint_cannot_bypass_initial_assignment(self, admin, ticket) -> None:
+        ticket.asignado = None
+        ticket.estado = Ticket.Estado.NUEVO
+        ticket.save(update_fields=["asignado", "estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/estado",
+            {
+                "estado": Ticket.Estado.EN_PROCESO,
+                "comentario": "Intento de omitir la asignación.",
+            },
+            format="json",
+        )
+
+        assert response.status_code == 400
+        ticket.refresh_from_db()
+        assert ticket.estado == Ticket.Estado.NUEVO
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
     def test_admin_can_change_ticket_status_at_registered_endpoint(self, admin, ticket) -> None:
         client = APIClient()
         client.force_authenticate(user=admin)

@@ -140,7 +140,7 @@ class ITicketService(ABC):
     @abstractmethod
     def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
         """
-        Reassign an 'EnProceso' ticket to a different worker.
+        Reassign a ticket to a different worker without changing its current state.
         Creates a TicketEvent with tipo='reasignacion'.
         """
         ...

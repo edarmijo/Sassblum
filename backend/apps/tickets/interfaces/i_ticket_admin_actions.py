@@ -45,10 +45,10 @@ class ITicketAdminActions(ABC):
     @abstractmethod
     def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
         """
-        HU-08: Reassign an EnProceso ticket to a different worker.
+        HU-08: Reassign a ticket without changing its current operational state.
         Creates a TicketEvent with tipo='reasignacion'.
         Returns: updated TicketDetail dict.
-        Raises: TicketNotFound, InvalidTransitionError (ticket not in EnProceso state).
+        Raises: TicketNotFound or validation errors for an invalid worker.
         """
         ...
 

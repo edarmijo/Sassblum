@@ -27,7 +27,7 @@ export interface ITicketAdminActions {
   assignTicket(id: string, workerId: string): Promise<TicketDetail>
 
   /**
-   * HU-08: Reassign an EnProceso ticket to a different worker.
+   * HU-08: Reassign a ticket without changing its current operational state.
    * @param newWorkerId - ID of the new TRABAJADOR
    */
   reassignTicket(id: string, newWorkerId: string): Promise<TicketDetail>

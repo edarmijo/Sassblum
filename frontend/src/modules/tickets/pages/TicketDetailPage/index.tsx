@@ -5,6 +5,7 @@ import { Button } from '../../../../core/ui/button'
 import { TicketDetail } from '../../components/TicketDetail'
 import { StatusChangeForm } from '../../components/StatusChangeForm'
 import { AssignModal } from '../../components/AssignModal'
+import { getAssignmentMode } from '../../components/AssignModal/assignmentOperation'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { ticketService } from '../../services/TicketService'
 import { useTicketDetail } from '../../hooks/useTickets'
@@ -82,9 +83,10 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
           </div>
         </FocusReveal>
       )}
-      {showAssign && (
+      {showAssign && currentTicket && (
         <AssignModal
           ticketId={ticketId}
+          mode={getAssignmentMode(currentTicket.estado)}
           onClose={() => setShowAssign(false)}
           onAssigned={(updatedTicket) => {
             setCurrentTicket(updatedTicket)

@@ -130,6 +130,11 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         self, ticket_id: int, new_status: str, comment: str, user
     ) -> dict:
         ticket = self._require(ticket_id, user)
+        if ticket.estado == Ticket.Estado.NUEVO and new_status == Ticket.Estado.EN_PROCESO:
+            raise TicketValidationError(
+                "estado",
+                "Un ticket Nuevo pasa a EnProceso únicamente mediante su primera asignación.",
+            )
         # raises on invalid transition / missing comment
         self._machine.transition(ticket.estado, new_status, comment)
         anterior = ticket.estado
@@ -160,9 +165,14 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     @transaction.atomic
     def assign_ticket(self, ticket_id: int, worker_id: int, user) -> dict:
         from apps.authentication.models import User  # noqa: PLC0415
-        ticket = self._repo.get_by_id(ticket_id)
+        ticket = self._repo.get_by_id_for_update(ticket_id)
         if ticket is None:
             raise TicketNotFound(TICKETNOTFOUND)
+        if ticket.asignado_id is not None:
+            raise TicketValidationError(
+                "asignado",
+                "El ticket ya tiene un trabajador asignado; use la reasignación.",
+            )
         if ticket.estado != Ticket.Estado.NUEVO:
             raise InvalidTransitionError(ticket.estado, Ticket.Estado.EN_PROCESO)
         worker = User.objects.filter(id=worker_id, role=User.Role.WORKER,
@@ -185,18 +195,30 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     @transaction.atomic
     def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
         from apps.authentication.models import User  # noqa: PLC0415
-        ticket = self._repo.get_by_id(ticket_id)
+        ticket = self._repo.get_by_id_for_update(ticket_id)
         if ticket is None:
             raise TicketNotFound(TICKETNOTFOUND)
+        if ticket.estado == Ticket.Estado.NUEVO or ticket.asignado_id is None:
+            raise TicketValidationError(
+                "asignado",
+                "Solo se puede reasignar un ticket que ya tenga un trabajador.",
+            )
+        if ticket.asignado_id == new_worker_id:
+            raise TicketValidationError(
+                "asignado",
+                "El trabajador seleccionado ya está asignado al ticket.",
+            )
         worker = User.objects.filter(id=new_worker_id, role=User.Role.WORKER,
                                      estado=User.Estado.ACTIVE).first()
         if worker is None:
             raise TicketValidationError("asignado", "Trabajador no válido o inactivo.")
+        previous_worker = ticket.asignado
         # Use the refreshed ticket so the Observer resolves the new worker.
         ticket = self._repo.update(ticket_id, {"asignado": worker})
         TicketEvent.objects.create(
             ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
-            comentario=f"Reasignado a {worker.email}.",
+            asignado_anterior=previous_worker,
+            comentario=f"Reasignado de {previous_worker.email} a {worker.email}.",
         )
         return self._detail(ticket)
 
