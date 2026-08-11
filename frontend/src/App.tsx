@@ -71,6 +71,7 @@ const Clients = lazy(lazyRetry(() => import('./modules/public/pages/Clients').th
 const ForgotPasswordPage = lazy(lazyRetry(() => import('./modules/auth/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage }))))
 const ResetPasswordPage = lazy(lazyRetry(() => import('./modules/auth/pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage }))))
 const VerifyEmailPage = lazy(lazyRetry(() => import('./modules/auth/pages/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage }))))
+const VerifyPendingPage = lazy(lazyRetry(() => import('./modules/auth/pages/VerifyPendingPage').then(m => ({ default: m.VerifyPendingPage }))))
 
 const ClientDashboard = lazy(lazyRetry(() => import('./modules/dashboard/ClientDashboard').then(m => ({ default: m.ClientDashboard }))))
 const WorkerDashboard = lazy(lazyRetry(() => import('./modules/dashboard/WorkerDashboard').then(m => ({ default: m.WorkerDashboard }))))
@@ -211,9 +212,26 @@ function RegisterRoute() {
         subtitle="Regístrate como cliente de SassBlum"
         footer={<>¿Ya tienes cuenta? <Link to="/login" className="text-brand-cyan-dark font-medium hover:underline">Inicia sesión</Link></>}
       >
-        <RegisterForm onSuccess={() => navigate('/login', { replace: true })} />
+        <RegisterForm
+          onSuccess={({ message, email }) =>
+            // El email viaja por router state (no por query string: sin datos
+            // personales en la URL). Si el usuario recarga, la pantalla degrada
+            // al texto genérico.
+            navigate('/verificar-cuenta', { replace: true, state: { email, message } })
+          }
+        />
       </AuthCard>
     </PublicRoute>
+  )
+}
+
+/** Pantalla post-registro: pide confirmar el correo antes de iniciar sesión. */
+function VerifyPendingRoute() {
+  const { state } = useLocation() as { state: { email?: string; message?: string } | null }
+  return (
+    <AuthCard title="Cuenta creada" subtitle="Falta un paso para activarla">
+      <VerifyPendingPage email={state?.email} message={state?.message} />
+    </AuthCard>
   )
 }
 
@@ -294,6 +312,7 @@ export default function App() {
               <Route path="/register" element={<RegisterRoute />} />
               <Route path="/forgot-password" element={<ForgotRoute />} />
               <Route path="/reset-password" element={<ResetRoute />} />
+              <Route path="/verificar-cuenta" element={<VerifyPendingRoute />} />
               <Route path="/verify-email" element={<VerifyRoute />} />
 
               {/* Authenticated app */}

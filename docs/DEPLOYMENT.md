@@ -27,7 +27,7 @@
 | EMAIL_HOST_USER | noreply@example.com | Yes | SMTP username |
 | EMAIL_HOST_PASSWORD | `...` | Yes | SMTP password (or app token) |
 | DEFAULT_FROM_EMAIL | noreply@example.com | Yes | From address for emails |
-| FRONTEND_URL | https://app.example.com | Yes | For verification links in emails |
+| FRONTEND_URL | https://sassblum.vercel.app | Yes | Base for verification / reset links in emails |
 | SUPABASE_URL | https://your-project.supabase.co | Optional | For file uploads |
 | SUPABASE_SERVICE_KEY | your-service-key | Optional | For file uploads |
 
@@ -155,7 +155,7 @@ EMAIL_PORT=587
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password
 DEFAULT_FROM_EMAIL=noreply@example.com
-FRONTEND_URL=https://app.example.com
+FRONTEND_URL=https://sassblum.vercel.app
 
 # Supabase (optional)
 SUPABASE_URL=https://your-project.supabase.co

@@ -12,7 +12,8 @@ import { Label } from '../../../../core/ui/label'
 import { Alert, AlertDescription } from '../../../../core/ui/alert'
 
 interface RegisterFormProps {
-  onSuccess?: (message: string) => void
+  /** Recibe el mensaje del backend y el email registrado (para la pantalla de verificación). */
+  onSuccess?: (result: { message: string; email: string }) => void
 }
 
 /**
@@ -50,7 +51,7 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     setLoading(true)
     try {
       const res = await register(form)
-      onSuccess?.(res.message)
+      onSuccess?.({ message: res.message, email: form.email })
     } catch (err: unknown) {
       const is409 = err instanceof AxiosError && err.response?.status === 409
       setEmailConflict(is409)

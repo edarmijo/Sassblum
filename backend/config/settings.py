@@ -288,8 +288,15 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@sassblum.com
 # Vacío = sin CC. Ej: EMAIL_CC=notificaciones@sassblum.com
 EMAIL_CC = [e.strip() for e in config('EMAIL_CC', default='').split(',') if e.strip()]
 
-# URL del frontend (para construir los enlaces de verificación / reseteo en los emails)
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+# URL del frontend (para construir los enlaces de verificación / reseteo en los emails).
+# El fallback depende de DEBUG a propósito: si la variable falta en el entorno de
+# producción, los enlaces del correo NO deben apuntar a localhost (el usuario abriría
+# un enlace muerto). Fuera de DEBUG el default es el dominio desplegado.
+PRODUCTION_FRONTEND_URL = 'https://sassblum.vercel.app'
+FRONTEND_URL = config(
+    'FRONTEND_URL',
+    default='http://localhost:5173' if DEBUG else PRODUCTION_FRONTEND_URL,
+).rstrip('/')
 
 
 # MISC

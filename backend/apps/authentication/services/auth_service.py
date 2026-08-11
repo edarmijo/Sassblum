@@ -261,8 +261,8 @@ class AuthService(IAuthService):
         responde igual de inmediato y el fallo queda solo en logs.
         """
         from django.conf import settings  # noqa: PLC0415
-        frontend = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
-        verify_url = f"{frontend}/verify-email?token={token}"
+        frontend = getattr(settings, "FRONTEND_URL", None) or "https://sassblum.vercel.app"
+        verify_url = f"{frontend.rstrip('/')}/verify-email?token={token}"
         context = {
             "tipo": "email_verification",
             "titulo": "Verifica tu correo",
