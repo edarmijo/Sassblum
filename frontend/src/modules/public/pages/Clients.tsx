@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { Star, Quote } from 'lucide-react'
 import { GlowCard } from '../../../core/ui/GlowCard'
 import { PageHero } from '../../../core/ui/layout/PageHero'
-import { Reveal, FocusReveal } from '../../../core/ui/motion'
+import { Reveal, RevealGroup, RevealItem } from '../../../core/ui/motion'
 import { PublicClientLogosSection } from '../../clients/components/PublicClientLogoMarquee'
 import { ClientLogoProvider } from '../../clients/hooks/ClientLogoProvider'
 import { clientLogoService } from '../../clients/services/ClientLogoService'
@@ -39,9 +39,9 @@ export function Clients() {
               Lo que dicen nuestros clientes
             </h2>
           </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t, i) => (
-              <FocusReveal key={t.name} delay={i * 0.1}>
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {TESTIMONIALS.map((t) => (
+              <RevealItem key={t.name} focus>
                 <GlowCard className="h-full" style={cardStyle}>
                   <div className="p-8">
                     <Quote className="h-9 w-9 mb-4" style={{ color: 'rgba(0,196,224,0.3)' }} />
@@ -55,9 +55,9 @@ export function Clients() {
                     <p className="text-sm" style={{ color: '#7aa3b8' }}>{t.company}</p>
                   </div>
                 </GlowCard>
-              </FocusReveal>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
       </section>
 

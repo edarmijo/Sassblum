@@ -13,6 +13,7 @@ import { BrowserRouter, Routes, Route, Outlet, Navigate, Link, useNavigate, useP
 import { useEffect, lazy, Suspense, useState, type ReactNode } from 'react'
 import { DeferredVisualEffects } from './core/ui/DeferredVisualEffects'
 import { PageLoader } from './core/ui/PageLoader'
+import { PageTransition } from './core/ui/PageTransition'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'
@@ -117,6 +118,7 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
 
 function SiteLayout() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
 
   const tree = (
     <>
@@ -133,7 +135,9 @@ function SiteLayout() {
         <Navbar />
         <main className="grow relative z-10">
           <Suspense fallback={<PageFallback />}>
-            <Outlet />
+            <PageTransition pathname={pathname}>
+              <Outlet />
+            </PageTransition>
           </Suspense>
         </main>
         <div className="relative z-10">

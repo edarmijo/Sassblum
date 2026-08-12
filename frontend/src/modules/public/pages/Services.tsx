@@ -1,6 +1,5 @@
 import { createElement, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Headphones, Wifi, Printer, Server, Camera, Home as HomeIcon, Wrench, ArrowRight } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
@@ -16,7 +15,7 @@ import {
   DialogFooter,
 } from '../../../core/ui/dialog'
 import { PageHero } from '../../../core/ui/layout/PageHero'
-import { EASE_APPLE } from '../../../core/ui/motion/ease'
+import { Reveal, RevealGroup, RevealItem } from '../../../core/ui/motion'
 import { useCatalog } from '../../catalog/hooks/useCatalog'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { env } from '../../../infrastructure/config/env'
@@ -89,17 +88,14 @@ export function Services() {
           {error && <p className="text-center text-red-400 mb-8">{error}</p>}
 
           {catalogFallback ?? (
-            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {services.map((s, i) => {
+            <RevealGroup className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+              {services.map((s) => {
                 const img = s.imagenUrl
                 return (
-                  <motion.div
+                  <RevealItem
                     key={s.id}
-                    initial={{ opacity: 0, y: 28 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-60px' }}
-                    transition={{ duration: 0.6, ease: EASE_APPLE, delay: (i % 4) * 0.08 }}
                     className="group"
+                    focus
                   >
                     <button
                       type="button"
@@ -140,10 +136,10 @@ export function Services() {
                         </Card>
                       </GlowCard>
                     </button>
-                  </motion.div>
+                  </RevealItem>
                 )
               })}
-            </div>
+            </RevealGroup>
           )}
         </div>
       </div>
@@ -151,13 +147,15 @@ export function Services() {
       {/* CTA */}
       <div className="relative z-10 py-16" style={{ background: 'rgba(0,196,224,0.04)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl mb-4 font-semibold" style={{ color: '#eef4f8' }}>¿Necesitas alguno de estos servicios?</h2>
-          <p className="mb-8" style={{ color: '#7aa3b8' }}>
-            {user ? 'Crea un ticket y nuestro equipo te contactará pronto' : 'Regístrate para crear un ticket y nuestro equipo te contactará pronto'}
-          </p>
-          <Button asChild size="lg" className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
-            <Link to={ctaTo}>{user ? 'Crear ticket' : 'Registrarse ahora'}</Link>
-          </Button>
+          <Reveal y={20}>
+            <h2 className="text-3xl mb-4 font-semibold" style={{ color: '#eef4f8' }}>¿Necesitas alguno de estos servicios?</h2>
+            <p className="mb-8" style={{ color: '#7aa3b8' }}>
+              {user ? 'Crea un ticket y nuestro equipo te contactará pronto' : 'Regístrate para crear un ticket y nuestro equipo te contactará pronto'}
+            </p>
+            <Button asChild size="lg" className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
+              <Link to={ctaTo}>{user ? 'Crear ticket' : 'Registrarse ahora'}</Link>
+            </Button>
+          </Reveal>
         </div>
       </div>
 

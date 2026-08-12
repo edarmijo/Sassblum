@@ -5,7 +5,7 @@ import { ImageWithFallback } from '../../../core/ui/ImageWithFallback'
 import { GlowCard } from '../../../core/ui/GlowCard'
 import { InteractiveGlow } from '../../../core/ui/InteractiveGlow'
 import { PageHero } from '../../../core/ui/layout/PageHero'
-import { Reveal, FocusReveal } from '../../../core/ui/motion'
+import { Reveal, RevealGroup, RevealItem } from '../../../core/ui/motion'
 import { EASE_APPLE } from '../../../core/ui/motion/ease'
 
 const VALUES = [
@@ -93,16 +93,16 @@ export function About() {
               <span className="text-gradient-brand">transforma empresas</span>
             </h2>
           </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-20">
-            {STATS.map((s, i) => (
-              <Reveal key={s.label} delay={i * 0.12} y={24}>
+          <RevealGroup className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-20" stagger={0.09}>
+            {STATS.map((s) => (
+              <RevealItem key={s.label}>
                 <p className="text-6xl md:text-7xl font-semibold tracking-tight text-brand-cyan">
                   {s.value}
                 </p>
                 <p className="mt-3 uppercase tracking-widest text-sm" style={{ color: '#7aa3b8' }}>{s.label}</p>
-              </Reveal>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
       </section>
 
@@ -115,15 +115,15 @@ export function About() {
               Lo que nos define
             </h2>
           </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {VALUES.map((v, i) => (
-              <FocusReveal key={v.title} delay={i * 0.08}>
+          <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {VALUES.map((v) => (
+              <RevealItem key={v.title} focus>
                 <GlowCard className="h-full" style={{ background: 'rgba(8,22,36,0.7)', border: '1px solid rgba(0,196,224,0.12)', backdropFilter: 'blur(12px)' } as CSSProperties}>
                   <div className="p-8 text-center">
                     <motion.div
                       className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-5 mx-auto"
                       style={{ background: 'rgba(0,196,224,0.1)', border: '1px solid rgba(0,196,224,0.2)' }}
-                      whileHover={{ scale: 1.1, rotate: -8 }}
+                      whileHover={reduce ? undefined : { scale: 1.08, rotate: -6 }}
                       transition={{ duration: 0.3, ease: EASE_APPLE }}
                     >
                       <v.icon className="h-7 w-7 text-brand-cyan" />
@@ -132,9 +132,9 @@ export function About() {
                     <p className="text-sm leading-relaxed" style={{ color: '#7aa3b8' }}>{v.text}</p>
                   </div>
                 </GlowCard>
-              </FocusReveal>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
         </div>
       </section>
     </div>

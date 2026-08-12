@@ -1,274 +1,155 @@
-import { Mail, Phone, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Mail, Phone } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
-const sectionHeaderStyle: React.CSSProperties = {
-  fontSize: '0.78rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: '#00c4e0',
-  marginBottom: '1rem',
-  fontWeight: 600,
-  fontFamily: "'Space Grotesk', sans-serif",
-}
+const serviceLinks = [
+  'Infraestructura IT',
+  'Soporte Técnico',
+  'Cableado Estructurado',
+] as const
 
-const linkBaseStyle: React.CSSProperties = {
-  display: 'block',
-  color: '#a0a0b8',
-  textDecoration: 'none',
-  fontSize: '0.9rem',
-  fontFamily: "'Space Grotesk', sans-serif",
-  transition: 'color 0.25s ease, transform 0.25s ease',
-  marginBottom: '0.6rem',
-}
+const additionalLinks = ['Sistema CCTV', 'Domótica', 'Servidores'] as const
+
+const navigationLinkClassName =
+  'group inline-flex min-h-11 max-w-full min-w-0 items-center gap-2 py-2 font-display text-[0.9rem] leading-snug text-[#c3d2e3] no-underline transition-[color,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-1 hover:text-[#76e7f5] focus-visible:translate-x-1 focus-visible:text-[#76e7f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5ee7f5] focus-visible:ring-offset-4 focus-visible:ring-offset-[#071426] motion-reduce:transform-none motion-reduce:transition-none'
+
+const sectionHeadingClassName =
+  'mb-3 font-display text-[0.76rem] font-semibold uppercase tracking-[0.14em] text-[#76e7f5]'
 
 export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer style={{ backgroundColor: 'transparent', color: '#ffffff', position: 'relative', zIndex: 10 }}>
-      {/* transparent footer — el fondo de partículas se ve a través (estética de
-          la sección "El nexo perfecto"); solo una hairline superior para separar */}
-      <div style={{
-        margin: '0 clamp(1rem,3vw,3rem)',
-        borderRadius: '24px 24px 0 0',
-        background: 'transparent',
-        borderTop: '1px solid rgba(0,196,224,0.12)',
-      }}>
+    <footer
+      id="site-footer"
+      className="relative z-10 w-full pt-8 sm:pt-10 lg:pt-14"
+      style={{
+        paddingInlineStart: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+        paddingInlineEnd: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+      }}
+    >
       <div
+        className="relative mx-auto max-w-[1440px] overflow-hidden rounded-t-[1.5rem] border border-b-0 border-white/10"
         style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '3.5rem 1.5rem 0',
+          background:
+            'linear-gradient(145deg, rgba(5, 13, 26, 0.96) 0%, rgba(10, 27, 48, 0.92) 54%, rgba(5, 13, 26, 0.97) 100%)',
+          boxShadow: '0 -18px 60px rgba(1, 8, 20, 0.3)',
         }}
       >
-        {/* Top section: brand (2fr) + link columns (3fr) */}
         <div
-          className="grid grid-cols-1 lg:grid-cols-[2fr_3fr]"
-          style={{
-            gap: '3rem',
-            paddingBottom: '3rem',
-          }}
-        >
-          {/* Brand column */}
-          <div>
-            <div
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '1.6rem',
-                fontWeight: 700,
-                marginBottom: '1rem',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              SASS<span style={{ color: '#00c4e0' }}>BLUM</span>
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#5ee7f5]/70 to-transparent"
+        />
+
+        <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8 lg:px-10">
+          <div className="grid gap-10 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,2fr)] lg:gap-16 lg:py-14">
+            <div className="min-w-0 lg:max-w-sm">
+              <Link
+                to="/"
+                aria-label="Sassblum, ir al inicio"
+                className="inline-flex min-h-11 items-center font-display text-[clamp(1.45rem,4vw,1.75rem)] font-bold tracking-[-0.035em] text-[#eef7ff] no-underline transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5ee7f5] focus-visible:ring-offset-4 focus-visible:ring-offset-[#071426] motion-reduce:transition-none"
+              >
+                SASS<span className="text-[#5ee7f5]">BLUM</span>
+              </Link>
+              <p className="mt-3 max-w-[34rem] font-display text-[0.94rem] leading-7 text-[#bfd0e2] lg:max-w-xs">
+                Innovación tecnológica para tu negocio. Más de 20 años creando
+                infraestructura confiable.
+              </p>
             </div>
-            <p
-              style={{
-                color: '#7aa3b8',
-                fontSize: '0.9rem',
-                lineHeight: 1.7,
-                maxWidth: '320px',
-                fontFamily: "'Space Grotesk', sans-serif",
-              }}
-            >
-              Innovación tecnológica para tu negocio. 20+ años de experiencia.
-            </p>
+
+            <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-9 sm:gap-x-10 md:grid-cols-3 md:gap-y-8">
+              <nav aria-labelledby="footer-services-heading" className="min-w-0">
+                <h2 id="footer-services-heading" className={sectionHeadingClassName}>
+                  Servicios
+                </h2>
+                <ul className="m-0 list-none p-0">
+                  {serviceLinks.map((label) => (
+                    <li key={label} className="min-w-0">
+                      <Link to="/servicios" className={navigationLinkClassName}>
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              <nav aria-labelledby="footer-more-heading" className="min-w-0">
+                <h2 id="footer-more-heading" className={sectionHeadingClassName}>
+                  Más
+                </h2>
+                <ul className="m-0 list-none p-0">
+                  {additionalLinks.map((label) => (
+                    <li key={label} className="min-w-0">
+                      <Link to="/servicios" className={navigationLinkClassName}>
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              <address
+                aria-labelledby="footer-contact-heading"
+                className="col-span-2 min-w-0 not-italic md:col-span-1"
+              >
+                <h2 id="footer-contact-heading" className={sectionHeadingClassName}>
+                  Contacto
+                </h2>
+                <ul className="m-0 list-none p-0">
+                  <li className="min-w-0">
+                    <a
+                      href="mailto:info@sassblum.com"
+                      className={navigationLinkClassName}
+                    >
+                      <Mail aria-hidden="true" className="size-4 shrink-0" />
+                      <span className="min-w-0 [overflow-wrap:anywhere]">
+                        info@sassblum.com
+                      </span>
+                    </a>
+                  </li>
+                  <li className="min-w-0">
+                    <a href="tel:+593969990990" className={navigationLinkClassName}>
+                      <Phone aria-hidden="true" className="size-4 shrink-0" />
+                      <span className="min-w-0 [overflow-wrap:anywhere]">
+                        +593 96 999 0990
+                      </span>
+                    </a>
+                  </li>
+                  <li className="min-w-0">
+                    <a
+                      href="https://www.instagram.com/sassblum/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={navigationLinkClassName}
+                    >
+                      <ArrowUpRight
+                        aria-hidden="true"
+                        className="size-4 shrink-0 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
+                      />
+                      <span>Instagram</span>
+                      <span className="sr-only">(se abre en una pestaña nueva)</span>
+                    </a>
+                  </li>
+                </ul>
+              </address>
+            </div>
           </div>
 
-          {/* Link columns */}
           <div
-            className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            className="flex flex-col gap-2 border-t border-[#91b4d4]/20 py-6 font-display text-[0.82rem] leading-6 text-[#b7c9dc] sm:flex-row sm:items-center sm:justify-between sm:gap-6"
             style={{
-              gap: '2rem',
+              paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            {/* Servicios */}
-            <div>
-              <h4 style={sectionHeaderStyle}>Servicios</h4>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Infraestructura IT
-              </a>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Soporte Técnico
-              </a>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Cableado Estructurado
-              </a>
-            </div>
-
-            {/* Más */}
-            <div>
-              <h4 style={sectionHeaderStyle}>Más</h4>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Sistema CCTV
-              </a>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Domótica
-              </a>
-              <a
-                href="#services"
-                style={linkBaseStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                Servidores
-              </a>
-            </div>
-
-            {/* Contacto */}
-            <div>
-              <h4 style={sectionHeaderStyle}>Contacto</h4>
-              <a
-                href="mailto:info@sassblum.com"
-                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', overflowWrap: 'anywhere' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <Mail size={14} />
-                info@sassblum.com
-              </a>
-              <a
-                href="tel:+593969990990"
-                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', overflowWrap: 'anywhere' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <Phone size={14} />
-                +593-9-6999-0990
-              </a>
-              <a
-                href="https://www.instagram.com/sassblum/"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#00c4e0'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#a0a0b8'
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <ArrowUpRight size={14} />
-                Instagram
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div
-          style={{
-            borderTop: '1px solid rgba(107, 107, 133, 0.2)',
-            paddingTop: '1.5rem',
-            paddingBottom: '1.5rem',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
-            }}
-          >
-            <p
-              style={{
-                color: '#7aa3b8',
-                fontSize: '0.82rem',
-                fontFamily: "'Space Grotesk', sans-serif",
-              }}
-            >
+            <p className="min-w-0 [overflow-wrap:anywhere]">
               © {year} sassblum.com — Todos los derechos reservados
             </p>
-            <p
-              style={{
-                color: '#7aa3b8',
-                fontSize: '0.82rem',
-                fontFamily: "'Space Grotesk', sans-serif",
-              }}
-            >
-              Diseñado con{' '}
-              <span style={{ color: '#00c4e0' }}>♥</span>
+            <p className="shrink-0">
+              Diseñado con <span className="text-[#76e7f5]" aria-hidden="true">♥</span>
+              <span className="sr-only">dedicación</span>
             </p>
           </div>
         </div>
       </div>
-      </div>{/* close glass card */}
     </footer>
   )
 }

@@ -1,32 +1,21 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { pageTransition } from '../utils/animation'
 
 interface PageTransitionProps {
   children: ReactNode
+  pathname: string
 }
 
 /**
- * Wrapper que aplica transiciones de página fluidas (blur + fade + slide).
- * Usa AnimatePresence de framer-motion para detectar cambios de ruta.
- * Respeta prefers-reduced-motion (framer-motion lo maneja automáticamente).
+ * Lightweight route-entry wrapper.
+ *
+ * The keyed element restarts a short CSS animation on navigation. The CSS only
+ * animates opacity and transform, and the global reduced-motion rule disables
+ * the spatial transition for users who request it.
  */
-export function PageTransition({ children }: Readonly<PageTransitionProps>) {
-  const location = useLocation()
-
+export function PageTransition({ children, pathname }: Readonly<PageTransitionProps>) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={pageTransition}
-        className="min-h-screen"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div key={pathname} className="route-enter" data-route-transition={pathname}>
+      {children}
+    </div>
   )
 }

@@ -260,18 +260,25 @@ export function Navbar() {
           }}
         >
           {/* Logo */}
-          <Link to="/" style={{ textDecoration: 'none' }}>
+          <Link
+            to="/"
+            aria-label="Sassblum, ir al inicio"
+            className="inline-flex min-h-11 min-w-0 shrink-0 items-center rounded-sm px-1 font-display no-underline transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-px hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5ee7f5] focus-visible:ring-offset-4 focus-visible:ring-offset-[#071426] motion-reduce:transform-none motion-reduce:transition-none"
+          >
             <span
+              className="inline-flex items-baseline whitespace-nowrap"
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontWeight: 700,
-                fontSize: '1.25rem',
-                letterSpacing: '0.12em',
+                fontSize: 'clamp(1rem, 4.8vw, 1.25rem)',
+                letterSpacing: '0.075em',
                 color: '#fff',
               }}
             >
               <span>SASS</span>
-              <span style={{ color: '#00c4e0' }}>.</span>
+              <span style={{ color: '#5ee7f5', marginInlineStart: '0.28em' }}>
+                BLUM
+              </span>
             </span>
           </Link>
 
