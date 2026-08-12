@@ -8,7 +8,7 @@ import threading
 from apps.clientes.interfaces import IClientLogoAdminView, IClientLogoPublicView
 from apps.clientes.repositories import ClientLogoRepository
 from apps.tickets.interfaces import IStorageService
-from apps.tickets.services.storage_name import storage_filename
+from apps.tickets.services.storage_name import versioned_storage_filename
 from core.exceptions.domain_exceptions import DomainException
 
 
@@ -74,7 +74,7 @@ class ClientLogoService(IClientLogoPublicView, IClientLogoAdminView):
             return logo
         if self._storage is None:
             raise RuntimeError("El almacenamiento de logotipos no está configurado.")
-        path = f"clients/{logo.id}/{storage_filename(getattr(file, 'name', 'logo'))}"
+        path = f"clients/{logo.id}/{versioned_storage_filename(getattr(file, 'name', 'logo'))}"
         url = self._storage.upload(file, path)
         if not url:
             raise RuntimeError("No se pudo subir el logotipo al almacenamiento.")

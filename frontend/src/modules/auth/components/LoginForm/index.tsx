@@ -11,7 +11,7 @@ interface LoginFormProps {
   readonly onSuccess?: () => void
 }
 
-// Si el servidor (Render plan gratuito) está dormido, tarda ~30-50 s en
+// Si el servidor (Render plan gratuito) está dormido, puede tardar cerca de 1 min en
 // despertar. Tras este umbral le avisamos al usuario para que no piense que
 // algo está roto.
 const COLD_START_HINT_MS = 8_000
@@ -74,7 +74,7 @@ export function LoginForm({ onSuccess }: Readonly<LoginFormProps>) {
       {isSlowStart && (
         <Alert>
           <AlertDescription className="text-sm text-muted-foreground">
-            El servidor está iniciando. Esto puede tardar hasta 30 segundos en la primera conexión del día.
+            El servidor está tardando en responder. En el plan gratuito puede demorar cerca de un minuto tras un periodo sin actividad.
           </AlertDescription>
         </Alert>
       )}

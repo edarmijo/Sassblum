@@ -26,6 +26,7 @@ function makeService(unread: number): INotificationService {
   return {
     getUserNotifications: vi.fn().mockResolvedValue(page),
     markAsRead: vi.fn().mockResolvedValue(page.items[0]),
+    markAllAsRead: vi.fn().mockResolvedValue(page.unreadCount),
     getPreferences: vi.fn().mockResolvedValue({ emailActivo: true, inAppActivo: true, wsActivo: true }),
     setPreferences: vi.fn(),
   }

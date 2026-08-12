@@ -159,7 +159,7 @@ export function ServiceDetailAdminPanel() {
                   const isDeleting = deletingImageId === image.id
                   return (
                     <article key={image.id} className="group overflow-hidden rounded-lg border border-border bg-muted/20">
-                      <div className="aspect-[4/3] overflow-hidden bg-muted"><ImageWithFallback src={image.imagen_url} alt={`${selectedService.nombre}, imagen adicional ${index + 1}`} className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105" /></div>
+                      <div className="aspect-[4/3] overflow-hidden bg-muted"><ImageWithFallback src={image.imagen_url} sizes="(max-width: 640px) 50vw, 240px" alt={`${selectedService.nombre}, imagen adicional ${index + 1}`} className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105" /></div>
                       <div className="flex items-center justify-between gap-2 p-2"><span className="text-xs text-muted-foreground">Imagen {index + 1}</span><Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-destructive hover:text-destructive" disabled={isDeleting} onClick={() => void removeImage(image.id)} aria-label={`Eliminar imagen ${index + 1} de ${selectedService.nombre}`}>{isDeleting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}<span className="ml-1.5">Eliminar</span></Button></div>
                     </article>
                   )

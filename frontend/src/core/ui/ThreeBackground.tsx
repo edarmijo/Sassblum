@@ -24,8 +24,9 @@ import { secureRandom } from '../utils/random';
  */
 
 /* ───────── constants ───────── */
-const PARTICLE_COUNT_DESKTOP = 800;
+const PARTICLE_COUNT_DESKTOP = 560;
 const PARTICLE_COUNT_MOBILE  = 300;
+const FRAME_INTERVAL_MS = 1000 / 30;
 const MOUSE_LERP  = 0.05;
 const CAMERA_LERP = 0.02;
 const ORB_LERP    = 0.03;
@@ -131,7 +132,7 @@ export function ThreeBackground() {
     /* ── renderer ── */
     const renderer = new WebGLRenderer({ alpha: true, antialias: !isMobile });
     renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
-    renderer.setPixelRatio(Math.min(globalThis.window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(globalThis.window.devicePixelRatio, 1.5));
     Object.assign(renderer.domElement.style, {
       position: 'fixed', top: '0', left: '0',
       width: '100%', height: '100%',
@@ -320,12 +321,17 @@ export function ThreeBackground() {
 
     /* ── animation loop ── */
     let rafId      = 0;
-    let frameCount = 0;   // Hz-independent throttle counter
+    let frameCount = 0;
+    let lastFrameMs = 0;
+    let running = false;
     let prevCamX   = 0;   // skip lookAt when camera barely moved
     const clock    = new Clock();
 
-    function animate() {
+    function animate(now = 0) {
+      if (!running) return;
       rafId = requestAnimationFrame(animate);
+      if (now - lastFrameMs < FRAME_INTERVAL_MS) return;
+      lastFrameMs = now;
       frameCount++;
       const elapsed = clock.getElapsedTime();
 
@@ -364,18 +370,22 @@ export function ThreeBackground() {
     }
 
     // Respect prefers-reduced-motion
-    if (globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const prefersReducedMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
       renderer.render(scene, camera);
     } else {
-      animate();
+      running = true;
+      rafId = requestAnimationFrame(animate);
     }
 
     /* ── pause when tab is hidden ── */
     const onVisibility = () => {
       if (document.hidden) {
+        running = false;
         cancelAnimationFrame(rafId);
-      } else {
-        animate();
+      } else if (!prefersReducedMotion && !running) {
+        running = true;
+        rafId = requestAnimationFrame(animate);
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -390,6 +400,7 @@ export function ThreeBackground() {
 
     /* ── cleanup ── */
     return () => {
+      running = false;
       cancelAnimationFrame(rafId);
       document.removeEventListener('visibilitychange', onVisibility);
       globalThis.removeEventListener('mousemove', onMouseMove);

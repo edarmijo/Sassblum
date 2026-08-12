@@ -1,6 +1,7 @@
 """Unit tests for gallery upload object names (no database)."""
 
 from types import SimpleNamespace
+import re
 
 from apps.gallery.services.gallery_service import GalleryService
 
@@ -12,7 +13,7 @@ def test_project_upload_uses_a_safe_storage_filename():
     class Storage:
         def upload(self, file, path):
             assert file is uploaded
-            assert path == "gallery/4/Recepcion-corporativa.jpg"
+            assert re.fullmatch(r"gallery/4/Recepcion-corporativa-[0-9a-f]{12}\.jpg", path)
             return "https://cdn.example/project.jpg"
 
     class Repository:

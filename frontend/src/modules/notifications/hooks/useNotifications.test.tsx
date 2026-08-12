@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { vi } from 'vitest'
-import { useNotifications } from './useNotifications'
+import { beforeEach, vi } from 'vitest'
+import { resetNotificationsCache, useNotifications } from './useNotifications'
 import { NotificationProvider } from './NotificationProvider'
 import type { INotificationService } from '../interfaces/INotificationService'
 import type { PaginatedNotifications } from '../interfaces/types'
@@ -29,6 +29,7 @@ function makeService(): INotificationService {
   return {
     getUserNotifications: vi.fn().mockResolvedValue(page),
     markAsRead: vi.fn().mockResolvedValue(page.items[0]),
+    markAllAsRead: vi.fn().mockResolvedValue(page.unreadCount),
     getPreferences: vi.fn(),
     setPreferences: vi.fn(),
   }
@@ -41,6 +42,8 @@ function wrapper(service: INotificationService) {
 }
 
 describe('useNotifications', () => {
+  beforeEach(() => resetNotificationsCache())
+
   it('loads notifications and unread count on mount', async () => {
     const service = makeService()
     const { result } = renderHook(() => useNotifications(), { wrapper: wrapper(service) })
@@ -75,5 +78,17 @@ describe('useNotifications', () => {
 
     expect(result.current.notifications[0].id).toBe('2')
     expect(result.current.unreadCount).toBe(2)
+  })
+
+  it('marks all notifications with one batch request', async () => {
+    const service = makeService()
+    const { result } = renderHook(() => useNotifications(), { wrapper: wrapper(service) })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => { await result.current.markAllAsRead() })
+
+    expect(service.markAllAsRead).toHaveBeenCalledOnce()
+    expect(service.markAsRead).not.toHaveBeenCalled()
+    expect(result.current.unreadCount).toBe(0)
   })
 })

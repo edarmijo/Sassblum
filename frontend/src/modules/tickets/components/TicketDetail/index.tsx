@@ -1,10 +1,12 @@
 import { Paperclip } from 'lucide-react'
-import { useTicketDetail } from '../../hooks/useTickets'
 import { TicketStatusBadge } from '../TicketStatusBadge'
 import { TicketHistory } from '../TicketHistory'
+import type { TicketDetail as TicketDetailData } from '../../interfaces/ITicketService'
 
 interface TicketDetailProps {
-  ticketId: string
+  ticket: TicketDetailData | null
+  isLoading: boolean
+  error: string | null
 }
 
 function MetaField({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
@@ -18,12 +20,10 @@ function MetaField({ label, children }: Readonly<{ label: string; children: Reac
 
 /**
  * SRP: renders full detail of one ticket including history.
- * DIP: loads data via useTicketDetail which depends on ITicketClientActions (Context).
+ * Data is supplied by the page so one ticket detail produces exactly one request.
  * OCP: new section (e.g. adjuntos list) → add below the grid without touching other sections.
  */
-export function TicketDetail({ ticketId }: Readonly<TicketDetailProps>) {
-  const { ticket, isLoading, error } = useTicketDetail(ticketId)
-
+export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetailProps>) {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">

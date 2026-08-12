@@ -57,6 +57,16 @@ class SocketClient {
     this.open()
   }
 
+  /** Rotate credentials without waking a socket that was intentionally suspended. */
+  updateToken(token: string): void {
+    const tokenChanged = this.token !== null && this.token !== token
+    this.token = token
+    this.shouldReconnect = true
+    this.retries = 0
+    if (tokenChanged) this.closeCurrentSocket()
+    if (!this.isSuspended) this.open()
+  }
+
   private open(): void {
     if (this.isSuspended) return
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return
@@ -118,6 +128,13 @@ class SocketClient {
     this.isSuspended = true
     this.clearReconnectTimer()
     this.closeCurrentSocket()
+  }
+
+  /** Resume with the current in-memory token; avoids rotating JWTs on short tab switches. */
+  resume(): void {
+    if (!this.token || !this.shouldReconnect) return
+    this.isSuspended = false
+    this.open()
   }
 
   private handlePageHide = (event: PageTransitionEvent): void => {

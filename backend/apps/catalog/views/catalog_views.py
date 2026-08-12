@@ -28,6 +28,7 @@ from rest_framework.views import APIView
 from apps.catalog.serializers import ServiceCreateSerializer, ServiceEditSerializer
 from apps.catalog.services import get_catalog_service
 from core.exceptions.domain_exceptions import ServiceHasTickets, ServiceNotFound
+from core.http import public_cache
 from core.permissions import IsAdmin
 
 
@@ -42,10 +43,10 @@ class ServiceListView(APIView):
             if k in request.query_params
         }
         services = get_catalog_service().get_active_services(filters)
-        return Response(
+        return public_cache(Response(
             {"items": services, "total": len(services)},
             status=status.HTTP_200_OK,
-        )
+        ))
 
 
 class ServiceDetailView(APIView):

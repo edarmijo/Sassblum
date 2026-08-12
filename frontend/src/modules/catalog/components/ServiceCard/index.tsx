@@ -1,6 +1,7 @@
 import { ArrowRight, Eye } from 'lucide-react'
 import { GlowCard } from '../../../../core/ui/GlowCard'
 import { ImageWithFallback } from '../../../../core/ui/ImageWithFallback'
+import { env } from '../../../../infrastructure/config/env'
 import type { ServiceSummary } from '../../interfaces/ICatalogService'
 
 interface ServiceCardProps {
@@ -40,6 +41,9 @@ export function ServiceCard({ service, onSelect, onViewDetails }: Readonly<Servi
           <div className="mb-2.5 aspect-[16/9] overflow-hidden rounded-lg bg-muted">
             <ImageWithFallback
               src={service.imagenUrl}
+              optimizedWidth={640}
+              optimizationEnabled={env.imageTransformsEnabled}
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
               alt={`Imagen de ${service.nombre}`}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

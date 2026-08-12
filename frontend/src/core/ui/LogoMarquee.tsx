@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ImageWithFallback } from './ImageWithFallback'
 
 export interface Brand {
   /** Nombre visible de la marca/empresa. */
@@ -27,10 +28,10 @@ function BrandLogo({ domain, logoUrl, name }: Readonly<{ domain?: string; logoUr
     return <span className="text-center text-sm font-semibold tracking-wide text-slate-200">{name}</span>
   }
   return (
-    <img
+    <ImageWithFallback
       src={source}
+      sizes={logoUrl ? '160px' : '36px'}
       alt={`Logo ${name}`}
-      loading="lazy"
       onError={() => setOk(false)}
       className={logoUrl
         ? 'h-14 max-w-40 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105'

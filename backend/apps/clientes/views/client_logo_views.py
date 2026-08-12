@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.clientes.serializers import ClientLogoCreateSerializer, ClientLogoEditSerializer
 from apps.clientes.services import ClientLogoNotFound, get_client_logo_service
+from core.http import public_cache
 from core.permissions import IsAdmin
 
 
@@ -18,7 +19,9 @@ class ClientLogoListView(APIView):
 
     def get(self, request):
         logos = get_client_logo_service().get_active_logos()
-        return Response({"items": logos, "total": len(logos)}, status=status.HTTP_200_OK)
+        return public_cache(
+            Response({"items": logos, "total": len(logos)}, status=status.HTTP_200_OK),
+        )
 
 
 class ClientLogoAdminView(APIView):

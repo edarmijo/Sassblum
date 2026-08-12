@@ -1,6 +1,6 @@
-import { useRef, useEffect, useState, type MouseEvent } from 'react';
+import { useRef, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { Server, Network, Cctv } from 'lucide-react';
 import { EASE_APPLE } from '../../../core/ui/motion/ease';
 
@@ -25,22 +25,26 @@ function glowMouse(e: MouseEvent<HTMLElement>) {
 }
 
 /* ─── animated counter hook ─── */
-function useCounter(target: number, inView: boolean, duration = 2000) {
+function useCounter(target: number, inView: boolean, reduceMotion: boolean, duration = 2000) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
+    if (reduceMotion) {
+      setValue(target);
+      return;
+    }
+    let rafId = 0;
     const startTime = performance.now();
     function tick(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      start = Math.round(eased * target);
-      setValue(start);
-      if (progress < 1) requestAnimationFrame(tick);
+      setValue(Math.round(eased * target));
+      if (progress < 1) rafId = requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
-  }, [inView, target, duration]);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [inView, target, reduceMotion, duration]);
   return value;
 }
 
@@ -62,35 +66,31 @@ const STATS = [
    HOME COMPONENT
    ──────────────────────────────────────────────────────────────────── */
 export function Home() {
+  const reduceMotion = useReducedMotion() ?? false;
+
   /* ── section in-view refs ── */
   const aboutRef = useRef<HTMLDivElement>(null);
   const aboutInView = useInView(aboutRef, { once: true, margin: '-100px' });
 
   /* ── counter values ── */
-  const c20 = useCounter(20, aboutInView);
-  const c500 = useCounter(500, aboutInView);
-  const c100 = useCounter(100, aboutInView);
+  const c20 = useCounter(20, aboutInView, reduceMotion);
+  const c500 = useCounter(500, aboutInView, reduceMotion);
+  const c100 = useCounter(100, aboutInView, reduceMotion);
   const counters = [c20, c500, c100];
 
-  /* ── marquee track ref (RAF-driven) ── */
-  const marqueeTrackRef = useRef<HTMLDivElement>(null);
-
-  /* ── hero card parallax refs (outer) + float refs (inner) ── */
+  /* ── hero card parallax refs (outer) ── */
   const heroRef = useRef<HTMLElement>(null);
-  const cardRefs = [
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-  ];
-  const floatRefs = [
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-  ];
+  const firstCardRef = useRef<HTMLDivElement>(null);
+  const secondCardRef = useRef<HTMLDivElement>(null);
+  const thirdCardRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useMemo(
+    () => [firstCardRef, secondCardRef, thirdCardRef],
+    [],
+  );
 
   /* ── hero card mouse parallax effect ── */
   useEffect(() => {
-    if (window.innerWidth < 768) return;
+    if (reduceMotion || window.innerWidth < 768) return;
     const hero = heroRef.current;
     if (!hero) return;
     const speeds = [0.03, 0.05, 0.04];
@@ -116,54 +116,7 @@ export function Home() {
     };
     hero.addEventListener('pointermove', onMove, { passive: true });
     return () => { cancelAnimationFrame(raf); hero.removeEventListener('pointermove', onMove); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── floating hero cards — RAF que escribe transform directo (inmune a
-        prefers-reduced-motion; siempre flotan por decisión del usuario) ── */
-  useEffect(() => {
-    const els = floatRefs.map((r) => r.current);
-    if (els.every((e) => !e)) return;
-    const params = [
-      { px: -15, py: 25, rot: 3, period: 12000 },
-      { px: 20, py: -20, rot: -4, period: 10000 },
-      { px: -10, py: -15, rot: 2, period: 14000 },
-    ];
-    let rafId = 0;
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = now - start;
-      els.forEach((el, i) => {
-        if (!el) return;
-        const p = params[i];
-        const f = (1 - Math.cos((t / p.period) * Math.PI * 2)) / 2; // 0 → 1 → 0
-        el.style.transform = `translate(${p.px * f}px, ${p.py * f}px) rotate(${p.rot * f}deg)`;
-      });
-      rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── marquee infinito — RAF que escribe transform directo (inmune a
-        prefers-reduced-motion; siempre anima por decisión del usuario) ── */
-  useEffect(() => {
-    const track = marqueeTrackRef.current;
-    if (!track) return;
-    let x = 0;
-    let half = 0;
-    let rafId = 0;
-    const step = () => {
-      if (!half) half = track.scrollWidth / 2;        // se mide cuando ya hay layout
-      if (half) {
-        x -= 0.5;
-        if (x <= -half) x += half;                     // loop sin salto
-        track.style.transform = `translateX(${x}px)`;
-      }
-      rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, []);
+  }, [cardRefs, reduceMotion]);
 
   /* ── CSS injected globally (keyframes + glow card + carousel) ── */
   const floatKeyframes = `
@@ -204,10 +157,10 @@ export function Home() {
       {/* ─────────────── HERO ─────────────── */}
       <section
         ref={heroRef}
-        className="min-h-screen flex items-center relative overflow-hidden z-10"
+        className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden z-10 md:flex-row"
         style={{ padding: '8rem clamp(1.5rem,4vw,4rem) 4rem' }}
       >
-        <div className="max-w-200 relative z-10">
+        <div className="w-full max-w-200 relative z-10">
           {/* badge */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="visible"
@@ -279,10 +232,7 @@ export function Home() {
         </div>
 
         {/* hero__cards — right half of hero */}
-        <div
-          className="absolute pointer-events-none hidden md:block"
-          style={{ top: 0, right: 0, bottom: 0, width: '50%', zIndex: 2 }}
-        >
+        <div className="home-hero-cards relative z-2 mt-12 grid w-full shrink-0 grid-cols-3 gap-2.5 pointer-events-none md:absolute md:inset-y-0 md:right-0 md:mt-0 md:block md:w-1/2">
           {([
             { Icon: Server,  label: 'Servidores', top: '15%',    right: '15%', bottom: undefined, iconColor: C.accent  },
             { Icon: Network, label: 'Cableado',   top: '50%',    right: '5%',  bottom: undefined, iconColor: C.accent2 },
@@ -293,25 +243,27 @@ export function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 + i * 0.2, duration: 0.9, ease: EASE_APPLE }}
-              className="absolute"
-              style={{ top: c.top, right: c.right, bottom: c.bottom }}
+              className="home-hero-card relative md:absolute"
+              style={{
+                ['--hero-card-top' as string]: c.top,
+                ['--hero-card-right' as string]: c.right,
+                ['--hero-card-bottom' as string]: c.bottom,
+              }}
             >
               {/* outer: JS mouse parallax via cardRefs[i] */}
-              <div ref={cardRefs[i]} style={{ width: 160, height: 160 }}>
-                {/* inner: RAF float via floatRefs[i] (inmune a reduced-motion) */}
+              <div ref={cardRefs[i]} className="h-24 w-full sm:h-28 md:h-40 md:w-40">
+                {/* CSS compositor animation avoids a permanent JavaScript frame loop. */}
                 <div
-                  ref={floatRefs[i]}
-                  className="w-full h-full flex flex-col items-center justify-center gap-3 rounded-[20px]"
+                  className="home-hero-card__surface w-full h-full flex flex-col items-center justify-center gap-2 rounded-2xl md:gap-3 md:rounded-[20px]"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    animation: reduceMotion ? undefined : `float${i + 1} ${[12, 10, 14][i]}s ease-in-out infinite`,
                   }}
                 >
-                  <c.Icon size={32} color={c.iconColor} strokeWidth={1.5} />
-                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: C.muted }}>{c.label}</span>
+                  <c.Icon className="h-6 w-6 md:h-8 md:w-8" color={c.iconColor} strokeWidth={1.5} />
+                  <span className="text-[0.6rem] md:text-xs" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, letterSpacing: '0.08em', color: C.muted }}>{c.label}</span>
                 </div>
               </div>
             </motion.div>
@@ -329,7 +281,10 @@ export function Home() {
 
       {/* ─────────────── MARQUEE ─────────────── */}
       <section className="relative z-10 overflow-hidden py-6" style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-        <div ref={marqueeTrackRef} className="flex" style={{ width: 'max-content', willChange: 'transform' }}>
+        <div
+          className="animate-marquee flex"
+          style={{ ['--marquee-duration' as string]: '42s' }}
+        >
           {[0, 1].map((copy) => (
             <div key={copy} className="flex items-center gap-10 pr-10" aria-hidden={copy === 1}>
               {MARQUEE.map((item, i) => (

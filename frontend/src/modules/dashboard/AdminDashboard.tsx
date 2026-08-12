@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Ticket as TicketIcon, Users, BarChart3, Package, Images, BadgeCheck, ImagePlus } from 'lucide-react'
 import { DashboardTabs, DashboardTabsList, DashboardTabsTrigger, DashboardTabsContent, DashboardTabsStyle } from '../../core/ui/DashboardTabs'
@@ -9,15 +9,16 @@ import { PageHero } from '../../core/ui/layout/PageHero'
 import { useTicketsList } from '../tickets/hooks/useTickets'
 import { TicketsTable } from '../tickets/components/TicketsTable'
 import { TicketFilters } from '../tickets/components/TicketFilters'
-import { AdminUserPage } from '../auth/pages/AdminUserPage'
-import { ReportsDashboard } from '../reports/components/ReportsDashboard'
-import { ReportsProvider } from '../reports/hooks/ReportsProvider'
-import { reportsService } from '../reports/services/ReportsService'
-import { CatalogAdminPanel } from '../catalog/components/CatalogAdminPanel'
-import { GalleryAdminPanel } from '../gallery/components/GalleryAdminPanel'
-import { ClientLogosAdminPage } from '../clients/pages/ClientLogosAdminPage'
-import { ServiceDetailAdminPanel } from '../catalog/components/ServiceDetailAdminPanel'
 import type { TicketFilterOptions } from '../tickets/interfaces/ITicketService'
+
+const AdminUserPage = lazy(() => import('../auth/pages/AdminUserPage').then((module) => ({ default: module.AdminUserPage })))
+const CatalogAdminPanel = lazy(() => import('../catalog/components/CatalogAdminPanel').then((module) => ({ default: module.CatalogAdminPanel })))
+const GalleryAdminPanel = lazy(() => import('../gallery/components/GalleryAdminPanel').then((module) => ({ default: module.GalleryAdminPanel })))
+const ClientLogosAdminPage = lazy(() => import('../clients/pages/ClientLogosAdminPage').then((module) => ({ default: module.ClientLogosAdminPage })))
+const ReportsAdminTab = lazy(() => import('../reports/components/ReportsAdminTab').then((module) => ({ default: module.ReportsAdminTab })))
+const ServiceDetailAdminPanel = lazy(() => import('../catalog/components/ServiceDetailAdminPanel').then((module) => ({ default: module.ServiceDetailAdminPanel })))
+
+const ADMIN_TAB_FALLBACK = <Skeleton className="h-48 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />
 
 export function AdminDashboard() {
   const [ticketFilters, setTicketFilters] = useState<TicketFilterOptions>({})
@@ -67,22 +68,20 @@ export function AdminDashboard() {
               </DashboardCard>
             </DashboardTabsContent>
 
-            <DashboardTabsContent value="users"><AdminUserPage /></DashboardTabsContent>
+            <DashboardTabsContent value="users"><Suspense fallback={ADMIN_TAB_FALLBACK}><AdminUserPage /></Suspense></DashboardTabsContent>
 
-            <DashboardTabsContent value="catalog"><CatalogAdminPanel /></DashboardTabsContent>
+            <DashboardTabsContent value="catalog"><Suspense fallback={ADMIN_TAB_FALLBACK}><CatalogAdminPanel /></Suspense></DashboardTabsContent>
 
-            <DashboardTabsContent value="gallery"><GalleryAdminPanel /></DashboardTabsContent>
+            <DashboardTabsContent value="gallery"><Suspense fallback={ADMIN_TAB_FALLBACK}><GalleryAdminPanel /></Suspense></DashboardTabsContent>
 
-            <DashboardTabsContent value="clients"><ClientLogosAdminPage /></DashboardTabsContent>
+            <DashboardTabsContent value="clients"><Suspense fallback={ADMIN_TAB_FALLBACK}><ClientLogosAdminPage /></Suspense></DashboardTabsContent>
 
             <DashboardTabsContent value="reports">
-              <ReportsProvider service={reportsService}>
-                <ReportsDashboard />
-              </ReportsProvider>
+              <Suspense fallback={ADMIN_TAB_FALLBACK}><ReportsAdminTab /></Suspense>
             </DashboardTabsContent>
 
             <DashboardTabsContent value="service-details">
-              <ServiceDetailAdminPanel />
+              <Suspense fallback={ADMIN_TAB_FALLBACK}><ServiceDetailAdminPanel /></Suspense>
             </DashboardTabsContent>
           </DashboardTabs>
         </FocusReveal>

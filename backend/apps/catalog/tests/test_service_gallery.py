@@ -1,6 +1,7 @@
 """Unit tests for catalog service image gallery behaviour (no database)."""
 
 from types import SimpleNamespace
+import re
 
 from apps.catalog.services.catalog_service import CatalogService
 from apps.tickets.services.storage_name import storage_filename
@@ -59,7 +60,7 @@ def test_add_service_image_uses_service_gallery_path_and_next_order():
     class Storage:
         def upload(self, file, path):
             assert file is uploaded
-            assert path == "services/7/gallery/rack.jpg"
+            assert re.fullmatch(r"services/7/gallery/rack-[0-9a-f]{12}\.jpg", path)
             return "https://cdn.example/rack.jpg"
 
     result = CatalogService(service_repository=Repository(), storage=Storage()).add_service_image(7, uploaded)

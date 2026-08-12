@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
+import re
 
 import pytest
 
@@ -52,7 +53,7 @@ def test_create_uploads_to_a_stable_client_folder():
     class Storage:
         def upload(self, file, path):
             assert file is uploaded
-            assert path == "clients/8/Soelec-final.png"
+            assert re.fullmatch(r"clients/8/Soelec-final-[0-9a-f]{12}\.png", path)
             return saved.logo_url
 
     service = ClientLogoService(repository=Repository(), storage=Storage())

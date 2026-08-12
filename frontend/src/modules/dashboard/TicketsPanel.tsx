@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, Ticket as TicketIcon, Clock, CheckCircle2, Loader2 } from 'lucide-react'
@@ -14,8 +14,11 @@ import { PageHero } from '../../core/ui/layout/PageHero'
 import { useTicketsList } from '../tickets/hooks/useTickets'
 import { TicketsTable } from '../tickets/components/TicketsTable'
 import { TicketFilters } from '../tickets/components/TicketFilters'
-import { CreateTicketPage } from '../tickets/pages/CreateTicketPage'
 import type { TicketSummary, TicketFilterOptions } from '../tickets/interfaces/ITicketService'
+
+const CreateTicketPage = lazy(() =>
+  import('../tickets/pages/CreateTicketPage').then((module) => ({ default: module.CreateTicketPage })),
+)
 
 function StatCard({ label, value, icon: Icon, chip }: Readonly<{ label: string; value: number; icon: LucideIcon; chip: string }>) {
   return (
@@ -132,13 +135,15 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
                     <DashboardCardDescription>Completa el formulario para solicitar un servicio</DashboardCardDescription>
                   </DashboardCardHeader>
                   <DashboardCardContent>
-                    <CreateTicketPage
-                      onCreated={(id, numero) => {
-                        // Paridad LN-1 (sistema legado): confirmar el número asignado al cliente
-                        toast.success(`Se te asignó el ticket ${numero}`)
-                        navigate(`/tickets/${id}`)
-                      }}
-                    />
+                    <Suspense fallback={<Skeleton className="h-64 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />}>
+                      <CreateTicketPage
+                        onCreated={(id, numero) => {
+                          // Paridad LN-1 (sistema legado): confirmar el número asignado al cliente
+                          toast.success(`Se te asignó el ticket ${numero}`)
+                          navigate(`/tickets/${id}`)
+                        }}
+                      />
+                    </Suspense>
                   </DashboardCardContent>
                 </DashboardCard>
               </DashboardTabsContent>

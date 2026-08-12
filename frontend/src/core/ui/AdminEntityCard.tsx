@@ -28,7 +28,7 @@ export function AdminEntityCard({
   return (
     <Card className={`overflow-hidden transition-opacity ${resaltada ? 'ring-2 ring-brand-cyan' : ''}`}>
       <div className="h-32 overflow-hidden bg-brand-navy/5">
-        <ImageWithFallback src={imagenUrl} alt={titulo} className="w-full h-full object-cover" />
+        <ImageWithFallback src={imagenUrl} sizes="(max-width: 640px) 100vw, 320px" alt={titulo} className="w-full h-full object-cover" />
       </div>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">

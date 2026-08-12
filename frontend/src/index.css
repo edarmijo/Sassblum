@@ -253,6 +253,124 @@ html {
   100% { transform: translateX(-50%); }
 }
 
+/* Mobile visual parity: a compositor-friendly echo of the desktop WebGL scene. */
+.mobile-visual-effects {
+  contain: strict;
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.mobile-visual-effects__grid,
+.mobile-visual-effects__nodes,
+.mobile-visual-effects__orb,
+.mobile-visual-effects__ring {
+  position: absolute;
+}
+
+.mobile-visual-effects__grid {
+  inset: -8%;
+  opacity: 0.13;
+  background-image:
+    linear-gradient(rgba(56, 217, 245, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 217, 245, 0.16) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 68% 30%, black 0%, transparent 72%);
+}
+
+.mobile-visual-effects__nodes {
+  inset: 0;
+  opacity: 0.32;
+  background-image: radial-gradient(circle, rgba(126, 232, 249, 0.9) 0 1px, transparent 1.5px);
+  background-size: 31px 31px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+
+.mobile-visual-effects__orb {
+  border-radius: 9999px;
+  will-change: transform;
+}
+
+.mobile-visual-effects__orb--primary {
+  top: 8%;
+  right: -32%;
+  width: 22rem;
+  height: 22rem;
+  opacity: 0.42;
+  background: radial-gradient(circle, rgba(0, 196, 224, 0.3) 0%, rgba(0, 196, 224, 0.08) 42%, transparent 70%);
+  animation: mobile-orb-drift 14s ease-in-out infinite;
+}
+
+.mobile-visual-effects__orb--secondary {
+  bottom: 3%;
+  left: -38%;
+  width: 20rem;
+  height: 20rem;
+  opacity: 0.28;
+  background: radial-gradient(circle, rgba(56, 217, 245, 0.26) 0%, rgba(56, 217, 245, 0.06) 45%, transparent 72%);
+  animation: mobile-orb-drift-alt 18s ease-in-out infinite;
+}
+
+.mobile-visual-effects__ring {
+  top: 19%;
+  right: -8.5rem;
+  border: 1px solid rgba(56, 217, 245, 0.16);
+  border-radius: 9999px;
+  will-change: transform;
+}
+
+.mobile-visual-effects__ring--outer {
+  width: 20rem;
+  height: 20rem;
+  animation: mobile-ring-turn 28s linear infinite;
+}
+
+.mobile-visual-effects__ring--inner {
+  top: 23%;
+  right: -5.5rem;
+  width: 14rem;
+  height: 14rem;
+  border-color: rgba(0, 196, 224, 0.22);
+  animation: mobile-ring-turn-reverse 22s linear infinite;
+}
+
+@keyframes mobile-orb-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.25rem, 2rem, 0) scale(1.06); }
+}
+
+@keyframes mobile-orb-drift-alt {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(1.5rem, -1rem, 0) scale(1.08); }
+}
+
+@keyframes mobile-ring-turn {
+  from { transform: rotate(18deg) scaleY(0.55); }
+  to { transform: rotate(378deg) scaleY(0.55); }
+}
+
+@keyframes mobile-ring-turn-reverse {
+  from { transform: rotate(360deg) scaleY(0.68); }
+  to { transform: rotate(0deg) scaleY(0.68); }
+}
+
+.home-hero-card__surface {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+@media (min-width: 768px) {
+  .home-hero-card {
+    top: var(--hero-card-top, auto);
+    right: var(--hero-card-right, auto);
+    bottom: var(--hero-card-bottom, auto);
+  }
+
+  .home-hero-card__surface {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}
+
 /* Texto con gradiente de marca animado */
 .text-gradient-brand {
   background-image: linear-gradient(115deg, #7c5cfc 0%, #a78bfa 45%, #c4b5fd 100%);

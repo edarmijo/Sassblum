@@ -90,7 +90,10 @@ class StorageService(IStorageService):
                 "Authorization": f"Bearer {self._key}",
                 "apikey": self._key,
                 "Content-Type": content_type,
-                "x-upsert": "true",
+                # Object names are versioned. They are immutable, so browsers
+                # and Supabase's CDN may retain them without revalidation.
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "x-upsert": "false",
             },
             timeout=30,
         )

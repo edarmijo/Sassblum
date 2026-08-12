@@ -13,6 +13,7 @@
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { env } from '../config/env'
+import { backendWarmupService } from '../health/BackendWarmupService'
 
 type TokenRefreshHandler = (accessToken: string, refreshToken: string | null) => void
 
@@ -23,6 +24,7 @@ class ApiClient {
   private onForcedLogout: (() => void) | null = null
   private onTokenRefreshed: TokenRefreshHandler | null = null
   private refreshPromise: Promise<boolean> | null = null
+  private sessionVersion = 0
 
   constructor() {
     this.http = axios.create({
@@ -34,7 +36,13 @@ class ApiClient {
       withCredentials: true,
     })
 
-    this.http.interceptors.request.use((config) => {
+    this.http.interceptors.request.use(async (config) => {
+      // Reuse the startup health request instead of racing it with login,
+      // session refresh, or catalog calls while Render is waking up. Calling
+      // start() here also covers a tab left open past Render's idle timeout.
+      // The health request is only a head start. Public catalog/login calls
+      // continue after a short bound even if Render's health endpoint is slow.
+      await backendWarmupService.waitUntilReady()
       if (this.accessToken) {
         config.headers.Authorization = `Bearer ${this.accessToken}`
       }
@@ -47,6 +55,8 @@ class ApiClient {
         const original = error.config as AxiosRequestConfig & { _retry?: boolean }
         if (
           error.response?.status === 401 &&
+          this.accessToken !== null &&
+          !original.url?.includes('/auth/token/refresh') &&
           !original._retry
         ) {
           original._retry = true
@@ -66,6 +76,7 @@ class ApiClient {
   // ── Token / session wiring (called by useAuth) ──────────────────────────────
 
   setTokens(access: string | null, refresh: string | null): void {
+    this.sessionVersion++
     this.accessToken = access
     this.refreshToken = refresh
   }
@@ -94,6 +105,7 @@ class ApiClient {
   }
 
   private async tryRefresh(): Promise<boolean> {
+    const sessionVersion = this.sessionVersion
     try {
       // H#4 (audit): Send device fingerprint with refresh token for binding.
       // simplejwt rotation + blacklist mitigates token theft.
@@ -110,12 +122,14 @@ class ApiClient {
         timeout: 60_000,
         withCredentials: true, // sin esto el navegador no manda la cookie
       })
+      if (sessionVersion !== this.sessionVersion) return this.accessToken !== null
       this.accessToken = data.access
       // La rotación emite un refresh nuevo; el viejo queda en blacklist.
       if (data.refresh) this.refreshToken = data.refresh
       this.onTokenRefreshed?.(data.access, this.refreshToken)
       return true
     } catch {
+      if (sessionVersion !== this.sessionVersion) return this.accessToken !== null
       return false
     }
   }

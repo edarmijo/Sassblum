@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 from apps.gallery.serializers import ProjectCreateSerializer, ProjectEditSerializer
 from apps.gallery.services import get_gallery_service
 from apps.gallery.services.gallery_service import ProjectNotFound
+from core.http import public_cache
 from core.permissions import IsAdmin
 
 
@@ -30,10 +31,10 @@ class ProjectListView(APIView):
 
     def get(self, request):
         projects = get_gallery_service().get_active_projects()
-        return Response(
+        return public_cache(Response(
             {"items": projects, "total": len(projects)},
             status=status.HTTP_200_OK,
-        )
+        ))
 
 
 class ProjectAdminView(APIView):

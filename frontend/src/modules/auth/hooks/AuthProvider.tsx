@@ -32,12 +32,33 @@ import type {
 import { authService as defaultAuthService } from '../services/AuthService'
 import { apiClient } from '../../../infrastructure/http/ApiClient'
 import { socketClient } from '../../../infrastructure/websocket/SocketClient'
+import {
+  requestNotificationsRevalidation,
+  resetNotificationsCache,
+} from '../../notifications/hooks/useNotifications'
 import { AuthContext } from './useAuth'
 
 /** Pista no sensible: "hubo una sesión aquí". Evita rehidratar en visitas anónimas. */
 const SESSION_HINT_KEY = 'sb_has_session'
 /** Claves heredadas — se purgan al arrancar: guardaban tokens en disco (BUG-06). */
 const LEGACY_KEYS = ['auth_tokens', 'auth_session', 'auth_user']
+const SESSION_REFRESH_AFTER_HIDDEN_MS = 60_000
+const ACCESS_TOKEN_EXPIRY_SKEW_MS = 30_000
+
+function jwtExpiresAt(accessToken: string): number {
+  try {
+    const encoded = accessToken.split('.')[1]
+    if (!encoded) return 0
+    const normalized = encoded.replaceAll('-', '+').replaceAll('_', '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const payload: unknown = JSON.parse(atob(padded))
+    if (typeof payload !== 'object' || payload === null) return 0
+    const expiresAt = (payload as Record<string, unknown>).exp
+    return typeof expiresAt === 'number' ? expiresAt * 1_000 : 0
+  } catch {
+    return 0
+  }
+}
 
 function hasSessionHint(): boolean {
   try {
@@ -74,6 +95,9 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   const [isLoading, setIsLoading] = useState(false)
   const [isBootstrapping, setIsBootstrapping] = useState(hasSessionHint)
   const isResumingSession = useRef(false)
+  const hiddenAtRef = useRef<number | null>(null)
+  const sessionGenerationRef = useRef(0)
+  const accessTokenExpiresAtRef = useRef(0)
 
   // Rehidratación: la cookie httpOnly se canjea por access + usuario.
   useEffect(() => {
@@ -94,6 +118,7 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
         const { user: u, tokens } = await service.refreshSession()
         if (cancelled) return
         apiClient.setTokens(tokens.accessToken, tokens.refreshToken || null)
+        accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
         socketClient.connect(tokens.accessToken)
         setRefreshToken(tokens.refreshToken || null)
         setUser(u)
@@ -116,7 +141,10 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   // Wire ApiClient's forced-logout (refresh failure) to clear our state.
   useEffect(() => {
     apiClient.setForcedLogoutHandler(() => {
+      sessionGenerationRef.current++
       clearSessionHint()
+      resetNotificationsCache()
+      accessTokenExpiresAtRef.current = 0
       socketClient.disconnect()
       setUser(null)
       setRefreshToken(null)
@@ -127,7 +155,8 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   useEffect(() => {
     apiClient.setTokenRefreshHandler((accessToken, nextRefreshToken) => {
       setRefreshToken(nextRefreshToken)
-      socketClient.connect(accessToken)
+      accessTokenExpiresAtRef.current = jwtExpiresAt(accessToken)
+      socketClient.updateToken(accessToken)
     })
     return () => apiClient.setTokenRefreshHandler(null)
   }, [])
@@ -138,11 +167,19 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   useEffect(() => {
     const resumeSession = async () => {
       if (!user || document.visibilityState === 'hidden' || isResumingSession.current) return
+      const sessionGeneration = sessionGenerationRef.current
       isResumingSession.current = true
       try {
         const { user: refreshedUser, tokens } = await service.refreshSession()
+        if (sessionGeneration !== sessionGenerationRef.current) return
         apiClient.setTokens(tokens.accessToken, tokens.refreshToken || null)
-        socketClient.connect(tokens.accessToken)
+        accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
+        if (!document.hidden) {
+          socketClient.connect(tokens.accessToken)
+          requestNotificationsRevalidation()
+        } else {
+          socketClient.updateToken(tokens.accessToken)
+        }
         setRefreshToken(tokens.refreshToken || null)
         setUser(refreshedUser)
       } catch {
@@ -155,10 +192,19 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now()
         socketClient.suspend()
         return
       }
-      void resumeSession()
+      const hiddenFor = hiddenAtRef.current === null ? Infinity : Date.now() - hiddenAtRef.current
+      hiddenAtRef.current = null
+      const tokenIsFresh = accessTokenExpiresAtRef.current > Date.now() + ACCESS_TOKEN_EXPIRY_SKEW_MS
+      if (hiddenFor < SESSION_REFRESH_AFTER_HIDDEN_MS && tokenIsFresh) {
+        socketClient.resume()
+        requestNotificationsRevalidation()
+      } else {
+        void resumeSession()
+      }
     }
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) void resumeSession()
@@ -173,10 +219,14 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   }, [service, user])
 
   const login = useCallback(async (credentials: LoginCredentials) => {
+    const sessionGeneration = ++sessionGenerationRef.current
+    resetNotificationsCache()
     setIsLoading(true)
     try {
       const { user: u, tokens } = await service.login(credentials)
+      if (sessionGeneration !== sessionGenerationRef.current) return
       apiClient.setTokens(tokens.accessToken, tokens.refreshToken)
+      accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
       socketClient.connect(tokens.accessToken)  // live notifications (Observer FE)
       setSessionHint()  // la credencial la custodia la cookie httpOnly, no nosotros
       setRefreshToken(tokens.refreshToken)
@@ -189,6 +239,7 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   const register = useCallback((data: RegisterData) => service.register(data), [service])
 
   const logout = useCallback(async () => {
+    sessionGenerationRef.current++
     // H#4 (audit): Optimistic logout — clear UI instantly, fire API in background.
     // El backend lee el refresh de la cookie; el valor en memoria es respaldo.
     service.logout(refreshToken ?? '').catch(() => {
@@ -197,6 +248,8 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
 
     // Immediately clear all local state to avoid UI lag
     apiClient.setTokens(null, null)
+    accessTokenExpiresAtRef.current = 0
+    resetNotificationsCache()
     socketClient.disconnect()
     clearSessionHint()
     setUser(null)
