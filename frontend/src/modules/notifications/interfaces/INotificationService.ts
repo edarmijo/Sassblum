@@ -41,6 +41,9 @@ export interface INotificationService {
    */
   markAsRead(notificationId: string): Promise<Notification>
 
+  /** Mark every unread notification in one server-side batch. */
+  markAllAsRead(): Promise<number>
+
   /** Load the current user's channel preferences. */
   getPreferences(): Promise<NotificationPreferences>
 

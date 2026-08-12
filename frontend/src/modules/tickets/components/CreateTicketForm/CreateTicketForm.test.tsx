@@ -99,11 +99,13 @@ function renderForm(service: ITicketClientActions, onSuccess = vi.fn()) {
 describe('CreateTicketForm', () => {
   describe('field rendering', () => {
     it('renders all required fields', () => {
-      renderForm(makeService())
+      const service = makeService()
+      renderForm(service)
       expect(screen.getByLabelText(/asunto/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/descripción/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/servicio/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /crear ticket/i })).toBeInTheDocument()
+      expect(service.getMyTickets).not.toHaveBeenCalled()
     })
 
     it('renders service options', () => {

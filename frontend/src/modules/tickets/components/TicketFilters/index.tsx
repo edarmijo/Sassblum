@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Filter, X } from 'lucide-react'
 import { Button } from '../../../../core/ui/button'
 import { Input } from '../../../../core/ui/input'
@@ -26,17 +26,32 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
   const [show, setShow] = useState(false)
   const [services, setServices] = useState<ServiceSummary[]>([])
   const [workers, setWorkers] = useState<AdminUser[]>([])
+  const catalogLoadedRef = useRef(false)
+  const workersLoadedRef = useRef(false)
   const { user } = useAuth()
   // El listado de trabajadores es un endpoint solo-admin: pedirlo con otro rol
   // genera un 403 innecesario en consola. El filtro por técnico solo aplica a admin.
   const isAdmin = user?.rol === 'ADMINISTRADOR'
 
   useEffect(() => {
-    void catalogService.getActiveServices().then(setServices).catch(() => setServices([]))
-    if (isAdmin) {
-      void userAdminService.listUsers({ role: 'worker', estado: 'activo' }).then(setWorkers).catch(() => setWorkers([]))
+    if (!show) return
+    if (!catalogLoadedRef.current) {
+      void catalogService.getActiveServices()
+        .then((items) => {
+          setServices(items)
+          catalogLoadedRef.current = true
+        })
+        .catch(() => setServices([]))
     }
-  }, [isAdmin])
+    if (isAdmin && !workersLoadedRef.current) {
+      void userAdminService.listUsers({ role: 'worker', estado: 'activo' })
+        .then((items) => {
+          setWorkers(items)
+          workersLoadedRef.current = true
+        })
+        .catch(() => setWorkers([]))
+    }
+  }, [show, isAdmin])
 
   const hasFilters = Object.values(filters).some(Boolean)
 

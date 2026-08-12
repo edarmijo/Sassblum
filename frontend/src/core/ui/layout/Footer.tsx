@@ -42,9 +42,8 @@ export function Footer() {
       >
         {/* Top section: brand (2fr) + link columns (3fr) */}
         <div
+          className="grid grid-cols-1 md:grid-cols-[2fr_3fr]"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 3fr',
             gap: '3rem',
             paddingBottom: '3rem',
           }}
@@ -77,9 +76,8 @@ export function Footer() {
 
           {/* Link columns */}
           <div
+            className="grid grid-cols-1 sm:grid-cols-3"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '2rem',
             }}
           >

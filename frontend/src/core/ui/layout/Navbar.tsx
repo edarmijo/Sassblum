@@ -1,19 +1,12 @@
-import { useEffect, useState, useCallback } from 'react'
+import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, User, LogOut } from 'lucide-react'
-import { Button } from '../button'
-import { Badge } from '../badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../dropdown-menu'
+import { LogOut } from 'lucide-react'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
 import type { AuthUser, UserRole } from '../../../modules/auth/interfaces/IAuthService'
-import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
+
+const AuthenticatedNavbarActions = lazy(() =>
+  import('./AuthenticatedNavbarActions').then((module) => ({ default: module.AuthenticatedNavbarActions })),
+)
 
 /* ─── constants ─────────────────────────────────────────────────────── */
 
@@ -40,87 +33,6 @@ const DASHBOARD_BY_ROLE: Record<UserRole, NavItem> = {
 }
 
 /* ─── AuthedActions (desktop) ───────────────────────────────────────── */
-
-function AuthedActions() {
-  const { user, logout } = useAuth()
-  const { unreadCount } = useNotifications()
-  const navigate = useNavigate()
-
-  if (!user) return null
-
-  return (
-    <div className="flex items-center gap-3">
-      {/* Notification bell */}
-      <Link
-        to="/notificaciones"
-        className="relative text-white/60 hover:text-white transition-colors"
-        style={{ transitionDuration: '200ms' }}
-        aria-label="Notificaciones"
-      >
-        <Bell className="h-[18px] w-[18px]" />
-        {unreadCount > 0 && (
-          <Badge
-            className="absolute -top-1.5 -right-2 h-4 min-w-4 flex items-center justify-center p-0 text-[10px] font-semibold rounded-full"
-            style={{ backgroundColor: '#00c4e0', color: '#fff' }}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-        )}
-      </Link>
-
-      {/* User dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full text-white/60 hover:text-white hover:bg-white/6"
-          >
-            <User className="h-[18px] w-[18px]" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="w-56"
-          style={{
-            backgroundColor: '#111118',
-            borderColor: 'rgba(255,255,255,0.06)',
-            color: '#fff',
-          }}
-        >
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span>
-                {user.nombre} {user.apellido}
-              </span>
-              <span className="text-xs capitalize" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {user.rol.toLowerCase()}
-              </span>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-          <DropdownMenuItem
-            onClick={() => navigate('/perfil')}
-            className="text-white/70 focus:text-white focus:bg-white/6"
-          >
-            <User className="mr-2 h-4 w-4" />
-            <span>Mi perfil</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              logout().catch(() => {})
-              navigate('/')
-            }}
-            className="text-white/70 focus:text-white focus:bg-white/6"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Cerrar sesión</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
 
 /* ─── MobileMenu ────────────────────────────────────────────────────── */
 
@@ -249,6 +161,16 @@ export function Navbar() {
   const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  ))
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)')
+    const updateViewport = () => setIsDesktop(query.matches)
+    query.addEventListener('change', updateViewport)
+    return () => query.removeEventListener('change', updateViewport)
+  }, [])
 
   /* scroll listener */
   useEffect(() => {
@@ -396,7 +318,11 @@ export function Navbar() {
           {/* Right side: auth + hamburger */}
           <div className="flex items-center" style={{ gap: 16 }}>
             {/* Auth actions — desktop only */}
-            {user && <div className="hidden md:block"><AuthedActions /></div>}
+            {user && isDesktop && (
+              <div className="hidden md:block">
+                <Suspense fallback={null}><AuthenticatedNavbarActions /></Suspense>
+              </div>
+            )}
 
             {/* Hamburger — mobile only */}
             <button

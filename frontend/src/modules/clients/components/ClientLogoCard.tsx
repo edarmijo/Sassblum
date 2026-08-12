@@ -20,7 +20,7 @@ export function ClientLogoCard({ logo, isSelected, onEdit, onToggle, onDelete }:
       }`}
     >
       <div className="relative flex h-32 items-center justify-center bg-white p-5">
-        <ImageWithFallback src={logo.logoUrl} alt={`Logotipo de ${logo.nombre}`} className="h-full w-full object-contain" />
+        <ImageWithFallback src={logo.logoUrl} sizes="160px" alt={`Logotipo de ${logo.nombre}`} className="h-full w-full object-contain" />
         <span className="absolute right-2 top-2 rounded-full bg-brand-navy/90 px-2 py-0.5 text-[10px] font-semibold text-white">
           #{logo.orden}
         </span>

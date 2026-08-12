@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { EASE_APPLE } from '../motion/ease'
 import { InteractiveGlow } from '../InteractiveGlow'
 
@@ -32,6 +32,7 @@ export function PageHero({
   accent = 'cyan',
   orbPosition = 'top-right',
 }: Readonly<PageHeroProps>) {
+  const reduceMotion = useReducedMotion() ?? false
   const { primary, secondary } = ORB_POSITION[orbPosition]
   const orbColor = ORB_COLOR[accent]
   const secondaryColor = accent === 'cyan' ? '#6366f1' : '#00d4ff'
@@ -45,20 +46,20 @@ export function PageHero({
       <motion.div
         className={`absolute ${primary} h-96 w-96 rounded-full blur-2xl pointer-events-none`}
         style={{ background: `radial-gradient(circle, ${orbColor} 0%, transparent 70%)` }}
-        animate={{ scale: [1, 1.12, 1], opacity: [0.2, 0.35, 0.2] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        animate={reduceMotion ? { scale: 1, opacity: 0.24 } : { scale: [1, 1.12, 1], opacity: [0.2, 0.35, 0.2] }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 7, repeat: Infinity, ease: 'easeInOut' }}
       />
       {/* Orbe secundario — movimiento contrario para profundidad */}
       <motion.div
         className={`absolute ${secondary} h-72 w-72 rounded-full blur-2xl pointer-events-none`}
         style={{ background: `radial-gradient(circle, ${secondaryColor} 0%, transparent 70%)` }}
-        animate={{ x: [0, -16, 0], y: [0, 20, 0], opacity: [0.12, 0.22, 0.12] }}
-        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        animate={reduceMotion ? { x: 0, y: 0, opacity: 0.16 } : { x: [0, -16, 0], y: [0, 20, 0], opacity: [0.12, 0.22, 0.12] }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 9, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="text-brand-cyan mb-4 uppercase tracking-[0.4em] text-sm"
@@ -66,7 +67,7 @@ export function PageHero({
           {eyebrow}
         </motion.p>
         <motion.h1
-          initial={{ opacity: 0, y: 24 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: EASE_APPLE, delay: 0.1 }}
           className="text-5xl md:text-7xl mb-5 font-semibold tracking-tight"
@@ -74,7 +75,7 @@ export function PageHero({
           <span className="text-gradient-brand">{title}</span>
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE_APPLE, delay: 0.22 }}
           className="text-xl text-gray-300 font-light max-w-2xl mx-auto"

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { User } from 'lucide-react'
-import { useTicketsList } from '../../hooks/useTickets'
+import { useCreateTicket } from '../../hooks/useTickets'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { TicketValidatorChain } from '../../validators/TicketValidatorChain'
 import type { TicketPrioridad } from '../../interfaces/ITicketService'
@@ -42,7 +42,7 @@ const PRIORIDADES: TicketPrioridad[] = ['Baja', 'Media', 'Alta', 'Critica']
  * OCP: new field → add to state + JSX; validation chain handles it automatically.
  */
 export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketFormProps>) {
-  const { createTicket, isLoading } = useTicketsList()
+  const createTicket = useCreateTicket()
   const { user } = useAuth()
   const validatorChain = useRef(new TicketValidatorChain())
 
@@ -246,7 +246,7 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
       )}
 
       {/* Submit */}
-      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting || isLoading} className="w-full">
+      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting} className="w-full">
         {isSubmitting ? 'Creando ticket…' : 'Crear ticket'}
       </Button>
     </form>

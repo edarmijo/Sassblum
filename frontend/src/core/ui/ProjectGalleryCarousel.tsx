@@ -1,5 +1,5 @@
-import { useRef, useEffect, type MouseEvent } from 'react';
-import { motion } from 'framer-motion';
+import { type MouseEvent } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useProjects } from '../../modules/gallery/hooks/useProjects';
 import { EASE_APPLE } from './motion/ease';
 import { ImageWithFallback } from './ImageWithFallback';
@@ -35,43 +35,21 @@ const galleryCss = `
 
 /**
  * Carrusel infinito de proyectos.
- * El desplazamiento se conduce por RAF escribiendo `transform` directamente sobre
- * el track — inmune a `@media (prefers-reduced-motion)` (siempre anima, por decisión
- * del usuario). Pausa al pasar el cursor por encima.
+ * El desplazamiento usa una animación CSS del compositor y se pausa al pasar el
+ * cursor. La regla global de movimiento reducido lo convierte en una vista estática.
  */
 export function ProjectGalleryCarousel() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const pausedRef = useRef(false);
+  const reduceMotion = useReducedMotion() ?? false;
 
   /* Proyectos desde la API; si no hay ninguno (o falla), usa los de ejemplo. */
-  const { projects } = useProjects();
+  const { projects, loading } = useProjects();
   const items = projects.length > 0
     ? projects.map((p) => ({ tag: p.tag, title: p.titulo, img: p.imagenUrl }))
-    : GALLERY;
-
-  /* ── infinite scroll RAF — transform directo (inmune a reduced-motion) ── */
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    let x = 0;
-    let half = 0;
-    let rafId = 0;
-    const step = () => {
-      if (!half) half = track.scrollWidth / 2;        // se mide cuando ya hay layout
-      if (!pausedRef.current && half) {
-        x -= 0.6;
-        if (x <= -half) x += half;                     // loop sin salto
-        track.style.transform = `translateX(${x}px)`;
-      }
-      rafId = requestAnimationFrame(step);
-    };
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, [items.length]); // re-mide el ancho cuando cambian los proyectos
+    : loading ? [] : GALLERY;
 
   /* ── 3D tilt + dynamic shine on each card ── */
   const onCardMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (window.innerWidth < 768) return;
+    if (reduceMotion || window.innerWidth < 768) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
@@ -118,17 +96,21 @@ export function ProjectGalleryCarousel() {
         </div>
       </div>
 
-      {/* infinite carousel — RAF writes transform on the track */}
-      <div style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%)', maskImage: 'linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%)' }}>
+      {/* Infinite carousel — compositor-only CSS transform. */}
+      <div className="marquee-track" style={{ overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%)', maskImage: 'linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%)' }}>
         <div
-          ref={trackRef}
-          className="flex"
-          style={{ width: 'max-content', willChange: 'transform' }}
-          onMouseEnter={() => { pausedRef.current = true; }}
-          onMouseLeave={() => { pausedRef.current = false; }}
+          className="animate-marquee flex"
+          style={{ ['--marquee-duration' as string]: `${Math.max(42, items.length * 8)}s` }}
         >
+          {loading && [0, 1, 2].map((index) => (
+            <div
+              key={`gallery-skeleton-${index}`}
+              className="h-[460px] w-[clamp(280px,28vw,380px)] shrink-0 animate-pulse rounded-2xl"
+              style={{ marginRight: 20, background: 'rgba(0,196,224,0.06)' }}
+            />
+          ))}
           {/* Two identical sets for a seamless loop */}
-          {([0, 1] as const).map((copy) => (
+          {!loading && ([0, 1] as const).map((copy) => (
             <div key={copy} className="flex" style={{ gap: 20, paddingRight: 20 }} aria-hidden={copy === 1}>
               {items.map((g, i) => (
                 <div
@@ -143,6 +125,7 @@ export function ProjectGalleryCarousel() {
                   >
                     <ImageWithFallback
                       src={g.img}
+                      sizes="(max-width: 640px) 280px, 380px"
                       alt={g.title}
                       className="pgc__img absolute inset-0 h-full w-full object-cover"
                       style={{ transition: 'transform 0.8s cubic-bezier(0.22,1,0.36,1)' }}

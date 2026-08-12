@@ -178,6 +178,7 @@ export function CatalogAdminPanel() {
                     <div key={img.id} className="relative group aspect-square">
                       <ImageWithFallback
                         src={img.imagen_url}
+                        sizes="120px"
                         alt={`Imagen ${img.orden + 1}`}
                         className="w-full h-full object-cover rounded-md border border-border"
                       />

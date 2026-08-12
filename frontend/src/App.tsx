@@ -10,11 +10,8 @@
  */
 
 import { BrowserRouter, Routes, Route, Outlet, Navigate, Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
-import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react'
-import { ThreeBackground } from './core/ui/ThreeBackground'
-import CustomCursor from './core/ui/CustomCursor'
-import { PageLoader } from './core/ui/PageLoader'
-import { MouseGradient } from './core/ui/MouseGradient'
+import { useEffect, lazy, Suspense, type ReactNode } from 'react'
+import { DeferredVisualEffects } from './core/ui/DeferredVisualEffects'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'
@@ -122,11 +119,15 @@ function SiteLayout() {
 
   const tree = (
     <>
-      <CustomCursor />
-      {/* Dark base + particle engine — fixed, persists across all routes */}
-      <div aria-hidden className="fixed inset-0 z-0" style={{ background: '#04090f' }} />
-      <ThreeBackground />
-      <MouseGradient />
+      {/* Lightweight base paints immediately; richer desktop effects load on idle. */}
+      <div
+        aria-hidden
+        className="fixed inset-0 z-0"
+        style={{
+          background: 'radial-gradient(circle at 75% 20%, rgba(0,196,224,0.08), transparent 32%), radial-gradient(circle at 15% 80%, rgba(56,217,245,0.05), transparent 30%), #04090f',
+        }}
+      />
+      <DeferredVisualEffects />
       <div className="min-h-screen flex flex-col text-[#eeeef5]">
         <Navbar />
         <main className="grow relative z-10">
@@ -281,19 +282,9 @@ function DetailRoute() {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 
-const INTRO_KEY = 'sassblum:intro-shown'
-
 export default function App() {
-  // El intro se muestra UNA vez por sesión; recargas y navegación entran directo.
-  const [loading, setLoading] = useState(() => sessionStorage.getItem(INTRO_KEY) !== '1')
-  const finishIntro = () => {
-    sessionStorage.setItem(INTRO_KEY, '1')
-    setLoading(false)
-  }
   return (
-    <>
-      {loading && <PageLoader onComplete={finishIntro} />}
-      <BrowserRouter>
+    <BrowserRouter>
       <ScrollToTop />
       <AuthProvider service={authService}>
         <SessionGate>
@@ -331,6 +322,5 @@ export default function App() {
         </SessionGate>
       </AuthProvider>
     </BrowserRouter>
-    </>
   )
 }

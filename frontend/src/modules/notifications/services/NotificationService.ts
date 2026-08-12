@@ -57,6 +57,13 @@ class NotificationService implements INotificationService {
     return mapNotification(data)
   }
 
+  async markAllAsRead(): Promise<number> {
+    const data = await apiClient.patch<{ marcadas: number }>(
+      '/notificaciones/marcar-todas-leidas',
+    )
+    return data.marcadas
+  }
+
   async getPreferences(): Promise<NotificationPreferences> {
     const data = await apiClient.get<{
       email_activo: boolean

@@ -19,6 +19,7 @@ import { PageHero } from '../../../core/ui/layout/PageHero'
 import { EASE_APPLE } from '../../../core/ui/motion/ease'
 import { useCatalog } from '../../catalog/hooks/useCatalog'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { env } from '../../../infrastructure/config/env'
 
 const CATEGORY_ICON: Record<string, typeof Wrench> = {
   soporte: Headphones,
@@ -110,7 +111,14 @@ export function Services() {
                         <Card className="overflow-hidden hover:shadow-2xl transition-shadow duration-300 h-full border-0 shadow-none" style={{ background: 'rgba(8,22,36,0.65)', backdropFilter: 'blur(12px)' }}>
                           {img ? (
                             <div className="h-32 overflow-hidden">
-                              <ImageWithFallback src={img} alt={s.nombre} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                              <ImageWithFallback
+                                src={img}
+                                optimizedWidth={640}
+                                optimizationEnabled={env.imageTransformsEnabled}
+                                sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                                alt={s.nombre}
+                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                              />
                             </div>
                           ) : (
                             <div className="h-32 flex items-center justify-center" style={{ background: 'rgba(0,196,224,0.06)' }}>
@@ -160,7 +168,12 @@ export function Services() {
             <>
               {selected.imagenUrl ? (
                 <div className="h-52 overflow-hidden">
-                  <ImageWithFallback src={selected.imagenUrl} alt={selected.nombre} className="w-full h-full object-cover" />
+                  <ImageWithFallback
+                    src={selected.imagenUrl}
+                    sizes="(max-width: 640px) 100vw, 576px"
+                    alt={selected.nombre}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ) : (
                 <div className="h-52 flex items-center justify-center" style={{ background: 'rgba(0,196,224,0.06)' }}>
@@ -180,6 +193,7 @@ export function Services() {
                       <div key={image.id} className="aspect-[4/3] overflow-hidden rounded-md border border-white/10">
                         <ImageWithFallback
                           src={image.imagenUrl}
+                          sizes="(max-width: 640px) 50vw, 192px"
                           alt={`${selected.nombre}, imagen ${image.orden + 1}`}
                           className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                         />

@@ -33,6 +33,7 @@ function ParallaxImage() {
       <motion.div className="absolute inset-0" style={reduce ? undefined : { y, scale }}>
         <ImageWithFallback
           src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1080&q=80"
+          sizes="(max-width: 1024px) 100vw, 50vw"
           alt="Equipo SASS BLUM"
           className="w-full h-full object-cover"
         />

@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from apps.catalog.interfaces import ICatalogClientView, ICatalogAdminView
 from apps.catalog.repositories import ServiceRepository
 from apps.tickets.interfaces import IStorageService
-from apps.tickets.services.storage_name import storage_filename
+from apps.tickets.services.storage_name import versioned_storage_filename
 from core.exceptions.domain_exceptions import ServiceHasTickets, ServiceNotFound
 
 
@@ -102,7 +102,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         if service is None:
             raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
         orden = self._repo.get_next_order(service_id)
-        path = f"services/{service_id}/gallery/{storage_filename(getattr(file, 'name', 'imagen'))}"
+        path = f"services/{service_id}/gallery/{versioned_storage_filename(getattr(file, 'name', 'imagen'))}"
         url = self._storage.upload(file, path) if self._storage is not None else ""
         if not url:
             raise RuntimeError("No se pudo subir la imagen al almacenamiento.")
@@ -121,7 +121,7 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
     def _maybe_attach_image(self, service, imagen):
         if imagen is None or self._storage is None:
             return service
-        path = f"services/{service.id}/cover/{storage_filename(getattr(imagen, 'name', 'imagen'))}"
+        path = f"services/{service.id}/cover/{versioned_storage_filename(getattr(imagen, 'name', 'imagen'))}"
         url = self._storage.upload(imagen, path)
         if not url:
             return service

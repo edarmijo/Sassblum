@@ -11,6 +11,9 @@ from apps.authentication.views.health_views import health_check
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health_check, name="health-check"),
+    # Alias bajo /api para que el frontend lo alcance mediante el rewrite
+    # existente de Vercel sin hardcodear el dominio de Render.
+    path("api/health/", health_check, name="api-health-check"),
 
     # ── API ────────────────────────────────────────────────────────────────
     path("api/auth/", include("apps.authentication.urls")),

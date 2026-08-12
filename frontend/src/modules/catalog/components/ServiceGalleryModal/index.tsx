@@ -65,6 +65,7 @@ export function ServiceGalleryModal({
                 >
                   <ImageWithFallback
                     src={img.imagenUrl}
+                    sizes="(max-width: 640px) 33vw, 180px"
                     alt={`${service.nombre} imagen ${img.orden + 2}`}
                     className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
                   />
