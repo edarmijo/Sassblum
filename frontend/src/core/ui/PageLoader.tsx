@@ -1,122 +1,69 @@
-import { useState, useEffect, useRef } from 'react';
-import { secureRandomInt } from '../utils/random';
+import { useEffect, useRef, useState } from 'react'
 
 interface PageLoaderProps {
-  onComplete: () => void;
+  readonly onComplete: () => void
 }
 
+const INTRO_DISPLAY_MS = 620
+const INTRO_FADE_MS = 260
+const REDUCED_MOTION_DISPLAY_MS = 120
+
+/**
+ * Brief branded intro that never gates application or network initialization.
+ * The progress illusion runs in CSS instead of re-rendering React every frame.
+ */
 export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
-  const [progress, setProgress] = useState(0);
-  const [fadeOut, setFadeOut] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onCompleteRef = useRef(onComplete);
-  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  const [isLeaving, setIsLeaving] = useState(false)
+  const onCompleteRef = useRef(onComplete)
 
   useEffect(() => {
-    const finishLoader = async () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      await new Promise(r => setTimeout(r, 200));
-      setFadeOut(true);
-      await new Promise(r => setTimeout(r, 500));
-      onCompleteRef.current();
-    };
+    onCompleteRef.current = onComplete
+  }, [onComplete])
 
-    const tick = () => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          finishLoader();
-          return 100;
-        }
-        // Random increment between 4 and 12
-        const inc = secureRandomInt(4, 12);
-        return Math.min(prev + inc, 100);
-      });
-    };
-
-    // ~250ms hasta 100% (+ fade): intro breve que no retrasa el contenido.
-    intervalRef.current = setInterval(tick, 16);
+  useEffect(() => {
+    const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const displayMs = reduceMotion ? REDUCED_MOTION_DISPLAY_MS : INTRO_DISPLAY_MS
+    const leaveId = globalThis.setTimeout(() => setIsLeaving(true), displayMs)
+    const completeId = globalThis.setTimeout(
+      () => onCompleteRef.current(),
+      displayMs + INTRO_FADE_MS,
+    )
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  // Stroke-dashoffset: 283 is full circumference. offset 283 = 0%, offset 0 = 100%
-  const dashOffset = 283 - (283 * progress) / 100;
+      globalThis.clearTimeout(leaveId)
+      globalThis.clearTimeout(completeId)
+    }
+  }, [])
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: '#06060a',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: fadeOut ? 0 : 1,
-        visibility: fadeOut ? 'hidden' : 'visible',
-        transition: 'opacity 0.5s cubic-bezier(0.22,1,0.36,1), visibility 0.5s',
-      }}
+      role="status"
+      aria-label="Preparando experiencia SassBlum"
+      className={`page-loader ${isLeaving ? 'page-loader--leaving' : ''}`}
     >
-      {/* SVG Ring */}
-      <svg
-        viewBox="0 0 100 100"
-        width={120}
-        height={120}
-        style={{ marginBottom: 24 }}
-      >
-        {/* Background track */}
-        <circle
-          cx={50}
-          cy={50}
-          r={45}
-          fill="none"
-          stroke="rgba(124,92,252,0.1)"
-          strokeWidth={3}
-        />
-        {/* Progress ring */}
-        <circle
-          cx={50}
-          cy={50}
-          r={45}
-          fill="none"
-          stroke="#7c5cfc"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeDasharray={283}
-          strokeDashoffset={dashOffset}
-          transform="rotate(-90 50 50)"
-          style={{ transition: 'stroke-dashoffset 0.15s ease' }}
-        />
-      </svg>
-
-      {/* Logo */}
-      <div
-        style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: '2rem',
-          fontWeight: 700,
-          color: '#fff',
-          letterSpacing: '0.1em',
-          marginBottom: 12,
-        }}
-      >
-        SASS <span style={{ color: '#7c5cfc' }}>BLUM</span>
-      </div>
-
-      {/* Percentage */}
-      <div
-        style={{
-          fontFamily: "'Space Grotesk', monospace",
-          fontSize: '0.875rem',
-          color: 'rgba(124,92,252,0.8)',
-          letterSpacing: '0.05em',
-        }}
-      >
-        {progress}%
+      <div className="page-loader__ambient" aria-hidden="true" />
+      <div className="page-loader__content">
+        <div className="page-loader__mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" width="120" height="120">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(56,217,245,0.12)" strokeWidth="2" />
+            <circle
+              className="page-loader__progress"
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke="#38d9f5"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeDasharray="283"
+              transform="rotate(-90 50 50)"
+            />
+          </svg>
+          <span className="page-loader__pulse" />
+        </div>
+        <div className="page-loader__brand">SASS <span>BLUM</span></div>
+        <div className="page-loader__caption">Preparando experiencia</div>
       </div>
     </div>
-  );
+  )
 }
