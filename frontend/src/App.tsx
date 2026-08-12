@@ -10,8 +10,9 @@
  */
 
 import { BrowserRouter, Routes, Route, Outlet, Navigate, Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
-import { useEffect, lazy, Suspense, type ReactNode } from 'react'
+import { useEffect, lazy, Suspense, useState, type ReactNode } from 'react'
 import { DeferredVisualEffects } from './core/ui/DeferredVisualEffects'
+import { PageLoader } from './core/ui/PageLoader'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'
@@ -282,9 +283,36 @@ function DetailRoute() {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 
+const INTRO_KEY = 'sassblum:intro-shown'
+
+function shouldShowIntro(): boolean {
+  try {
+    return sessionStorage.getItem(INTRO_KEY) !== '1'
+  } catch {
+    return true
+  }
+}
+
+function rememberIntro(): void {
+  try {
+    sessionStorage.setItem(INTRO_KEY, '1')
+  } catch {
+    // The intro still completes when storage is unavailable.
+  }
+}
+
 export default function App() {
+  const [showIntro, setShowIntro] = useState(shouldShowIntro)
+
+  const finishIntro = () => {
+    rememberIntro()
+    setShowIntro(false)
+  }
+
   return (
-    <BrowserRouter>
+    <>
+      {showIntro ? <PageLoader onComplete={finishIntro} /> : null}
+      <BrowserRouter>
       <ScrollToTop />
       <AuthProvider service={authService}>
         <SessionGate>
@@ -321,6 +349,7 @@ export default function App() {
         </CatalogProvider>
         </SessionGate>
       </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </>
   )
 }

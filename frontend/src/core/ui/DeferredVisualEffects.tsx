@@ -15,7 +15,7 @@ type NavigatorWithConnection = Navigator & {
   connection?: NetworkInformationLike
 }
 
-const ENHANCED_ROUTES = new Set(['/', '/nosotros', '/servicios', '/galeria', '/clientes'])
+const ENHANCED_ROUTES = new Set(['/', '/nosotros', '/servicios', '/galeria', '/clientes', '/login'])
 
 function supportsEnhancedEffects(): boolean {
   const connection = (navigator as NavigatorWithConnection).connection
