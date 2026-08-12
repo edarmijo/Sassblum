@@ -64,7 +64,7 @@ export default function CustomCursor() {
         dot.style.height = `${size}px`
         dot.style.marginLeft = `${margin}px`
         dot.style.marginTop = `${margin}px`
-        dot.style.background = hovering ? '#7c5cfc' : '#fff'
+        dot.style.background = hovering ? '#00c4e0' : '#fff'
       }
       if (follower) {
         const size = hovering ? 70 : 40
@@ -73,7 +73,7 @@ export default function CustomCursor() {
         follower.style.height = `${size}px`
         follower.style.marginLeft = `${margin}px`
         follower.style.marginTop = `${margin}px`
-        follower.style.borderColor = hovering ? '#7c5cfc' : 'rgba(124,92,252,0.5)'
+        follower.style.borderColor = hovering ? '#00c4e0' : 'rgba(0,196,224,0.5)'
       }
     }
 
@@ -217,7 +217,7 @@ export default function CustomCursor() {
         style={{
           position: 'fixed', top: 0, left: 0, width: 40, height: 40,
           marginLeft: -20, marginTop: -20, borderRadius: '50%',
-          border: '1.5px solid rgba(124,92,252,0.5)', background: 'transparent',
+          border: '1.5px solid rgba(0,196,224,0.5)', background: 'transparent',
           zIndex: 10000, pointerEvents: 'none', opacity: 0, transition,
           willChange: 'transform',
         }}
@@ -228,7 +228,7 @@ export default function CustomCursor() {
         style={{
           position: 'fixed', top: 0, left: 0, width: 4, height: 4,
           marginLeft: -2, marginTop: -2, borderRadius: '50%',
-          background: '#7c5cfc', opacity: 0, zIndex: 10000,
+          background: '#00c4e0', opacity: 0, zIndex: 10000,
           pointerEvents: 'none', willChange: 'transform',
           transition: 'opacity 0.12s ease-out',
         }}

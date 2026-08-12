@@ -45,7 +45,7 @@ export function VerifyPendingPage({ email, message }: Readonly<VerifyPendingPage
           )}
         </p>
         {message && (
-          <p className="text-xs" style={{ color: '#5c7a94' }}>{message}</p>
+          <p className="break-all text-xs" style={{ color: '#7aa3b8' }}>{message}</p>
         )}
       </div>
 

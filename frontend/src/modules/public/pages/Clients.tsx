@@ -16,9 +16,8 @@ const TESTIMONIALS = [
 ]
 
 const cardStyle: CSSProperties = {
-  background: 'rgba(8,22,36,0.7)',
+  background: 'rgba(8,22,36,0.92)',
   border: '1px solid rgba(0,196,224,0.12)',
-  backdropFilter: 'blur(12px)',
 }
 
 export function Clients() {
@@ -40,7 +39,7 @@ export function Clients() {
               Lo que dicen nuestros clientes
             </h2>
           </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {TESTIMONIALS.map((t, i) => (
               <FocusReveal key={t.name} delay={i * 0.1}>
                 <GlowCard className="h-full" style={cardStyle}>
@@ -53,7 +52,7 @@ export function Clients() {
                       ))}
                     </div>
                     <p className="font-medium" style={{ color: '#eef4f8' }}>{t.name}</p>
-                    <p className="text-sm" style={{ color: '#5c7a94' }}>{t.company}</p>
+                    <p className="text-sm" style={{ color: '#7aa3b8' }}>{t.company}</p>
                   </div>
                 </GlowCard>
               </FocusReveal>

@@ -55,6 +55,8 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
           pointerEvents: mobileOpen ? 'auto' : 'none',
           opacity: mobileOpen ? 1 : 0,
           transition: `opacity 400ms ${EASE_OUT}`,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
         }}
         aria-hidden={!mobileOpen}
       >
@@ -75,8 +77,8 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            height: '100%',
-            padding: '100px 32px 48px',
+            minHeight: '100%',
+            padding: 'max(88px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom))',
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -99,7 +101,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
                 <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', fontWeight: 400, minWidth: 24 }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: isActive(item.to) ? '#00c4e0' : '#fff', transition: `color 200ms ${EASE_OUT}` }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.45rem, 7vw, 2rem)', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: isActive(item.to) ? '#00c4e0' : '#fff', transition: `color 200ms ${EASE_OUT}`, overflowWrap: 'anywhere' }}>
                   {item.label}
                 </span>
               </Link>
@@ -123,7 +125,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
                 <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)', fontWeight: 400, minWidth: 24 }}>
                   {String(items.length + 1).padStart(2, '0')}
                 </span>
-                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#fff' }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.45rem, 7vw, 2rem)', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#fff', overflowWrap: 'anywhere' }}>
                   NOTIFICACIONES
                 </span>
               </Link>
@@ -133,8 +135,8 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: mobileOpen ? 1 : 0, transform: mobileOpen ? 'translateY(0)' : 'translateY(16px)', transition: `opacity 500ms ${EASE_OUT} 400ms, transform 500ms ${EASE_OUT} 400ms` }}>
             <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Contacto</span>
             <a href="mailto:info@sassblum.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>info@sassblum.com</a>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>Ciudad de México, México</span>
-            <a href="tel:+525512345678" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>+52 55 1234 5678</a>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>Guayaquil, Ecuador</span>
+            <a href="tel:+593969990990" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>+593 96 999 0990</a>
 
             {user && (
               <button
@@ -162,11 +164,11 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
   ))
 
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 768px)')
+    const query = window.matchMedia('(min-width: 1024px)')
     const updateViewport = () => setIsDesktop(query.matches)
     query.addEventListener('change', updateViewport)
     return () => query.removeEventListener('change', updateViewport)
@@ -221,9 +223,9 @@ export function Navbar() {
     left: 0,
     right: 0,
     zIndex: 50,
-    backgroundColor: scrolled ? 'rgba(6,6,10,0.8)' : 'transparent',
-    backdropFilter: scrolled ? 'blur(24px)' : 'none',
-    WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'none',
+    backgroundColor: scrolled ? 'rgba(4,9,15,0.9)' : 'transparent',
+    backdropFilter: scrolled ? 'blur(10px)' : 'none',
+    WebkitBackdropFilter: scrolled ? 'blur(10px)' : 'none',
     borderBottom: scrolled ? '1px solid rgba(255,255,255,0.04)' : '1px solid transparent',
     transition: `background-color 400ms ${EASE_OUT}, backdrop-filter 400ms ${EASE_OUT}, border-color 400ms ${EASE_OUT}`,
   }
@@ -275,7 +277,7 @@ export function Navbar() {
 
           {/* Center links — desktop only */}
           <div
-            className="hidden md:flex items-center"
+            className="hidden lg:flex items-center"
             style={{ gap: 28 }}
           >
             {items.map((item) => (
@@ -319,7 +321,7 @@ export function Navbar() {
           <div className="flex items-center" style={{ gap: 16 }}>
             {/* Auth actions — desktop only */}
             {user && isDesktop && (
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <Suspense fallback={null}><AuthenticatedNavbarActions /></Suspense>
               </div>
             )}
@@ -327,10 +329,10 @@ export function Navbar() {
             {/* Hamburger — mobile only */}
             <button
               type="button"
-              className="md:hidden flex flex-col justify-center items-center"
+              className="lg:hidden flex flex-col justify-center items-center"
               style={{
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',

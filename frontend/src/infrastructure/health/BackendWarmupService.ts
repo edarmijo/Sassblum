@@ -47,11 +47,9 @@ export class BackendWarmupService {
       return Promise.resolve()
     }
 
-    if (this.inFlight === null) {
-      this.inFlight = this.checkAvailability().finally(() => {
-        this.inFlight = null
-      })
-    }
+    this.inFlight ??= this.checkAvailability().finally(() => {
+      this.inFlight = null
+    })
     return this.inFlight
   }
 

@@ -40,7 +40,11 @@ LEGACY_SERVICES = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="Reassign tickets and permanently delete verified legacy services.")
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Reassign tickets and permanently delete verified legacy services.",
+    )
     return parser.parse_args()
 
 
@@ -48,11 +52,14 @@ def verified_legacy_services() -> list[Service]:
     services = list(Service.objects.filter(pk__in=LEGACY_SERVICES).order_by("id"))
     found = {service.id: service.nombre for service in services}
     if found != LEGACY_SERVICES:
-        raise RuntimeError(f"Legacy-service verification failed: expected {LEGACY_SERVICES}, found {found}")
+        raise RuntimeError(
+            "Legacy-service verification failed: "
+            f"expected {LEGACY_SERVICES}, found {found}"
+        )
     return services
 
 
-def main() -> int:
+def main() -> None:
     args = parse_args()
     target = Service.objects.get(pk=TARGET_SERVICE_ID, nombre=TARGET_SERVICE_NAME)
     legacy_services = verified_legacy_services()
@@ -60,16 +67,16 @@ def main() -> int:
 
     print(f"Target service: {target.id} — {target.nombre}")
     print(f"Legacy services: {[(service.id, service.nombre) for service in legacy_services]}")
-    print(f"Tickets to reassign from service 8: {list(affected_tickets.values_list('numero', flat=True))}")
+    ticket_numbers = list(affected_tickets.values_list("numero", flat=True))
+    print(f"Tickets to reassign from service 8: {ticket_numbers}")
     if not args.execute:
-        return 0
+        return
 
     with transaction.atomic():
         reassigned = affected_tickets.update(servicio=target)
         deleted, _ = Service.objects.filter(pk__in=LEGACY_SERVICES).delete()
     print(f"Reassigned tickets: {reassigned}; deleted service records: {deleted}")
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -21,7 +21,7 @@ const EVENT_LABELS: Record<string, string> = {
 export function TicketHistory({ events }: Readonly<TicketHistoryProps>) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-[#5c7a94] italic">Sin historial de eventos.</p>
+      <p className="text-sm text-[#7aa3b8] italic">Sin historial de eventos.</p>
     )
   }
 
@@ -39,7 +39,7 @@ export function TicketHistory({ events }: Readonly<TicketHistoryProps>) {
               </span>
 
               {event.estadoAnterior && event.estadoNuevo && (
-                <span className="flex items-center gap-1.5 text-xs text-[#5c7a94]">
+                <span className="flex items-center gap-1.5 text-xs text-[#7aa3b8]">
                   <TicketStatusBadge estado={event.estadoAnterior as TicketEstado} />
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                   <TicketStatusBadge estado={event.estadoNuevo as TicketEstado} />
@@ -47,7 +47,7 @@ export function TicketHistory({ events }: Readonly<TicketHistoryProps>) {
               )}
             </div>
 
-            <time className="text-xs text-[#5c7a94]">
+            <time className="text-xs text-[#7aa3b8]">
               {new Date(event.creadoEn).toLocaleString('es-EC', {
                 day: '2-digit',
                 month: 'short',

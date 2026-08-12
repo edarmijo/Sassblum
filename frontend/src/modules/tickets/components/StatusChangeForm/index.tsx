@@ -54,7 +54,7 @@ export function StatusChangeForm({ currentStatus, onSubmit, onCancel }: Readonly
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg p-4" style={{ background: 'rgba(8,22,36,0.82)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg p-4" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
       <div className="flex items-center gap-2 mb-1">
         <MessageSquare className="h-4 w-4 text-brand-cyan" />
         <h4 className="text-sm font-semibold text-[#eef4f8]">Cambiar estado del ticket</h4>

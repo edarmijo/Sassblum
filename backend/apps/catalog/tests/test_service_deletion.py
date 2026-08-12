@@ -124,9 +124,10 @@ def test_delete_service_with_tickets_is_rejected_without_deleting_media() -> Non
         cliente=client_user,
     )
     storage = _StorageSpy()
+    catalog_service = CatalogService(storage=storage)
 
     with pytest.raises(ServiceHasTickets):
-        CatalogService(storage=storage).delete_service(service.id)
+        catalog_service.delete_service(service.id)
 
     assert Service.objects.filter(pk=service.id).exists()
     assert storage.deleted_paths == []

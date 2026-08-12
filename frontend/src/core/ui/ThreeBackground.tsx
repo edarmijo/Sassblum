@@ -30,6 +30,13 @@ const FRAME_INTERVAL_MS = 1000 / 30;
 const MOUSE_LERP  = 0.05;
 const CAMERA_LERP = 0.02;
 const ORB_LERP    = 0.03;
+const MAX_RENDER_PIXELS = 4_000_000;
+const MAX_PIXEL_RATIO = 1.75;
+
+function optimizedPixelRatio(width: number, height: number): number {
+  const budgetRatio = Math.sqrt(MAX_RENDER_PIXELS / Math.max(1, width * height));
+  return Math.max(0.75, Math.min(globalThis.window.devicePixelRatio, MAX_PIXEL_RATIO, budgetRatio));
+}
 
 /* ───────── vertex shader ───────── */
 // 'position' holds the INITIAL (static) position.
@@ -130,9 +137,10 @@ export function ThreeBackground() {
     const PARTICLE_COUNT = isMobile ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP;
 
     /* ── renderer ── */
-    const renderer = new WebGLRenderer({ alpha: true, antialias: !isMobile });
+    const viewportPixels = globalThis.window.innerWidth * globalThis.window.innerHeight;
+    const renderer = new WebGLRenderer({ alpha: true, antialias: !isMobile && viewportPixels <= 2_500_000 });
     renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
-    renderer.setPixelRatio(Math.min(globalThis.window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(optimizedPixelRatio(globalThis.window.innerWidth, globalThis.window.innerHeight));
     Object.assign(renderer.domElement.style, {
       position: 'fixed', top: '0', left: '0',
       width: '100%', height: '100%',
@@ -252,9 +260,26 @@ export function ThreeBackground() {
         const i3 = i * 3;
         const rawX = initPositions[i3]     + velocities[i3]     * elapsed;
         const rawY = initPositions[i3 + 1] + velocities[i3 + 1] * elapsed;
-        cpuPositions[i3]     = ((rawX + 10) % 20 + 20) % 20 - 10;
-        cpuPositions[i3 + 1] = ((rawY + 10) % 20 + 20) % 20 - 10;
-        cpuPositions[i3 + 2] = initPositions[i3 + 2] + velocities[i3 + 2] * elapsed;
+        const phase = randoms[i] * Math.PI * 2;
+        let x = ((rawX + 10) % 20 + 20) % 20 - 10;
+        const y = ((rawY + 10) % 20 + 20) % 20 - 10
+          + Math.sin(elapsed * 0.4 + phase) * 0.5;
+        let z = initPositions[i3 + 2] + velocities[i3 + 2] * elapsed
+          + Math.sin(elapsed * 0.2 + randoms[i] * Math.PI) * 0.25;
+        x += Math.cos(elapsed * 0.3 + phase) * 0.35;
+
+        const dx = x - mouseSmooth.x * 5;
+        const dz = z - mouseSmooth.y * 4;
+        const distance = Math.hypot(dx, dz);
+        const t = Math.max(0, Math.min(1, 1 - distance / 3));
+        const force = t * t * (3 - 2 * t) * 1.5;
+        const length = Math.hypot(dx + 0.0001, dz + 0.0001) || 1;
+        x += ((dx + 0.0001) / length) * force;
+        z += ((dz + 0.0001) / length) * force;
+
+        cpuPositions[i3] = x;
+        cpuPositions[i3 + 1] = y;
+        cpuPositions[i3 + 2] = z;
       }
     }
 
@@ -364,7 +389,7 @@ export function ThreeBackground() {
       particles.rotation.y = elapsed * 0.02;
 
       // line network: Hz-independent throttle + O(n) grid hash
-      if (frameCount % 3 === 0) updateLines(elapsed);
+      if (frameCount % 2 === 0) updateLines(elapsed);
 
       renderer.render(scene, camera);
     }
@@ -395,6 +420,7 @@ export function ThreeBackground() {
       camera.aspect = globalThis.window.innerWidth / globalThis.window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(globalThis.window.innerWidth, globalThis.window.innerHeight);
+      renderer.setPixelRatio(optimizedPixelRatio(globalThis.window.innerWidth, globalThis.window.innerHeight));
     };
     globalThis.addEventListener('resize', onResize, { passive: true });
 

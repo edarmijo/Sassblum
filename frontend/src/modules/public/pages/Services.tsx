@@ -63,13 +63,13 @@ export function Services() {
   let catalogFallback: React.ReactNode = null
   if (isLoading) {
     catalogFallback = (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
         {SKELETON_KEYS.map((k) => <Skeleton key={k} className="h-56 rounded-xl" />)}
       </div>
     )
   } else if (services.length === 0) {
     catalogFallback = (
-      <p className="text-center" style={{ color: '#5c7a94' }}>Aún no hay servicios publicados en el catálogo.</p>
+      <p className="text-center" style={{ color: '#7aa3b8' }}>Aún no hay servicios publicados en el catálogo.</p>
     )
   }
 
@@ -89,7 +89,7 @@ export function Services() {
           {error && <p className="text-center text-red-400 mb-8">{error}</p>}
 
           {catalogFallback ?? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
               {services.map((s, i) => {
                 const img = s.imagenUrl
                 return (
@@ -108,14 +108,14 @@ export function Services() {
                       aria-label={`Ver detalles de ${s.nombre}`}
                     >
                       <GlowCard className="h-full">
-                        <Card className="overflow-hidden hover:shadow-2xl transition-shadow duration-300 h-full border-0 shadow-none" style={{ background: 'rgba(8,22,36,0.65)', backdropFilter: 'blur(12px)' }}>
+                        <Card className="overflow-hidden hover:shadow-2xl transition-shadow duration-300 h-full border-0 shadow-none" style={{ background: 'rgba(8,22,36,0.92)' }}>
                           {img ? (
                             <div className="h-32 overflow-hidden">
                               <ImageWithFallback
                                 src={img}
                                 optimizedWidth={640}
                                 optimizationEnabled={env.imageTransformsEnabled}
-                                sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                                sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 480px) 50vw, 100vw"
                                 alt={s.nombre}
                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                               />
@@ -128,9 +128,9 @@ export function Services() {
                             </div>
                           )}
                           <CardHeader>
-                            <p className="text-[10px] uppercase tracking-widest text-brand-cyan">{s.categoria}</p>
+                            <p className="text-xs uppercase tracking-widest text-brand-cyan">{s.categoria}</p>
                             <CardTitle style={{ color: '#eef4f8' }}>{s.nombre}</CardTitle>
-                            <CardDescription style={{ color: '#5c7a94' }} className="line-clamp-2">{s.descripcion}</CardDescription>
+                            <CardDescription style={{ color: '#7aa3b8' }} className="line-clamp-2">{s.descripcion}</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-cyan transition-all group-hover:gap-2">
@@ -152,7 +152,7 @@ export function Services() {
       <div className="relative z-10 py-16" style={{ background: 'rgba(0,196,224,0.04)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl mb-4 font-semibold" style={{ color: '#eef4f8' }}>¿Necesitas alguno de estos servicios?</h2>
-          <p className="mb-8" style={{ color: '#5c7a94' }}>
+          <p className="mb-8" style={{ color: '#7aa3b8' }}>
             {user ? 'Crea un ticket y nuestro equipo te contactará pronto' : 'Regístrate para crear un ticket y nuestro equipo te contactará pronto'}
           </p>
           <Button asChild size="lg" className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
@@ -163,11 +163,11 @@ export function Services() {
 
       {/* Modal de detalle del servicio */}
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null) }}>
-        <DialogContent className="sm:max-w-xl p-0 overflow-hidden gap-0" style={{ background: 'rgba(8,22,36,0.95)', border: '1px solid rgba(0,196,224,0.2)', backdropFilter: 'blur(24px)' }}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl p-0 gap-0" style={{ background: 'rgba(8,22,36,0.97)', border: '1px solid rgba(0,196,224,0.2)' }}>
           {selected && (
             <>
               {selected.imagenUrl ? (
-                <div className="h-52 overflow-hidden">
+                <div className="h-44 overflow-hidden sm:h-52">
                   <ImageWithFallback
                     src={selected.imagenUrl}
                     sizes="(max-width: 640px) 100vw, 576px"
@@ -201,7 +201,7 @@ export function Services() {
                     ))}
                   </div>
                 )}
-                <DialogDescription className="text-base leading-relaxed mt-5" style={{ color: '#5c7a94' }}>
+                <DialogDescription className="text-base leading-relaxed mt-5" style={{ color: '#7aa3b8' }}>
                   {selected.descripcionDetalle || selected.descripcion}
                 </DialogDescription>
                 <DialogFooter className="mt-6">

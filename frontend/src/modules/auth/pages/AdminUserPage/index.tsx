@@ -49,10 +49,10 @@ export function AdminUserPage() {
     <section className="space-y-6">
       <header>
         <h2 className="text-xl font-bold text-foreground">Gestión de usuarios</h2>
-        <p className="text-sm text-[#5c7a94] mt-0.5">Crea trabajadores y clientes para gestionar su acceso.</p>
+        <p className="text-sm text-[#7aa3b8] mt-0.5">Crea trabajadores y clientes para gestionar su acceso.</p>
       </header>
 
-      <form onSubmit={create} className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: 'rgba(8,22,36,0.82)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <form onSubmit={create} className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
         <Input placeholder="Nombre" required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
         <Input placeholder="Apellido" required value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
         <Input type="email" placeholder="Correo" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -100,7 +100,7 @@ export function AdminUserPage() {
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,196,224,0.12)' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-[#5c7a94]" style={{ background: 'rgba(0,196,224,0.06)', borderBottom: '1px solid rgba(0,196,224,0.12)' }}>
+            <tr className="text-left text-xs uppercase tracking-wide text-[#7aa3b8]" style={{ background: 'rgba(0,196,224,0.06)', borderBottom: '1px solid rgba(0,196,224,0.12)' }}>
               <th className="py-2.5 px-4 font-semibold">Email</th>
               <th className="font-semibold">Rol</th>
               <th className="font-semibold">Estado</th>
@@ -111,7 +111,7 @@ export function AdminUserPage() {
             {users.map((u) => (
               <tr key={u.id} className="transition-colors hover:bg-white/5" style={{ borderBottom: '1px solid rgba(0,196,224,0.12)' }}>
                 <td className="py-2.5 px-4 text-[#eef4f8]">{u.email}</td>
-                <td className="capitalize text-[#5c7a94]">{u.rol.toLowerCase()}</td>
+                <td className="capitalize text-[#7aa3b8]">{u.rol.toLowerCase()}</td>
                 <td>
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${
                     u.estado === 'bloqueado'

@@ -1,6 +1,5 @@
 import type { ITicketAdminActions } from '../../interfaces/ITicketAdminActions'
-import type { TicketEstado } from '../../interfaces/ITicketService'
-import type { TicketDetail } from '../../interfaces/ITicketService'
+import type { TicketDetail, TicketEstado } from '../../interfaces/ITicketService'
 
 export type AssignmentMode = 'assign' | 'reassign'
 

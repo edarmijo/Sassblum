@@ -42,7 +42,7 @@ export function Footer() {
       >
         {/* Top section: brand (2fr) + link columns (3fr) */}
         <div
-          className="grid grid-cols-1 md:grid-cols-[2fr_3fr]"
+          className="grid grid-cols-1 lg:grid-cols-[2fr_3fr]"
           style={{
             gap: '3rem',
             paddingBottom: '3rem',
@@ -63,7 +63,7 @@ export function Footer() {
             </div>
             <p
               style={{
-                color: '#6b6b85',
+                color: '#7aa3b8',
                 fontSize: '0.9rem',
                 lineHeight: 1.7,
                 maxWidth: '320px',
@@ -76,7 +76,7 @@ export function Footer() {
 
           {/* Link columns */}
           <div
-            className="grid grid-cols-1 sm:grid-cols-3"
+            className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             style={{
               gap: '2rem',
             }}
@@ -92,7 +92,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -106,7 +106,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -120,7 +120,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -139,7 +139,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -153,7 +153,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -167,7 +167,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -180,13 +180,13 @@ export function Footer() {
               <h4 style={sectionHeaderStyle}>Contacto</h4>
               <a
                 href="mailto:info@sassblum.com"
-                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', overflowWrap: 'anywhere' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = '#00c4e0'
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -195,13 +195,13 @@ export function Footer() {
               </a>
               <a
                 href="tel:+593969990990"
-                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                style={{ ...linkBaseStyle, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', overflowWrap: 'anywhere' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = '#00c4e0'
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -218,7 +218,7 @@ export function Footer() {
                   e.currentTarget.style.transform = 'translateX(4px)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#6b6b85'
+                  e.currentTarget.style.color = '#a0a0b8'
                   e.currentTarget.style.transform = 'translateX(0)'
                 }}
               >
@@ -248,7 +248,7 @@ export function Footer() {
           >
             <p
               style={{
-                color: '#6b6b85',
+                color: '#7aa3b8',
                 fontSize: '0.82rem',
                 fontFamily: "'Space Grotesk', sans-serif",
               }}
@@ -257,7 +257,7 @@ export function Footer() {
             </p>
             <p
               style={{
-                color: '#6b6b85',
+                color: '#7aa3b8',
                 fontSize: '0.82rem',
                 fontFamily: "'Space Grotesk', sans-serif",
               }}

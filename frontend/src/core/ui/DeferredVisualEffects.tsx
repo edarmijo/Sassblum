@@ -18,6 +18,7 @@ type NavigatorWithConnection = Navigator & {
 const ENHANCED_ROUTES = new Set(['/', '/nosotros', '/servicios', '/galeria', '/clientes', '/login'])
 
 function supportsEnhancedEffects(): boolean {
+  if (typeof globalThis.matchMedia !== 'function' || typeof navigator === 'undefined') return false
   const connection = (navigator as NavigatorWithConnection).connection
   const slowConnection = connection?.saveData === true || connection?.effectiveType === '2g'
   const desktopPointer = globalThis.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -28,12 +29,27 @@ function supportsEnhancedEffects(): boolean {
 /** Loads decorative effects only after critical UI work has had a chance to paint. */
 export function DeferredVisualEffects() {
   const [ready, setReady] = useState(false)
+  const [enhancedSupported, setEnhancedSupported] = useState(supportsEnhancedEffects)
   const { pathname } = useLocation()
   const isEnhancedRoute = ENHANCED_ROUTES.has(pathname)
 
   useEffect(() => {
+    const pointerQuery = globalThis.matchMedia('(hover: hover) and (pointer: fine)')
+    const motionQuery = globalThis.matchMedia('(prefers-reduced-motion: reduce)')
+    const updateSupport = () => setEnhancedSupported(supportsEnhancedEffects())
+    pointerQuery.addEventListener('change', updateSupport)
+    motionQuery.addEventListener('change', updateSupport)
+    globalThis.addEventListener('resize', updateSupport, { passive: true })
+    return () => {
+      pointerQuery.removeEventListener('change', updateSupport)
+      motionQuery.removeEventListener('change', updateSupport)
+      globalThis.removeEventListener('resize', updateSupport)
+    }
+  }, [])
+
+  useEffect(() => {
     setReady(false)
-    if (!isEnhancedRoute || !supportsEnhancedEffects()) return
+    if (!isEnhancedRoute || !enhancedSupported) return
 
     let idleId: number | undefined
     let delayId: number | undefined
@@ -61,13 +77,13 @@ export function DeferredVisualEffects() {
         globalThis.cancelIdleCallback(idleId)
       }
     }
-  }, [isEnhancedRoute])
+  }, [enhancedSupported, isEnhancedRoute])
 
   if (!isEnhancedRoute) return null
   return (
     <>
       <MobileVisualEffects />
-      {ready ? <Suspense fallback={null}><VisualEffects /></Suspense> : null}
+      {ready && enhancedSupported ? <Suspense fallback={null}><VisualEffects /></Suspense> : null}
     </>
   )
 }

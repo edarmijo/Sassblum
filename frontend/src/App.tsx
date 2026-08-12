@@ -154,7 +154,7 @@ function SiteLayout() {
 function AuthCard({ title, subtitle, children, footer }: Readonly<{ title: string; subtitle: string; children: ReactNode; footer?: ReactNode }>) {
   return (
     <AuthServiceProvider service={authService}>
-      <div className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 overflow-hidden">
+      <div className="relative min-h-[calc(100dvh-4rem)] flex items-start justify-center overflow-hidden px-4 pb-12 pt-24 sm:items-center">
         {/* teal radial glow behind the card */}
         <div aria-hidden className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full blur-3xl" style={{ background: 'rgba(0,196,224,0.08)' }} />
         <div className="relative w-full max-w-md">
@@ -163,14 +163,14 @@ function AuthCard({ title, subtitle, children, footer }: Readonly<{ title: strin
               <span className="tracking-wider font-semibold" style={{ color: '#00c4e0' }}>SASS BLUM</span>
             </Link>
           </div>
-          <Card className="w-full" style={{ background: 'rgba(8,22,36,0.82)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+          <Card className="w-full" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
             <CardHeader>
               <CardTitle className="text-xl font-bold" style={{ color: '#eef4f8' }}>{title}</CardTitle>
-              <CardDescription style={{ color: '#5c7a94' }}>{subtitle}</CardDescription>
+              <CardDescription style={{ color: '#7aa3b8' }}>{subtitle}</CardDescription>
             </CardHeader>
             <CardContent>
               {children}
-              {footer && <div className="mt-6 pt-6 text-center text-sm" style={{ borderTop: '1px solid rgba(0,196,224,0.1)', color: '#5c7a94' }}>{footer}</div>}
+              {footer && <div className="mt-6 pt-6 text-center text-sm" style={{ borderTop: '1px solid rgba(0,196,224,0.1)', color: '#7aa3b8' }}>{footer}</div>}
             </CardContent>
           </Card>
         </div>

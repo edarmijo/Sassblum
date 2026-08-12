@@ -36,6 +36,9 @@ export function PageHero({
   const { primary, secondary } = ORB_POSITION[orbPosition]
   const orbColor = ORB_COLOR[accent]
   const secondaryColor = accent === 'cyan' ? '#6366f1' : '#00d4ff'
+  const animateOrbs = !reduceMotion
+    && typeof globalThis.matchMedia === 'function'
+    && globalThis.matchMedia('(hover: hover) and (pointer: fine)').matches
 
   return (
     <div className="relative text-white py-28 md:py-36 overflow-hidden" style={{ background: 'rgba(4,9,20,0.88)' }}>
@@ -46,15 +49,15 @@ export function PageHero({
       <motion.div
         className={`absolute ${primary} h-96 w-96 rounded-full blur-2xl pointer-events-none`}
         style={{ background: `radial-gradient(circle, ${orbColor} 0%, transparent 70%)` }}
-        animate={reduceMotion ? { scale: 1, opacity: 0.24 } : { scale: [1, 1.12, 1], opacity: [0.2, 0.35, 0.2] }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        animate={animateOrbs ? { scale: [1, 1.12, 1], opacity: [0.2, 0.35, 0.2] } : { scale: 1, opacity: 0.2 }}
+        transition={animateOrbs ? { duration: 7, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
       />
       {/* Orbe secundario — movimiento contrario para profundidad */}
       <motion.div
-        className={`absolute ${secondary} h-72 w-72 rounded-full blur-2xl pointer-events-none`}
+        className={`absolute ${secondary} hidden h-72 w-72 rounded-full blur-2xl pointer-events-none md:block`}
         style={{ background: `radial-gradient(circle, ${secondaryColor} 0%, transparent 70%)` }}
-        animate={reduceMotion ? { x: 0, y: 0, opacity: 0.16 } : { x: [0, -16, 0], y: [0, 20, 0], opacity: [0.12, 0.22, 0.12] }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        animate={animateOrbs ? { x: [0, -16, 0], y: [0, 20, 0], opacity: [0.12, 0.22, 0.12] } : { x: 0, y: 0, opacity: 0.14 }}
+        transition={animateOrbs ? { duration: 9, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

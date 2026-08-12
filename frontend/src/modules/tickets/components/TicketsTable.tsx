@@ -60,7 +60,7 @@ export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-[#5c7a94]">No se encontraron tickets</TableCell>
+                  <TableCell colSpan={7} className="text-center py-10 text-[#7aa3b8]">No se encontraron tickets</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((t) => (
@@ -89,7 +89,7 @@ export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
         </div>
       </div>
 
-      <p className="text-sm text-[#5c7a94]">Mostrando {filtered.length} de {tickets.length} tickets</p>
+      <p className="text-sm text-[#7aa3b8]">Mostrando {filtered.length} de {tickets.length} tickets</p>
     </div>
   )
 }

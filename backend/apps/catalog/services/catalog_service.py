@@ -13,12 +13,15 @@ SOLID: DIP · SRP · LSP · ISP · OCP
 from __future__ import annotations
 
 import threading
-from urllib.parse import urlparse
 
 from apps.catalog.interfaces import ICatalogClientView, ICatalogAdminView
+from apps.catalog.models import Service
 from apps.catalog.repositories import ServiceRepository
 from apps.tickets.interfaces import IStorageService
-from apps.tickets.services.storage_name import versioned_storage_filename
+from apps.tickets.services.storage_name import (
+    managed_public_object_path,
+    versioned_storage_filename,
+)
 from core.exceptions.domain_exceptions import ServiceHasTickets, ServiceNotFound
 
 
@@ -61,28 +64,21 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         return self._detail(service)
 
     def edit_service(self, service_id: int, data: dict) -> dict:
-        if self._repo.get_by_id(service_id) is None:
-            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
+        service = self._get_service_or_raise(service_id)
         data = dict(data)
         imagen = data.pop("imagen", None)
         if data:
             service = self._repo.update(service_id, data)
-        else:
-            service = self._repo.get_by_id(service_id)
         service = self._maybe_attach_image(service, imagen)
         return self._detail(service)
 
     def toggle_active(self, service_id: int) -> dict:
-        service = self._repo.get_by_id(service_id)
-        if service is None:
-            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
+        service = self._get_service_or_raise(service_id)
         service = self._repo.update(service_id, {"activo": not service.activo})
         return self._detail(service)
 
     def delete_service(self, service_id: int) -> None:
-        service = self._repo.get_by_id(service_id)
-        if service is None:
-            raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
+        service = self._get_service_or_raise(service_id)
         if service.tickets.exists():
             raise ServiceHasTickets(
                 "No se puede eliminar un servicio con tickets asociados. "
@@ -95,14 +91,19 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         # the parent service in a single database operation.
         self._repo.delete(service_id)
 
-    # ── Gallery image management (ICatalogAdminView) ───────────────────────────
-
-    def add_service_image(self, service_id: int, file) -> dict:
+    def _get_service_or_raise(self, service_id: int) -> Service:
         service = self._repo.get_by_id(service_id)
         if service is None:
             raise ServiceNotFound(SERVICE_NOT_FOUND_MESSAGE)
+        return service
+
+    # ── Gallery image management (ICatalogAdminView) ───────────────────────────
+
+    def add_service_image(self, service_id: int, file) -> dict:
+        self._get_service_or_raise(service_id)
         orden = self._repo.get_next_order(service_id)
-        path = f"services/{service_id}/gallery/{versioned_storage_filename(getattr(file, 'name', 'imagen'))}"
+        filename = versioned_storage_filename(getattr(file, "name", "imagen"))
+        path = f"services/{service_id}/gallery/{filename}"
         url = self._storage.upload(file, path) if self._storage is not None else ""
         if not url:
             raise RuntimeError("No se pudo subir la imagen al almacenamiento.")
@@ -121,7 +122,8 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
     def _maybe_attach_image(self, service, imagen):
         if imagen is None or self._storage is None:
             return service
-        path = f"services/{service.id}/cover/{versioned_storage_filename(getattr(imagen, 'name', 'imagen'))}"
+        filename = versioned_storage_filename(getattr(imagen, "name", "imagen"))
+        path = f"services/{service.id}/cover/{filename}"
         url = self._storage.upload(imagen, path)
         if not url:
             return service
@@ -132,21 +134,9 @@ class CatalogService(ICatalogClientView, ICatalogAdminView):
         if self._storage is None:
             return
         for url in urls:
-            path = self._managed_storage_path(url, allowed_prefix)
+            path = managed_public_object_path(url, allowed_prefix)
             if path is not None:
                 self._storage.delete(path)
-
-    @staticmethod
-    def _managed_storage_path(url: str, allowed_prefix: str) -> str | None:
-        public_marker = "/object/public/"
-        storage_path = urlparse(url).path
-        if public_marker not in storage_path:
-            return None
-        _, _, bucket_and_object = storage_path.partition(public_marker)
-        _, separator, object_path = bucket_and_object.partition("/")
-        if not separator or not object_path.startswith(allowed_prefix):
-            return None
-        return object_path
 
     # ── Serialization helpers ──────────────────────────────────────────────────
 

@@ -10,12 +10,18 @@ SOLID: DIP · SRP · LSP · OCP
 from __future__ import annotations
 
 import threading
-from urllib.parse import urlparse
 
+from apps.gallery.models import Project
 from apps.gallery.repositories import ProjectRepository
 from apps.tickets.interfaces import IStorageService
-from apps.tickets.services.storage_name import versioned_storage_filename
+from apps.tickets.services.storage_name import (
+    managed_public_object_path,
+    versioned_storage_filename,
+)
 from core.exceptions.domain_exceptions import DomainException
+
+
+PROJECT_NOT_FOUND_MESSAGE = "El proyecto no existe."
 
 
 class ProjectNotFound(DomainException):
@@ -50,37 +56,37 @@ class GalleryService:
         return self._detail(project)
 
     def edit_project(self, project_id: int, data: dict) -> dict:
-        if self._repo.get_by_id(project_id) is None:
-            raise ProjectNotFound("El proyecto no existe.")
+        project = self._get_project_or_raise(project_id)
         data = dict(data)
         imagen = data.pop("imagen", None)
         if data:
             project = self._repo.update(project_id, data)
-        else:
-            project = self._repo.get_by_id(project_id)
         project = self._maybe_attach_image(project, imagen)
         return self._detail(project)
 
     def toggle_active(self, project_id: int) -> dict:
-        project = self._repo.get_by_id(project_id)
-        if project is None:
-            raise ProjectNotFound("El proyecto no existe.")
+        project = self._get_project_or_raise(project_id)
         project = self._repo.update(project_id, {"activo": not project.activo})
         return self._detail(project)
 
     def delete_project(self, project_id: int) -> None:
-        project = self._repo.get_by_id(project_id)
-        if project is None:
-            raise ProjectNotFound("El proyecto no existe.")
+        project = self._get_project_or_raise(project_id)
         self._delete_managed_file(project.imagen_url, f"gallery/{project_id}/")
         self._repo.delete(project_id)
+
+    def _get_project_or_raise(self, project_id: int) -> Project:
+        project = self._repo.get_by_id(project_id)
+        if project is None:
+            raise ProjectNotFound(PROJECT_NOT_FOUND_MESSAGE)
+        return project
 
     # ── Image upload (Strategy via IStorageService) ────────────────────────────
 
     def _maybe_attach_image(self, project, imagen):
         if imagen is None or self._storage is None:
             return project
-        path = f"gallery/{project.id}/{versioned_storage_filename(getattr(imagen, 'name', 'imagen'))}"
+        filename = versioned_storage_filename(getattr(imagen, "name", "imagen"))
+        path = f"gallery/{project.id}/{filename}"
         url = self._storage.upload(imagen, path)
         if not url:
             return project
@@ -89,21 +95,9 @@ class GalleryService:
     def _delete_managed_file(self, url: str, allowed_prefix: str) -> None:
         if self._storage is None:
             return
-        path = self._managed_storage_path(url, allowed_prefix)
+        path = managed_public_object_path(url, allowed_prefix)
         if path is not None:
             self._storage.delete(path)
-
-    @staticmethod
-    def _managed_storage_path(url: str, allowed_prefix: str) -> str | None:
-        public_marker = "/object/public/"
-        storage_path = urlparse(url).path
-        if public_marker not in storage_path:
-            return None
-        _, _, bucket_and_object = storage_path.partition(public_marker)
-        _, separator, object_path = bucket_and_object.partition("/")
-        if not separator or not object_path.startswith(allowed_prefix):
-            return None
-        return object_path
 
     # ── Serialization helpers ──────────────────────────────────────────────────
 

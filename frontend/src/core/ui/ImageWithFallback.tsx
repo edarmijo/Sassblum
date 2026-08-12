@@ -26,19 +26,28 @@ export function ImageWithFallback({
   const [errored, setErrored] = useState(false)
   const [useOriginal, setUseOriginal] = useState(false)
   const localVariant = src ? getLocalMediaVariant(src) : undefined
-  const optimizedSrc = localVariant?.src ?? (
-    src && optimizedWidth && optimizationEnabled
-      ? getOptimizedImageUrl(src, optimizedWidth)
-      : src
-  )
+  let optimizedSrc = src
+  if (localVariant) {
+    optimizedSrc = localVariant.src
+  } else if (src && optimizedWidth && optimizationEnabled) {
+    optimizedSrc = getOptimizedImageUrl(src, optimizedWidth)
+  }
   const hasOptimizedVariant = Boolean(src && optimizedSrc && optimizedSrc !== src)
-  const responsiveSrcSet = localVariant?.srcSet ?? (
-    hasOptimizedVariant && src
-      ? [320, 640, 960]
-        .map((width) => `${getOptimizedImageUrl(src, width)} ${width}w`)
-        .join(', ')
-      : srcSet
-  )
+  let responsiveSrcSet = srcSet
+  if (localVariant) {
+    responsiveSrcSet = localVariant.srcSet
+  } else if (hasOptimizedVariant && src) {
+    responsiveSrcSet = [320, 640, 960]
+      .map((width) => `${getOptimizedImageUrl(src, width)} ${width}w`)
+      .join(', ')
+  }
+
+  let displayedSrc = optimizedSrc
+  if (errored || !src) {
+    displayedSrc = fallbackSrc
+  } else if (useOriginal) {
+    displayedSrc = src
+  }
 
   useEffect(() => {
     setErrored(false)
@@ -47,7 +56,7 @@ export function ImageWithFallback({
 
   return (
     <img
-      src={errored || !src ? fallbackSrc : useOriginal ? src : optimizedSrc}
+      src={displayedSrc}
       srcSet={!errored && !useOriginal ? responsiveSrcSet : undefined}
       sizes={sizes}
       alt={alt}

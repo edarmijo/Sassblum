@@ -15,24 +15,33 @@ import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import ParseResult, unquote, urljoin, urlparse, urlunparse
 
 import requests
 from PIL import Image, ImageOps
 
 
 WIDTHS = (320, 640, 960)
+COVER_WIDTHS = (320, 640, 960, 1280)
+ABOUT_WIDTHS = (320, 640, 960, 1280, 1600)
 WEBP_QUALITY = 82
 MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024
 MAX_IMAGE_PIXELS = 50_000_000
 MAX_REDIRECTS = 3
+DEFAULT_API_BASE = "https://sassblum.onrender.com/api"
+ALLOWED_API_HOSTS = frozenset({"sassblum.onrender.com"})
+API_ENDPOINT_URLS = {
+    "servicios/": f"{DEFAULT_API_BASE}/servicios/",
+    "proyectos/": f"{DEFAULT_API_BASE}/proyectos/",
+    "clientes/": f"{DEFAULT_API_BASE}/clientes/",
+}
 DEFAULT_MEDIA_HOSTS = (
     "images.unsplash.com",
     "opiywavbmidgpzzkkivy.supabase.co",
 )
 ABOUT_TEAM_IMAGE_URL = (
     "https://images.unsplash.com/photo-1521737604893-d14cc237f11d"
-    "?auto=format&fit=crop&w=1080&q=80"
+    "?auto=format&fit=crop&w=1600&q=82"
 )
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "public"
@@ -48,54 +57,120 @@ def _slug(value: str) -> str:
     return normalized or "media"
 
 
+def _validate_api_base(value: str) -> str:
+    """Return a normalized project API URL or reject unsafe CLI input."""
+    parsed = urlparse(value)
+    if not _has_safe_https_authority(parsed, ALLOWED_API_HOSTS):
+        raise ValueError(f"API base URL is not allowed: {value}")
+
+    path = parsed.path.rstrip("/")
+    if path != "/api" or parsed.query or parsed.fragment:
+        raise ValueError(f"API base path is not allowed: {value}")
+    # Return a compile-time constant, not a URL assembled from CLI-controlled text.
+    return DEFAULT_API_BASE
+
+
+def _has_safe_https_authority(parsed: ParseResult, allowed_hosts: frozenset[str]) -> bool:
+    """Check scheme and authority without letting an invalid port escape validation."""
+    try:
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname in allowed_hosts
+        and not parsed.username
+        and not parsed.password
+        and port in (None, 443)
+    )
+
+
+def _validate_media_host_argument(value: str) -> str:
+    """Restrict CLI host entries to the project's audited media providers."""
+    normalized = value.strip().lower()
+    if normalized not in DEFAULT_MEDIA_HOSTS:
+        raise ValueError(f"media host is not allowed: {value}")
+    return normalized
+
+
+def _validated_media_hosts(values: frozenset[str]) -> frozenset[str]:
+    """Validate host sets received outside argparse before any network request."""
+    return frozenset(_validate_media_host_argument(value) for value in values)
+
+
 def _fetch_items(api_base: str, endpoint: str) -> list[dict[str, Any]]:
-    response = requests.get(f"{api_base.rstrip('/')}/{endpoint}", timeout=90)
-    response.raise_for_status()
-    payload = response.json()
+    if endpoint not in API_ENDPOINT_URLS:
+        raise ValueError(f"API endpoint is not allowed: {endpoint}")
+    _validate_api_base(api_base)
+    # This URL is selected from constants only. CLI text never reaches requests.
+    request_url = API_ENDPOINT_URLS[endpoint]
+    with requests.get(request_url, timeout=90, allow_redirects=False) as response:
+        if _redirect_target(response, request_url) is not None:
+            raise ValueError(f"API redirects are not allowed: {request_url}")
+        response.raise_for_status()
+        payload = response.json()
     items = payload.get("items", payload) if isinstance(payload, dict) else payload
     return items if isinstance(items, list) else []
 
 
-def _validate_media_url(url: str, allowed_hosts: frozenset[str]) -> None:
+def _canonical_media_url(url: str, allowed_hosts: frozenset[str]) -> str:
+    """Return a URL whose network authority comes only from the closed allowlist."""
     parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in allowed_hosts:
+    if not _has_safe_https_authority(parsed, allowed_hosts):
         raise ValueError(f"media URL host is not allowed: {url}")
-    if parsed.username or parsed.password or parsed.port not in (None, 443):
-        raise ValueError(f"media URL authority is not allowed: {url}")
+    if parsed.fragment or "\\" in url or any(ord(character) < 32 for character in url):
+        raise ValueError(f"media URL is malformed: {url}")
+
+    # Select the authority from trusted constants. The remote path/query cannot
+    # change the destination origin, including after a relative redirect.
+    canonical_host = next(host for host in allowed_hosts if parsed.hostname == host)
+    return urlunparse(("https", canonical_host, parsed.path or "/", "", parsed.query, ""))
+
+
+def _redirect_target(response: requests.Response, current_url: str) -> str | None:
+    if not (response.is_redirect or response.is_permanent_redirect):
+        return None
+    location = response.headers.get("Location")
+    if not location:
+        raise ValueError(f"redirect without Location: {current_url}")
+    return urljoin(current_url, location)
+
+
+def _read_bounded_body(response: requests.Response, source_url: str) -> bytes:
+    declared_size = int(response.headers.get("Content-Length", "0") or 0)
+    if declared_size > MAX_DOWNLOAD_BYTES:
+        raise ValueError(f"media exceeds {MAX_DOWNLOAD_BYTES} bytes: {source_url}")
+
+    body = bytearray()
+    for chunk in response.iter_content(chunk_size=128 * 1024):
+        body.extend(chunk)
+        if len(body) > MAX_DOWNLOAD_BYTES:
+            raise ValueError(f"media exceeds {MAX_DOWNLOAD_BYTES} bytes: {source_url}")
+    return bytes(body)
 
 
 def _download(url: str, allowed_hosts: frozenset[str]) -> tuple[Image.Image, str]:
+    safe_hosts = _validated_media_hosts(allowed_hosts)
     current_url = url
     for _ in range(MAX_REDIRECTS + 1):
-        _validate_media_url(current_url, allowed_hosts)
+        safe_url = _canonical_media_url(current_url, safe_hosts)
         with requests.get(
-            current_url,
+            safe_url,
             timeout=(10, 120),
             stream=True,
             allow_redirects=False,
         ) as response:
-            if response.is_redirect or response.is_permanent_redirect:
-                location = response.headers.get("Location")
-                if not location:
-                    raise ValueError(f"redirect without Location: {current_url}")
-                current_url = urljoin(current_url, location)
+            redirect_target = _redirect_target(response, safe_url)
+            if redirect_target is not None:
+                current_url = redirect_target
                 continue
 
             response.raise_for_status()
-            declared_size = int(response.headers.get("Content-Length", "0") or 0)
-            if declared_size > MAX_DOWNLOAD_BYTES:
-                raise ValueError(f"media exceeds {MAX_DOWNLOAD_BYTES} bytes: {url}")
-
-            body = bytearray()
-            for chunk in response.iter_content(chunk_size=128 * 1024):
-                body.extend(chunk)
-                if len(body) > MAX_DOWNLOAD_BYTES:
-                    raise ValueError(f"media exceeds {MAX_DOWNLOAD_BYTES} bytes: {url}")
+            content = _read_bounded_body(response, url)
             break
     else:
         raise ValueError(f"too many redirects: {url}")
 
-    content = bytes(body)
     with warnings.catch_warnings():
         warnings.simplefilter("error", Image.DecompressionBombWarning)
         image = Image.open(BytesIO(content))
@@ -145,6 +220,8 @@ def _register_remote(
     section: str,
     identity: str,
     allowed_hosts: frozenset[str],
+    *,
+    widths: tuple[int, ...] = WIDTHS,
 ) -> None:
     if not url or url in manifest:
         return
@@ -152,9 +229,9 @@ def _register_remote(
         image, content_hash = _download(url, allowed_hosts)
         stem = f"{_slug(identity)}-{content_hash}"
         with image:
-            manifest[url] = _save_variants(image, section, stem)
+            manifest[url] = _save_variants(image, section, stem, widths=widths)
         print(f"optimized {section}: {identity}")
-    except (ValueError, OSError, requests.RequestException) as error:
+    except (ValueError, OSError) as error:
         print(f"skipped {section}: {identity} ({error})")
 
 
@@ -182,7 +259,7 @@ def _register_local_client_logo(
                     ImageOps.exif_transpose(image),
                     "clients",
                     f"client-{_slug(local_file.stem)}-{content_hash}",
-                    widths=(160, 320),
+                    widths=(160, 320, 640) if image.width / max(1, image.height) >= 2.5 else (160, 320),
                     lossless=True,
                 )
     except (ValueError, OSError) as error:
@@ -238,6 +315,7 @@ def generate(api_base: str, allowed_hosts: frozenset[str]) -> None:
         "public",
         "about-team",
         allowed_hosts,
+        widths=ABOUT_WIDTHS,
     )
 
     for service in _fetch_items(api_base, "servicios/"):
@@ -248,6 +326,7 @@ def generate(api_base: str, allowed_hosts: frozenset[str]) -> None:
             "services",
             f"service-{service_id}-cover",
             allowed_hosts,
+            widths=COVER_WIDTHS,
         )
         for image in service.get("imagenes") or []:
             _register_remote(
@@ -279,14 +358,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--api-base",
-        default="https://sassblum.onrender.com/api",
-        help="Public API base URL.",
+        default=DEFAULT_API_BASE,
+        type=_validate_api_base,
+        help="Audited HTTPS public API base URL.",
     )
     parser.add_argument(
         "--allowed-media-host",
         action="append",
         default=list(DEFAULT_MEDIA_HOSTS),
-        help="Exact HTTPS hostname allowed for media downloads; repeat as needed.",
+        type=_validate_media_host_argument,
+        help="Audited HTTPS media hostname; repeat as needed.",
     )
     args = parser.parse_args()
     generate(args.api_base, frozenset(args.allowed_media_host))

@@ -42,7 +42,7 @@ function BrandLogo({ domain, logoUrl, name }: Readonly<{ domain?: string; logoUr
 
 function Logos({ brands, ariaHidden }: Readonly<{ brands: Brand[]; ariaHidden?: boolean }>) {
   return (
-    <ul className="animate-marquee flex items-center gap-6 pr-6" aria-hidden={ariaHidden}>
+    <ul className="flex items-center gap-6 pr-6" aria-hidden={ariaHidden}>
       {brands.map((b, i) => (
         <li key={`${b.name}-${i}`} className="shrink-0">
           <div className="group flex h-28 w-56 flex-col items-center justify-center gap-2 rounded-2xl border border-cyan-300/15 bg-[#0b2134] px-6 shadow-[0_12px_30px_rgba(0,0,0,0.2)] transition-all duration-300 hover:-translate-y-1 hover:border-brand-cyan/60 hover:shadow-[0_16px_36px_rgba(0,196,224,0.14)]">
@@ -68,7 +68,7 @@ export function LogoMarquee({ brands, durationSec = 36 }: Readonly<LogoMarqueePr
       className="marquee-track marquee-mask relative w-full overflow-hidden"
       style={{ ['--marquee-duration' as string]: `${durationSec}s` }}
     >
-      <div className="flex w-max">
+      <div className="animate-marquee flex w-max">
         <Logos brands={brands} />
         {/* Copia para el bucle continuo */}
         <Logos brands={brands} ariaHidden />

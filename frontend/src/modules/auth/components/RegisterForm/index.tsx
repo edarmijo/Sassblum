@@ -72,7 +72,7 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="nombre">Nombre</Label>
           <Input id="nombre" required value={form.nombre} onChange={set('nombre')} />

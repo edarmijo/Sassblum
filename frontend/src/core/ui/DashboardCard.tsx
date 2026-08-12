@@ -7,10 +7,10 @@ import { cn } from './utils'
  * with the public pages (dark navy + teal accents + blur).
  */
 const GLASS_STYLE: React.CSSProperties = {
-  background: 'rgba(8,22,36,0.82)',
+  background: 'rgba(8,22,36,0.94)',
   border: '1px solid rgba(0,196,224,0.14)',
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
   boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
 }
 
@@ -58,7 +58,7 @@ export function DashboardCardTitle({ className, children, ...props }: Readonly<R
 
 /** Description inside a DashboardCard header. */
 export function DashboardCardDescription({ className, ...props }: Readonly<React.ComponentProps<'p'>>) {
-  return <p className={cn('text-[#5c7a94]', className)} {...props} />
+  return <p className={cn('text-[#7aa3b8]', className)} {...props} />
 }
 
 /** Content area inside a DashboardCard. */

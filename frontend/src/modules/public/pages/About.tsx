@@ -32,8 +32,8 @@ function ParallaxImage() {
     <div ref={ref} className="relative overflow-hidden rounded-2xl shadow-2xl h-96 md:h-120" style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.55)', border: '1px solid rgba(0,196,224,0.12)' }}>
       <motion.div className="absolute inset-0" style={reduce ? undefined : { y, scale }}>
         <ImageWithFallback
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1080&q=80"
-          sizes="(max-width: 1024px) 100vw, 50vw"
+          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=82"
+          sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1024px) calc(50vw - 3rem), 592px"
           alt="Equipo SASS BLUM"
           className="w-full h-full object-cover"
         />
@@ -43,6 +43,7 @@ function ParallaxImage() {
 }
 
 export function About() {
+  const reduce = useReducedMotion() ?? false
   return (
     <div className="min-h-screen">
       <PageHero
@@ -82,7 +83,7 @@ export function About() {
         <motion.div
           className="absolute -top-20 -right-20 h-80 w-80 rounded-full blur-2xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.28, 0.15] }}
+          animate={reduce ? undefined : { scale: [1, 1.1, 1], opacity: [0.15, 0.28, 0.15] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -98,7 +99,7 @@ export function About() {
                 <p className="text-6xl md:text-7xl font-semibold tracking-tight text-brand-cyan">
                   {s.value}
                 </p>
-                <p className="mt-3 uppercase tracking-widest text-sm" style={{ color: '#5c7a94' }}>{s.label}</p>
+                <p className="mt-3 uppercase tracking-widest text-sm" style={{ color: '#7aa3b8' }}>{s.label}</p>
               </Reveal>
             ))}
           </div>
@@ -128,7 +129,7 @@ export function About() {
                       <v.icon className="h-7 w-7 text-brand-cyan" />
                     </motion.div>
                     <h3 className="text-lg mb-2 font-semibold" style={{ color: '#eef4f8' }}>{v.title}</h3>
-                    <p className="text-sm leading-relaxed" style={{ color: '#5c7a94' }}>{v.text}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: '#7aa3b8' }}>{v.text}</p>
                   </div>
                 </GlowCard>
               </FocusReveal>

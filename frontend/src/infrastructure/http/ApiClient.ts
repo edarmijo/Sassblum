@@ -96,11 +96,9 @@ class ApiClient {
   }
 
   private refreshAccessToken(): Promise<boolean> {
-    if (this.refreshPromise === null) {
-      this.refreshPromise = this.tryRefresh().finally(() => {
-        this.refreshPromise = null
-      })
-    }
+    this.refreshPromise ??= this.tryRefresh().finally(() => {
+      this.refreshPromise = null
+    })
     return this.refreshPromise
   }
 

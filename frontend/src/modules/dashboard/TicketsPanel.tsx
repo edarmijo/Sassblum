@@ -26,10 +26,10 @@ function StatCard({ label, value, icon: Icon, chip }: Readonly<{ label: string; 
       className="ring-1 ring-white/5"
       glowColor="rgba(0, 196, 224, 0.18)"
       style={{
-        background: 'rgba(8,22,36,0.78)',
+        background: 'rgba(8,22,36,0.94)',
         border: '1px solid rgba(0,196,224,0.12)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
       }}
     >
       <div className="flex items-center gap-4 p-5">
@@ -41,7 +41,7 @@ function StatCard({ label, value, icon: Icon, chip }: Readonly<{ label: string; 
           <Icon className="h-5 w-5" />
         </motion.div>
         <div className="min-w-0">
-          <p className="text-sm text-[#5c7a94] truncate">{label}</p>
+          <p className="text-sm text-[#7aa3b8] truncate">{label}</p>
           <p className="text-2xl font-bold text-[#eef4f8] tabular-nums">{value}</p>
         </div>
       </div>

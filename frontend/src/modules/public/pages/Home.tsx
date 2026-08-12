@@ -11,7 +11,7 @@ const C = {
   accent: '#00c4e0',          // vivid teal (brand primary)
   accent2:'#38d9f5',          // light teal
   accent3:'#7ee8f9',          // pale teal highlight
-  muted:  '#5c7a94',          // blue-muted text
+  muted:  '#7aa3b8',          // accessible blue-muted text
   text:   '#eef4f8',          // cool white
   green:  '#22d87a',          // status green
   glow:   'rgba(0,196,224,0.32)', // teal glow
@@ -157,10 +157,10 @@ export function Home() {
       {/* ─────────────── HERO ─────────────── */}
       <section
         ref={heroRef}
-        className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden z-10 md:flex-row"
+        className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden z-10 lg:flex-row"
         style={{ padding: '8rem clamp(1.5rem,4vw,4rem) 4rem' }}
       >
-        <div className="w-full max-w-200 relative z-10">
+        <div className="w-full max-w-200 relative z-10 lg:w-[55%]">
           {/* badge */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="visible"
@@ -213,7 +213,7 @@ export function Home() {
               to="/login"
               onMouseMove={onMagneticMove}
               onMouseLeave={onMagneticLeave}
-              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(124,92,252,0.35)]"
+              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
               style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff', transition: 'box-shadow 0.3s' }}
             >
               <span>Enviar Ticket</span>
@@ -232,7 +232,7 @@ export function Home() {
         </div>
 
         {/* hero__cards — right half of hero */}
-        <div className="home-hero-cards relative z-2 mt-12 grid w-full shrink-0 grid-cols-3 gap-2.5 pointer-events-none md:absolute md:inset-y-0 md:right-0 md:mt-0 md:block md:w-1/2">
+        <div className="home-hero-cards relative z-2 mt-12 grid w-full shrink-0 grid-cols-3 gap-2.5 pointer-events-none lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:block lg:w-[45%]">
           {([
             { Icon: Server,  label: 'Servidores', top: '15%',    right: '15%', bottom: undefined, iconColor: C.accent  },
             { Icon: Network, label: 'Cableado',   top: '50%',    right: '5%',  bottom: undefined, iconColor: C.accent2 },
@@ -243,7 +243,7 @@ export function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 + i * 0.2, duration: 0.9, ease: EASE_APPLE }}
-              className="home-hero-card relative md:absolute"
+              className="home-hero-card relative lg:absolute"
               style={{
                 ['--hero-card-top' as string]: c.top,
                 ['--hero-card-right' as string]: c.right,
@@ -414,7 +414,7 @@ export function Home() {
               to="/login"
               onMouseMove={onMagneticMove}
               onMouseLeave={onMagneticLeave}
-              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(124,92,252,0.35)]"
+              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
               style={{ padding: '1rem 2.5rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff', transition: 'box-shadow 0.3s' }}
             >
               <span>Comenzar ahora</span>

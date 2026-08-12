@@ -52,14 +52,14 @@ export function TicketDetailPage({ ticketId, onBack }: Readonly<TicketDetailPage
           <button
             type="button"
             onClick={onBack}
-            className="text-sm text-[#5c7a94] hover:text-[#00c4e0] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            className="text-sm text-[#7aa3b8] hover:text-[#00c4e0] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Volver al historial
           </button>
         </Reveal>
       )}
       <FocusReveal>
-        <div className="rounded-xl p-6" style={{ background: 'rgba(8,22,36,0.82)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+        <div className="rounded-xl p-6" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
           <TicketDetail ticket={ticket} isLoading={isLoading} error={error} />
         </div>
       </FocusReveal>

@@ -27,6 +27,16 @@ interface BackendService {
   descripcion_detalle?: string
 }
 
+interface BackendServiceList {
+  items: BackendService[]
+  total?: number
+}
+
+function serviceItems(payload: BackendService[] | BackendServiceList): BackendService[] {
+  if (Array.isArray(payload)) return payload
+  return Array.isArray(payload.items) ? payload.items : []
+}
+
 function mapSummary(s: BackendService): ServiceSummary {
   return {
     id: String(s.id),
@@ -57,10 +67,10 @@ class CatalogService implements ICatalogClientView {
     const params = new URLSearchParams()
     if (filters?.categoria) params.set('categoria', filters.categoria)
     if (filters?.busqueda) params.set('busqueda', filters.busqueda)
-    const data = await apiClient.get<{ items: BackendService[]; total: number }>(
+    const data = await apiClient.get<BackendService[] | BackendServiceList>(
       `/servicios/${querySuffix(params)}`,
     )
-    return data.items.map(mapSummary)
+    return serviceItems(data).map(mapSummary)
   }
 
   async getServiceDetail(id: string): Promise<ServiceDetail> {

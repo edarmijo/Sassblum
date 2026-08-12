@@ -90,7 +90,7 @@ export function ServiceDetailAdminPanel() {
   }
 
   if (loading) {
-    return <div className="flex min-h-56 items-center justify-center text-muted-foreground" role="status"><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />Cargando servicios…</div>
+    return <output className="flex min-h-56 items-center justify-center text-muted-foreground" aria-live="polite"><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />Cargando servicios…</output>
   }
 
   if (services.length === 0) {
@@ -108,17 +108,19 @@ export function ServiceDetailAdminPanel() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-cyan">Detalle público</p>
         <h2 className="mt-1 text-xl font-semibold">Servicios</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">Elige una ficha para mantener su texto e imágenes complementarias.</p>
-        <div className="mt-4 space-y-2" role="list" aria-label="Servicios disponibles">
+        <ul className="mt-4 space-y-2" aria-label="Servicios disponibles">
           {services.map((service) => {
             const isSelected = service.id === selectedId
             return (
-              <button key={service.id} type="button" onClick={() => setSelectedId(service.id)} aria-pressed={isSelected} className={`w-full rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan ${isSelected ? 'border-brand-cyan bg-brand-cyan/10 text-foreground' : 'border-transparent bg-muted/35 hover:border-border hover:bg-muted/60'}`}>
-                <span className="block truncate font-medium">{service.nombre}</span>
-                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{service.categoria}</span>
-              </button>
+              <li key={service.id}>
+                <button type="button" onClick={() => setSelectedId(service.id)} aria-pressed={isSelected} className={`w-full rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan ${isSelected ? 'border-brand-cyan bg-brand-cyan/10 text-foreground' : 'border-transparent bg-muted/35 hover:border-border hover:bg-muted/60'}`}>
+                  <span className="block truncate font-medium">{service.nombre}</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{service.categoria}</span>
+                </button>
+              </li>
             )
           })}
-        </div>
+        </ul>
       </aside>
 
       {!selectedService ? (

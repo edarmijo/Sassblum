@@ -31,6 +31,9 @@ export function AssignModal({ ticketId, mode, onClose, onAssigned }: Readonly<As
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isReassignment = mode === 'reassign'
+  const actionLabel = isReassignment ? 'Reasignar' : 'Asignar'
+  const busyActionLabel = isReassignment ? 'Reasignando…' : 'Asignando…'
+  const submitLabel = busy ? busyActionLabel : actionLabel
 
   useEffect(() => {
     void userAdminService.listUsers({ role: 'worker', estado: 'activo' }).then(setWorkers)
@@ -51,7 +54,7 @@ export function AssignModal({ ticketId, mode, onClose, onAssigned }: Readonly<As
       onClose()
     } catch (err: unknown) {
       const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setError(d ?? `No se pudo ${isReassignment ? 'reasignar' : 'asignar'}.`)
+      setError(d ?? `No se pudo ${actionLabel.toLocaleLowerCase('es-EC')}.`)
     } finally {
       setBusy(false)
     }
@@ -84,9 +87,7 @@ export function AssignModal({ ticketId, mode, onClose, onAssigned }: Readonly<As
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
             <Button type="button" variant="brand" disabled={!workerId || busy} onClick={() => void assign()}>
-              {busy
-                ? (isReassignment ? 'Reasignando…' : 'Asignando…')
-                : (isReassignment ? 'Reasignar' : 'Asignar')}
+              {submitLabel}
             </Button>
           </div>
         </div>

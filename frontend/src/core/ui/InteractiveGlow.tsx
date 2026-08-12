@@ -24,7 +24,8 @@ export function InteractiveGlow({ color = '#00d4ff', size = 520 }: Readonly<Inte
   useEffect(() => {
     const el = ref.current
     const parent = el?.parentElement
-    if (!el || !parent || reduce) return
+    const finePointer = globalThis.matchMedia('(hover: hover) and (pointer: fine)').matches
+    if (!el || !parent || reduce || !finePointer) return
 
     let raf = 0
     const half = size / 2
@@ -61,7 +62,6 @@ export function InteractiveGlow({ color = '#00d4ff', size = 520 }: Readonly<Inte
         width: size,
         height: size,
         background: `radial-gradient(circle, ${color}59 0%, transparent 70%)`,
-        willChange: 'transform, opacity',
       }}
     />
   )

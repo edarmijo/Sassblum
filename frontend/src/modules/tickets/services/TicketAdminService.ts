@@ -4,7 +4,6 @@
  */
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
-import { querySuffix } from '../../../core/utils/query'
 import type { ITicketAdminActions } from '../interfaces/ITicketAdminActions'
 import type { TicketSummary, TicketDetail, TicketFilterOptions } from '../interfaces/ITicketService'
 import {
@@ -13,6 +12,7 @@ import {
   type BackendTicketDetail,
   type BackendTicketSummary,
 } from './ticketMappers'
+import { buildTicketListQuery } from './ticketListQuery'
 
 class TicketAdminService implements ITicketAdminActions {
   async assignTicket(id: string, workerId: string): Promise<TicketDetail> {
@@ -32,15 +32,9 @@ class TicketAdminService implements ITicketAdminActions {
   async getAllTickets(
     filters?: TicketFilterOptions & { clienteId?: string; asignadoId?: string },
   ): Promise<TicketSummary[]> {
-    const params = new URLSearchParams()
-    if (filters?.estado) params.set('estado', filters.estado)
-    if (filters?.prioridad) params.set('prioridad', filters.prioridad)
-    if (filters?.servicioId) params.set('servicio_id', filters.servicioId)
-    if (filters?.fechaDesde) params.set('fecha_desde', filters.fechaDesde)
-    if (filters?.fechaHasta) params.set('fecha_hasta', filters.fechaHasta)
-    if (filters?.clienteId) params.set('cliente_id', filters.clienteId)
-    if (filters?.asignadoId) params.set('asignado_id', filters.asignadoId)
-    const data = await apiClient.get<{ items: BackendTicketSummary[] }>(`/tickets/${querySuffix(params)}`)
+    const data = await apiClient.get<{ items: BackendTicketSummary[] }>(
+      `/tickets/${buildTicketListQuery(filters)}`,
+    )
     return data.items.map(mapTicketSummary)
   }
 }

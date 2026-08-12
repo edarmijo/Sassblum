@@ -5,9 +5,9 @@ export interface MediaVariant {
 }
 
 export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
-  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1080&q=80": {
-    "src": "/media/public/about-team-a57d724d8e42-960.webp",
-    "srcSet": "/media/public/about-team-a57d724d8e42-320.webp 320w, /media/public/about-team-a57d724d8e42-640.webp 640w, /media/public/about-team-a57d724d8e42-960.webp 960w"
+  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=82": {
+    "src": "/media/public/about-team-f362a3e94427-1600.webp",
+    "srcSet": "/media/public/about-team-f362a3e94427-320.webp 320w, /media/public/about-team-f362a3e94427-640.webp 640w, /media/public/about-team-f362a3e94427-960.webp 960w, /media/public/about-team-f362a3e94427-1280.webp 1280w, /media/public/about-team-f362a3e94427-1600.webp 1600w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/1/scd.png": {
     "src": "/media/clients/client-scd-83340f41c832-206.webp",
@@ -26,20 +26,20 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/clients/client-aceria-xinlong-b7b29b4b821b-155.webp 155w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/5/banapov.png": {
-    "src": "/media/clients/client-banapov-8f3a20ab6f9d-320.webp",
-    "srcSet": "/media/clients/client-banapov-8f3a20ab6f9d-160.webp 160w, /media/clients/client-banapov-8f3a20ab6f9d-320.webp 320w"
+    "src": "/media/clients/client-banapov-8f3a20ab6f9d-640.webp",
+    "srcSet": "/media/clients/client-banapov-8f3a20ab6f9d-160.webp 160w, /media/clients/client-banapov-8f3a20ab6f9d-320.webp 320w, /media/clients/client-banapov-8f3a20ab6f9d-640.webp 640w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/6/omaconsa.png": {
-    "src": "/media/clients/client-omaconsa-0bedef508ea2-320.webp",
-    "srcSet": "/media/clients/client-omaconsa-0bedef508ea2-160.webp 160w, /media/clients/client-omaconsa-0bedef508ea2-320.webp 320w"
+    "src": "/media/clients/client-omaconsa-0bedef508ea2-640.webp",
+    "srcSet": "/media/clients/client-omaconsa-0bedef508ea2-160.webp 160w, /media/clients/client-omaconsa-0bedef508ea2-320.webp 320w, /media/clients/client-omaconsa-0bedef508ea2-640.webp 640w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/7/imdo.png": {
-    "src": "/media/clients/client-imdo-765d9c589d1d-320.webp",
-    "srcSet": "/media/clients/client-imdo-765d9c589d1d-160.webp 160w, /media/clients/client-imdo-765d9c589d1d-320.webp 320w"
+    "src": "/media/clients/client-imdo-765d9c589d1d-640.webp",
+    "srcSet": "/media/clients/client-imdo-765d9c589d1d-160.webp 160w, /media/clients/client-imdo-765d9c589d1d-320.webp 320w, /media/clients/client-imdo-765d9c589d1d-640.webp 640w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/clients/8/soelec.png": {
-    "src": "/media/clients/client-soelec-f1cbca299597-320.webp",
-    "srcSet": "/media/clients/client-soelec-f1cbca299597-160.webp 160w, /media/clients/client-soelec-f1cbca299597-320.webp 320w"
+    "src": "/media/clients/client-soelec-f1cbca299597-640.webp",
+    "srcSet": "/media/clients/client-soelec-f1cbca299597-160.webp 160w, /media/clients/client-soelec-f1cbca299597-320.webp 320w, /media/clients/client-soelec-f1cbca299597-640.webp 640w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/gallery/11/Captura-de-pantalla-2026-07-07-210629.png": {
     "src": "/media/projects/project-11-60d25d33c7b5-390.webp",
@@ -66,8 +66,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/projects/project-6-9edc3ab8cfa8-320.webp 320w, /media/projects/project-6-9edc3ab8cfa8-640.webp 640w, /media/projects/project-6-9edc3ab8cfa8-666.webp 666w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/1/cover/infraestructura-ti.jpg": {
-    "src": "/media/services/service-1-cover-51672411625d-960.webp",
-    "srcSet": "/media/services/service-1-cover-51672411625d-320.webp 320w, /media/services/service-1-cover-51672411625d-640.webp 640w, /media/services/service-1-cover-51672411625d-960.webp 960w"
+    "src": "/media/services/service-1-cover-51672411625d-1280.webp",
+    "srcSet": "/media/services/service-1-cover-51672411625d-320.webp 320w, /media/services/service-1-cover-51672411625d-640.webp 640w, /media/services/service-1-cover-51672411625d-960.webp 960w, /media/services/service-1-cover-51672411625d-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/1/gallery/1.jpeg": {
     "src": "/media/services/service-1-gallery-1-e92c706428c8-960.webp",
@@ -98,8 +98,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/services/service-12-cover-e31d888fb890-320.webp 320w, /media/services/service-12-cover-e31d888fb890-640.webp 640w, /media/services/service-12-cover-e31d888fb890-673.webp 673w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/2/cover/soporte-tecnico.jpg": {
-    "src": "/media/services/service-2-cover-b00cd727bf34-960.webp",
-    "srcSet": "/media/services/service-2-cover-b00cd727bf34-320.webp 320w, /media/services/service-2-cover-b00cd727bf34-640.webp 640w, /media/services/service-2-cover-b00cd727bf34-960.webp 960w"
+    "src": "/media/services/service-2-cover-b00cd727bf34-1280.webp",
+    "srcSet": "/media/services/service-2-cover-b00cd727bf34-320.webp 320w, /media/services/service-2-cover-b00cd727bf34-640.webp 640w, /media/services/service-2-cover-b00cd727bf34-960.webp 960w, /media/services/service-2-cover-b00cd727bf34-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/2/gallery/1-1.jpeg": {
     "src": "/media/services/service-2-gallery-7-b5fcde512e25-960.webp",
@@ -114,8 +114,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/services/service-2-gallery-9-48ba172e2319-320.webp 320w, /media/services/service-2-gallery-9-48ba172e2319-640.webp 640w, /media/services/service-2-gallery-9-48ba172e2319-960.webp 960w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/3/cover/cable-estructurado.jpg": {
-    "src": "/media/services/service-3-cover-76e8256201df-960.webp",
-    "srcSet": "/media/services/service-3-cover-76e8256201df-320.webp 320w, /media/services/service-3-cover-76e8256201df-640.webp 640w, /media/services/service-3-cover-76e8256201df-960.webp 960w"
+    "src": "/media/services/service-3-cover-76e8256201df-1280.webp",
+    "srcSet": "/media/services/service-3-cover-76e8256201df-320.webp 320w, /media/services/service-3-cover-76e8256201df-640.webp 640w, /media/services/service-3-cover-76e8256201df-960.webp 960w, /media/services/service-3-cover-76e8256201df-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/3/gallery/1.jpeg": {
     "src": "/media/services/service-3-gallery-10-0ea51fa30ca8-960.webp",
@@ -142,8 +142,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/services/service-3-gallery-15-f72ebc46ddb0-320.webp 320w, /media/services/service-3-gallery-15-f72ebc46ddb0-640.webp 640w, /media/services/service-3-gallery-15-f72ebc46ddb0-960.webp 960w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/4/cover/Sistema-de-vigilancia-CCTV.jpg": {
-    "src": "/media/services/service-4-cover-9309af8b87f1-960.webp",
-    "srcSet": "/media/services/service-4-cover-9309af8b87f1-320.webp 320w, /media/services/service-4-cover-9309af8b87f1-640.webp 640w, /media/services/service-4-cover-9309af8b87f1-960.webp 960w"
+    "src": "/media/services/service-4-cover-9309af8b87f1-1280.webp",
+    "srcSet": "/media/services/service-4-cover-9309af8b87f1-320.webp 320w, /media/services/service-4-cover-9309af8b87f1-640.webp 640w, /media/services/service-4-cover-9309af8b87f1-960.webp 960w, /media/services/service-4-cover-9309af8b87f1-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/4/gallery/1-1.jpeg": {
     "src": "/media/services/service-4-gallery-16-1c6b434ddad4-960.webp",
@@ -170,8 +170,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/services/service-4-gallery-21-fbd4dd96cc44-320.webp 320w, /media/services/service-4-gallery-21-fbd4dd96cc44-640.webp 640w, /media/services/service-4-gallery-21-fbd4dd96cc44-960.webp 960w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/5/cover/Domotica.jpg": {
-    "src": "/media/services/service-5-cover-90ce5ae93929-960.webp",
-    "srcSet": "/media/services/service-5-cover-90ce5ae93929-320.webp 320w, /media/services/service-5-cover-90ce5ae93929-640.webp 640w, /media/services/service-5-cover-90ce5ae93929-960.webp 960w"
+    "src": "/media/services/service-5-cover-90ce5ae93929-1280.webp",
+    "srcSet": "/media/services/service-5-cover-90ce5ae93929-320.webp 320w, /media/services/service-5-cover-90ce5ae93929-640.webp 640w, /media/services/service-5-cover-90ce5ae93929-960.webp 960w, /media/services/service-5-cover-90ce5ae93929-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/5/gallery/1.jpeg": {
     "src": "/media/services/service-5-gallery-22-e1579ea5ae2e-960.webp",
@@ -186,8 +186,8 @@ export const MEDIA_VARIANTS: Readonly<Record<string, MediaVariant>> = {
     "srcSet": "/media/services/service-5-gallery-24-6c2fab122aa7-320.webp 320w, /media/services/service-5-gallery-24-6c2fab122aa7-640.webp 640w, /media/services/service-5-gallery-24-6c2fab122aa7-832.webp 832w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/6/cover/Venta-de-servidores.jpg": {
-    "src": "/media/services/service-6-cover-25a21a8d34a1-960.webp",
-    "srcSet": "/media/services/service-6-cover-25a21a8d34a1-320.webp 320w, /media/services/service-6-cover-25a21a8d34a1-640.webp 640w, /media/services/service-6-cover-25a21a8d34a1-960.webp 960w"
+    "src": "/media/services/service-6-cover-25a21a8d34a1-1280.webp",
+    "srcSet": "/media/services/service-6-cover-25a21a8d34a1-320.webp 320w, /media/services/service-6-cover-25a21a8d34a1-640.webp 640w, /media/services/service-6-cover-25a21a8d34a1-960.webp 960w, /media/services/service-6-cover-25a21a8d34a1-1280.webp 1280w"
   },
   "https://opiywavbmidgpzzkkivy.supabase.co/storage/v1/object/public/SassBlumImagenes/services/6/gallery/1-1.jpeg": {
     "src": "/media/services/service-6-gallery-25-66d2361958a4-960.webp",

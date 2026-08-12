@@ -8,7 +8,7 @@ import { ImageWithFallback } from './ImageWithFallback';
 const C = {
   accent: '#00c4e0',
   text: '#eef4f8',
-  muted: '#5c7a94',
+  muted: '#7aa3b8',
 };
 
 const fadeUp = {
@@ -31,6 +31,10 @@ const galleryCss = `
   .pgc__card:hover .pgc__info { opacity:1; }
   .pgc__shine { position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 0.3s ease; }
   .pgc__card:hover .pgc__img { transform:scale(1.1); }
+  @media (max-width: 767px), (hover: none), (pointer: coarse) {
+    .pgc__info { opacity:1; }
+    .pgc__img { transform:none !important; }
+  }
 `;
 
 /**
@@ -43,19 +47,27 @@ export function ProjectGalleryCarousel() {
 
   /* Proyectos desde la API; si no hay ninguno (o falla), usa los de ejemplo. */
   const { projects, loading } = useProjects();
-  const items = projects.length > 0
-    ? projects.map((p) => ({ tag: p.tag, title: p.titulo, img: p.imagenUrl }))
-    : loading ? [] : GALLERY;
+  let items = GALLERY;
+  if (projects.length > 0) {
+    items = projects.map((project) => ({
+      tag: project.tag,
+      title: project.titulo,
+      img: project.imagenUrl,
+    }));
+  } else if (loading) {
+    items = [];
+  }
 
   /* ── 3D tilt + dynamic shine on each card ── */
   const onCardMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (reduceMotion || window.innerWidth < 768) return;
+    if (reduceMotion || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    const rotX = (y - 0.5) * 12;
-    const rotY = (x - 0.5) * -12;
-    e.currentTarget.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.02)`;
+    const rotX = (y - 0.5) * 5;
+    const rotY = (x - 0.5) * -5;
+    e.currentTarget.style.willChange = 'transform';
+    e.currentTarget.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     const shine = e.currentTarget.querySelector<HTMLDivElement>('[data-shine]');
     if (shine) {
       shine.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(255,255,255,0.1), transparent 60%)`;
@@ -67,6 +79,7 @@ export function ProjectGalleryCarousel() {
     el.style.transition = 'transform 0.6s cubic-bezier(0.22,1,0.36,1)';
     el.style.transform = '';
     setTimeout(() => { el.style.transition = ''; }, 600);
+    el.style.willChange = 'auto';
     const shine = el.querySelector<HTMLDivElement>('[data-shine]');
     if (shine) shine.style.opacity = '0';
   };
@@ -91,7 +104,7 @@ export function ProjectGalleryCarousel() {
           <motion.p variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}
             style={{ color: C.muted, fontSize: '0.85rem', maxWidth: 260 }}
           >
-            Pasa el cursor sobre una tarjeta para pausar
+            Explora cada proyecto; el carrusel se pausa al interactuar
           </motion.p>
         </div>
       </div>

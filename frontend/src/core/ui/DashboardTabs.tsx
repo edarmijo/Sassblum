@@ -25,14 +25,14 @@ function DashboardTabsList({ className, ...props }: React.ComponentProps<typeof 
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'inline-flex h-11 w-fit items-center justify-center rounded-xl p-1 gap-1 flex-wrap',
+        'inline-flex min-h-11 max-w-full w-fit items-center justify-start overflow-x-auto rounded-xl p-1 gap-1 flex-nowrap',
         className,
       )}
       style={{
-        background: 'rgba(8,22,36,0.75)',
+        background: 'rgba(8,22,36,0.92)',
         border: '1px solid rgba(0,196,224,0.12)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
       }}
       {...props}
     />
@@ -45,7 +45,7 @@ function DashboardTabsTrigger({ className, ...props }: React.ComponentProps<type
       data-slot="tabs-trigger"
       className={cn(
         'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
-        'text-[#5c7a94] hover:text-[#eef4f8]',
+        'text-[#7aa3b8] hover:text-[#eef4f8]',
         'data-[state=active]:text-[#eef4f8] data-[state=active]:shadow-sm',
         'disabled:pointer-events-none disabled:opacity-50',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',

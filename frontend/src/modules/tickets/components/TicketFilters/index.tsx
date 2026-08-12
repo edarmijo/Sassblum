@@ -87,7 +87,7 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
       </div>
 
       {show && (
-        <div className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" style={{ background: 'rgba(8,22,36,0.82)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(24px)' }}>
+        <div className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)' }}>
           <div className="space-y-1.5">
             <Label>Estado</Label>
             <Select value={filters.estado ?? 'none'} onValueChange={(v) => update('estado', v === 'none' ? undefined : v as TicketFilterOptions['estado'])}>

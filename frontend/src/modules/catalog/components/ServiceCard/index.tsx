@@ -43,7 +43,7 @@ export function ServiceCard({ service, onSelect, onViewDetails }: Readonly<Servi
               src={service.imagenUrl}
               optimizedWidth={640}
               optimizationEnabled={env.imageTransformsEnabled}
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               alt={`Imagen de ${service.nombre}`}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
