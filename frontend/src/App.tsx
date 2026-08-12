@@ -287,35 +287,12 @@ function DetailRoute() {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 
-const INTRO_KEY = 'sassblum:intro-shown'
-
-function shouldShowIntro(): boolean {
-  try {
-    return sessionStorage.getItem(INTRO_KEY) !== '1'
-  } catch {
-    return true
-  }
-}
-
-function rememberIntro(): void {
-  try {
-    sessionStorage.setItem(INTRO_KEY, '1')
-  } catch {
-    // The intro still completes when storage is unavailable.
-  }
-}
-
 export default function App() {
-  const [showIntro, setShowIntro] = useState(shouldShowIntro)
-
-  const finishIntro = () => {
-    rememberIntro()
-    setShowIntro(false)
-  }
+  const [showIntro, setShowIntro] = useState(true)
 
   return (
     <>
-      {showIntro ? <PageLoader onComplete={finishIntro} /> : null}
+      {showIntro ? <PageLoader onComplete={() => setShowIntro(false)} /> : null}
       <BrowserRouter>
       <ScrollToTop />
       <AuthProvider service={authService}>

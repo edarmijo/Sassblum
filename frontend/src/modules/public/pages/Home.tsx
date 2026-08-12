@@ -157,10 +157,10 @@ export function Home() {
       {/* ─────────────── HERO ─────────────── */}
       <section
         ref={heroRef}
-        className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden z-10 lg:flex-row"
+        className="min-h-screen flex flex-col items-stretch justify-center relative overflow-hidden z-10 lg:flex-row lg:items-center lg:justify-start"
         style={{ padding: '8rem clamp(1.5rem,4vw,4rem) 4rem' }}
       >
-        <div className="w-full max-w-200 relative z-10 lg:w-[55%]">
+        <div className="w-full max-w-200 relative z-10 text-left lg:w-[55%]">
           {/* badge */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="visible"

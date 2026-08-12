@@ -41,4 +41,10 @@ describe('Footer', () => {
       'tel:+593969990990',
     )
   })
+
+  it('does not render the former design credit', () => {
+    renderFooter()
+
+    expect(screen.queryByText(/Diseñado con/i)).not.toBeInTheDocument()
+  })
 })

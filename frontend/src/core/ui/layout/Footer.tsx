@@ -31,7 +31,7 @@ export function Footer() {
         className="relative mx-auto max-w-[1440px] overflow-hidden rounded-t-[1.5rem] border border-b-0 border-white/10"
         style={{
           background:
-            'linear-gradient(145deg, rgba(5, 13, 26, 0.96) 0%, rgba(10, 27, 48, 0.92) 54%, rgba(5, 13, 26, 0.97) 100%)',
+            'linear-gradient(145deg, rgba(5, 13, 26, 0.84) 0%, rgba(10, 27, 48, 0.72) 54%, rgba(5, 13, 26, 0.86) 100%)',
           boxShadow: '0 -18px 60px rgba(1, 8, 20, 0.3)',
         }}
       >
@@ -135,17 +135,13 @@ export function Footer() {
           </div>
 
           <div
-            className="flex flex-col gap-2 border-t border-[#91b4d4]/20 py-6 font-display text-[0.82rem] leading-6 text-[#b7c9dc] sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+            className="border-t border-[#91b4d4]/20 py-6 text-left font-display text-[0.82rem] leading-6 text-[#b7c9dc]"
             style={{
               paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
             <p className="min-w-0 [overflow-wrap:anywhere]">
               © {year} sassblum.com — Todos los derechos reservados
-            </p>
-            <p className="shrink-0">
-              Diseñado con <span className="text-[#76e7f5]" aria-hidden="true">♥</span>
-              <span className="sr-only">dedicación</span>
             </p>
           </div>
         </div>
