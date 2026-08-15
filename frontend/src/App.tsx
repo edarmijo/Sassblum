@@ -21,6 +21,7 @@ import { authService } from './modules/auth/services/AuthService'
 import { catalogService } from './modules/catalog/services/CatalogService'
 import { ticketService } from './modules/tickets/services/TicketService'
 import { notificationService } from './modules/notifications/services/NotificationService'
+import { testimonialService } from './modules/testimonials/services/TestimonialService'
 
 // Providers (DIP seams)
 import { AuthProvider } from './modules/auth/hooks/AuthProvider'
@@ -29,6 +30,7 @@ import { AuthServiceProvider } from './modules/auth/hooks/AuthServiceProvider'
 import { CatalogProvider } from './modules/catalog/hooks/CatalogProvider'
 import { TicketClientProvider } from './modules/tickets/hooks/TicketClientProvider'
 import { NotificationProvider } from './modules/notifications/hooks/NotificationProvider'
+import { TestimonialProvider } from './modules/testimonials/hooks/TestimonialProvider'
 
 // Layout
 import { Navbar } from './core/ui/layout/Navbar'
@@ -322,6 +324,7 @@ export default function App() {
       <AuthProvider service={authService}>
         <SessionGate>
         <CatalogProvider service={catalogService}>
+          <TestimonialProvider service={testimonialService}>
           <Routes>
             <Route element={<SiteLayout />}>
               {/* Public marketing site */}
@@ -351,6 +354,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
+          </TestimonialProvider>
         </CatalogProvider>
         </SessionGate>
       </AuthProvider>

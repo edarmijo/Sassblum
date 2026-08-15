@@ -145,30 +145,33 @@ class NetworkBoundaryTests(unittest.TestCase):
         generate.assert_not_called()
 
     def test_download_rejects_programmatic_host_allowlist_before_request(self) -> None:
+        allowed_hosts = frozenset({"127.0.0.1"})
         with patch.object(MEDIA_OPTIMIZER.requests, "get") as request_get:
             with self.assertRaisesRegex(ValueError, "media host is not allowed"):
                 MEDIA_OPTIMIZER._download(
                     "https://127.0.0.1/internal",
-                    frozenset({"127.0.0.1"}),
+                    allowed_hosts,
                 )
             request_get.assert_not_called()
 
     def test_download_rejects_unapproved_url_before_request(self) -> None:
+        allowed_hosts = frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS)
         with patch.object(MEDIA_OPTIMIZER.requests, "get") as request_get:
             with self.assertRaisesRegex(ValueError, "host is not allowed"):
                 MEDIA_OPTIMIZER._download(
                     "https://127.0.0.1/internal",
-                    frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS),
+                    allowed_hosts,
                 )
             request_get.assert_not_called()
 
     def test_redirect_is_revalidated_before_following_it(self) -> None:
         response = FakeResponse(headers={"Location": "https://127.0.0.1/internal"}, redirect=True)
+        allowed_hosts = frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS)
         with patch.object(MEDIA_OPTIMIZER.requests, "get", return_value=response) as request_get:
             with self.assertRaisesRegex(ValueError, "host is not allowed"):
                 MEDIA_OPTIMIZER._download(
                     "https://images.unsplash.com/photo.jpg",
-                    frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS),
+                    allowed_hosts,
                 )
         request_get.assert_called_once()
 
@@ -187,21 +190,23 @@ class NetworkBoundaryTests(unittest.TestCase):
 
     def test_download_stops_after_the_redirect_limit(self) -> None:
         response = FakeResponse(headers={"Location": "/again.png"}, redirect=True)
+        allowed_hosts = frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS)
         with patch.object(MEDIA_OPTIMIZER.requests, "get", return_value=response) as request_get:
             with self.assertRaisesRegex(ValueError, "too many redirects"):
                 MEDIA_OPTIMIZER._download(
                     "https://images.unsplash.com/photo.jpg",
-                    frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS),
+                    allowed_hosts,
                 )
         self.assertEqual(request_get.call_count, MEDIA_OPTIMIZER.MAX_REDIRECTS + 1)
 
     def test_download_keeps_byte_and_pixel_limits(self) -> None:
         oversized = FakeResponse(headers={"Content-Length": str(MEDIA_OPTIMIZER.MAX_DOWNLOAD_BYTES + 1)})
+        allowed_hosts = frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS)
         with patch.object(MEDIA_OPTIMIZER.requests, "get", return_value=oversized):
             with self.assertRaisesRegex(ValueError, "media exceeds"):
                 MEDIA_OPTIMIZER._download(
                     "https://images.unsplash.com/photo.jpg",
-                    frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS),
+                    allowed_hosts,
                 )
 
         image_bytes = io.BytesIO()
@@ -214,7 +219,7 @@ class NetworkBoundaryTests(unittest.TestCase):
         ):
             MEDIA_OPTIMIZER._download(
                 "https://images.unsplash.com/photo.jpg",
-                frozenset(MEDIA_OPTIMIZER.DEFAULT_MEDIA_HOSTS),
+                allowed_hosts,
             )
 
     def test_allowed_image_download_uses_no_automatic_redirects(self) -> None:

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.catalog',
     'apps.clientes',
     'apps.gallery',
+    'apps.testimonials',
     'apps.tickets',
     'apps.notifications',
     'apps.reports',

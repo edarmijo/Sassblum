@@ -36,8 +36,7 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
   }, [])
 
   return (
-    <div
-      role="status"
+    <output
       aria-label="Preparando experiencia SassBlum"
       className={`page-loader ${isLeaving ? 'page-loader--leaving' : ''}`}
     >
@@ -64,6 +63,6 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
         <div className="page-loader__brand">SASS <span>BLUM</span></div>
         <div className="page-loader__caption">Preparando experiencia</div>
       </div>
-    </div>
+    </output>
   )
 }

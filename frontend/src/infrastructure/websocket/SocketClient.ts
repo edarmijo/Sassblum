@@ -137,7 +137,7 @@ class SocketClient {
     this.open()
   }
 
-  private handlePageHide = (event: PageTransitionEvent): void => {
+  private readonly handlePageHide = (event: PageTransitionEvent): void => {
     if (!event.persisted) return
     this.suspend()
   }

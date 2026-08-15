@@ -39,7 +39,7 @@ export function useMagneticPointer<T extends HTMLElement>(strength = 0.22): Magn
 
   const resetElement = useCallback((element: T) => {
     cancelFrame()
-    element.removeAttribute('data-magnetic-active')
+    delete element.dataset.magneticActive
     element.style.removeProperty('--magnetic-x')
     element.style.removeProperty('--magnetic-y')
     rectRef.current = null
@@ -50,7 +50,7 @@ export function useMagneticPointer<T extends HTMLElement>(strength = 0.22): Magn
     if (!supportsMagneticPointer() || event.currentTarget.matches(':disabled, [aria-disabled="true"]')) return
     elementRef.current = event.currentTarget
     rectRef.current = event.currentTarget.getBoundingClientRect()
-    event.currentTarget.setAttribute('data-magnetic-active', 'true')
+    event.currentTarget.dataset.magneticActive = 'true'
   }, [])
 
   const onPointerMove = useCallback<PointerEventHandler<T>>((event) => {
@@ -80,7 +80,7 @@ export function useMagneticPointer<T extends HTMLElement>(strength = 0.22): Magn
     cancelFrame()
     const element = elementRef.current
     if (element) {
-      element.removeAttribute('data-magnetic-active')
+      delete element.dataset.magneticActive
       element.style.removeProperty('--magnetic-x')
       element.style.removeProperty('--magnetic-y')
     }
