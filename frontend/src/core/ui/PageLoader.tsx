@@ -4,9 +4,9 @@ interface PageLoaderProps {
   readonly onComplete: () => void
 }
 
-const INTRO_DISPLAY_MS = 680
-const INTRO_FADE_MS = 220
-const REDUCED_MOTION_TOTAL_MS = 80
+const INTRO_DISPLAY_MS = 620
+const INTRO_FADE_MS = 260
+const REDUCED_MOTION_DISPLAY_MS = 120
 
 /**
  * Brief branded intro that never gates application or network initialization.
@@ -22,14 +22,11 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
 
   useEffect(() => {
     const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const leaveMs = reduceMotion ? 0 : INTRO_DISPLAY_MS
-    const completeMs = reduceMotion
-      ? REDUCED_MOTION_TOTAL_MS
-      : INTRO_DISPLAY_MS + INTRO_FADE_MS
-    const leaveId = globalThis.setTimeout(() => setIsLeaving(true), leaveMs)
+    const displayMs = reduceMotion ? REDUCED_MOTION_DISPLAY_MS : INTRO_DISPLAY_MS
+    const leaveId = globalThis.setTimeout(() => setIsLeaving(true), displayMs)
     const completeId = globalThis.setTimeout(
       () => onCompleteRef.current(),
-      completeMs,
+      displayMs + INTRO_FADE_MS,
     )
 
     return () => {
@@ -47,40 +44,25 @@ export function PageLoader({ onComplete }: Readonly<PageLoaderProps>) {
       <div className="page-loader__ambient" aria-hidden="true" />
       <div className="page-loader__content">
         <div className="page-loader__mark" aria-hidden="true">
-          <svg viewBox="0 0 120 120" width="136" height="136">
-            <defs>
-              <linearGradient id="page-loader-gradient" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#7ee8f9" />
-                <stop offset="0.56" stopColor="#00d4ff" />
-                <stop offset="1" stopColor="#818cf8" />
-              </linearGradient>
-            </defs>
-            <circle className="page-loader__orbit" cx="60" cy="60" r="53" fill="none" strokeWidth="1" />
-            <circle className="page-loader__track" cx="60" cy="60" r="45" fill="none" strokeWidth="3" />
+          <svg viewBox="0 0 100 100" width="120" height="120">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(56,217,245,0.12)" strokeWidth="2" />
             <circle
               className="page-loader__progress"
-              cx="60"
-              cy="60"
+              cx="50"
+              cy="50"
               r="45"
               fill="none"
-              stroke="url(#page-loader-gradient)"
-              strokeWidth="3"
+              stroke="#38d9f5"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeDasharray="283"
-              transform="rotate(-90 60 60)"
+              transform="rotate(-90 50 50)"
             />
           </svg>
-          <div className="page-loader__percentage">
-            <span className="page-loader__percentage-value" />
-            <span className="page-loader__percentage-unit">%</span>
-          </div>
+          <span className="page-loader__pulse" />
         </div>
-        <div className="page-loader__brand">SASS<span>BLUM</span></div>
-        <div className="page-loader__caption">
-          <span aria-hidden="true" />
-          Soluciones tecnológicas
-          <span aria-hidden="true" />
-        </div>
+        <div className="page-loader__brand">SASS <span>BLUM</span></div>
+        <div className="page-loader__caption">Preparando experiencia</div>
       </div>
     </div>
   )
