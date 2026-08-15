@@ -1,9 +1,10 @@
 import { Bell, LogOut, User } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
 import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
 import { Badge } from '../badge'
 import { Button } from '../button'
+import { SmoothLink as Link } from '../SmoothLink'
 import {
   DropdownMenu,
   DropdownMenuContent,

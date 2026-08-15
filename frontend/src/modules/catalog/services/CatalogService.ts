@@ -32,9 +32,17 @@ interface BackendServiceList {
   total?: number
 }
 
-function serviceItems(payload: BackendService[] | BackendServiceList): BackendService[] {
+function serviceItems(payload: unknown): BackendService[] {
   if (Array.isArray(payload)) return payload
-  return Array.isArray(payload.items) ? payload.items : []
+  if (
+    typeof payload === 'object'
+    && payload !== null
+    && 'items' in payload
+    && Array.isArray(payload.items)
+  ) {
+    return payload.items as BackendService[]
+  }
+  throw new Error('La respuesta del catálogo no tiene el formato esperado')
 }
 
 function mapSummary(s: BackendService): ServiceSummary {

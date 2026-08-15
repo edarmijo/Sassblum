@@ -1,5 +1,5 @@
 import { ArrowUpRight, Mail, Phone } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { SmoothLink as Link } from '../SmoothLink'
 
 const serviceLinks = [
   'Infraestructura IT',

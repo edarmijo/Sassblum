@@ -38,4 +38,12 @@ describe('CatalogService public list compatibility', () => {
       imagenUrl: 'https://example.com/cover.webp',
     })
   })
+
+  it('rejects malformed content instead of replacing the local snapshot with an empty catalog', async () => {
+    apiClientMock.get.mockResolvedValue('<!doctype html>')
+
+    await expect(catalogService.getActiveServices()).rejects.toThrow(
+      'La respuesta del catálogo no tiene el formato esperado',
+    )
+  })
 })

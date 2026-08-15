@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { useAuth } from '../../hooks/useAuth'
 import { EmailValidator } from '../../validators/EmailValidator'
@@ -10,6 +9,7 @@ import { RippleButton } from '../../../../core/ui/RippleButton'
 import { Input } from '../../../../core/ui/input'
 import { Label } from '../../../../core/ui/label'
 import { Alert, AlertDescription } from '../../../../core/ui/alert'
+import { SmoothLink as Link } from '../../../../core/ui/SmoothLink'
 
 interface RegisterFormProps {
   /** Recibe el mensaje del backend y el email registrado (para la pantalla de verificación). */

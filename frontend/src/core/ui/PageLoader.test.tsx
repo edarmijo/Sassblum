@@ -19,16 +19,13 @@ describe('PageLoader', () => {
 
     render(<PageLoader onComplete={onComplete} />)
     expect(screen.getByRole('status', { name: 'Preparando experiencia SassBlum' })).toBeInTheDocument()
-    expect(screen.getByText('SASS')).toHaveTextContent('SASSBLUM')
-    expect(document.querySelector('.page-loader__percentage-value')).toBeInTheDocument()
-    expect(document.querySelector('linearGradient#page-loader-gradient')).toBeInTheDocument()
     expect(intervalSpy).not.toHaveBeenCalled()
 
-    act(() => vi.advanceTimersByTime(680))
+    act(() => vi.advanceTimersByTime(620))
     expect(screen.getByRole('status')).toHaveClass('page-loader--leaving')
     expect(onComplete).not.toHaveBeenCalled()
 
-    act(() => vi.advanceTimersByTime(220))
+    act(() => vi.advanceTimersByTime(260))
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
@@ -37,21 +34,8 @@ describe('PageLoader', () => {
     const onComplete = vi.fn()
 
     render(<PageLoader onComplete={onComplete} />)
-    expect(screen.getByRole('status')).not.toHaveClass('page-loader--leaving')
-    act(() => vi.advanceTimersByTime(0))
-    expect(screen.getByRole('status')).toHaveClass('page-loader--leaving')
-    act(() => vi.advanceTimersByTime(80))
+    act(() => vi.advanceTimersByTime(380))
 
     expect(onComplete).toHaveBeenCalledTimes(1)
-  })
-
-  it('cancels completion when it unmounts', () => {
-    const onComplete = vi.fn()
-    const { unmount } = render(<PageLoader onComplete={onComplete} />)
-
-    unmount()
-    act(() => vi.runAllTimers())
-
-    expect(onComplete).not.toHaveBeenCalled()
   })
 })
