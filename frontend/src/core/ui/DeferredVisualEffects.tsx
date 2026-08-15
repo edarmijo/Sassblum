@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 import { MobileVisualEffects } from './MobileVisualEffects'
 
 const VisualEffects = lazy(() =>
@@ -15,8 +14,6 @@ type NavigatorWithConnection = Navigator & {
   connection?: NetworkInformationLike
 }
 
-const ENHANCED_ROUTES = new Set(['/', '/nosotros', '/servicios', '/galeria', '/clientes', '/login'])
-
 function supportsEnhancedEffects(): boolean {
   if (typeof globalThis.matchMedia !== 'function' || typeof navigator === 'undefined') return false
   const connection = (navigator as NavigatorWithConnection).connection
@@ -26,12 +23,16 @@ function supportsEnhancedEffects(): boolean {
   return desktopPointer && !reducedMotion && !slowConnection && globalThis.innerWidth >= 768
 }
 
-/** Loads decorative effects only after critical UI work has had a chance to paint. */
+/**
+ * Global visual atmosphere for every route and role.
+ *
+ * The lightweight layer paints immediately. The desktop Three.js bundle is
+ * downloaded once, after critical UI work, and remains mounted across route
+ * changes so navigation never recreates the WebGL context or animation loop.
+ */
 export function DeferredVisualEffects() {
   const [ready, setReady] = useState(false)
   const [enhancedSupported, setEnhancedSupported] = useState(supportsEnhancedEffects)
-  const { pathname } = useLocation()
-  const isEnhancedRoute = ENHANCED_ROUTES.has(pathname)
 
   useEffect(() => {
     const pointerQuery = globalThis.matchMedia('(hover: hover) and (pointer: fine)')
@@ -49,19 +50,16 @@ export function DeferredVisualEffects() {
 
   useEffect(() => {
     setReady(false)
-    if (!isEnhancedRoute || !enhancedSupported) return
+    if (!enhancedSupported) return
 
     let idleId: number | undefined
-    let delayId: number | undefined
 
     const scheduleAfterCriticalWork = () => {
-      delayId = globalThis.setTimeout(() => {
-        if ('requestIdleCallback' in globalThis) {
-          idleId = globalThis.requestIdleCallback(() => setReady(true), { timeout: 1_000 })
-        } else {
-          setReady(true)
-        }
-      }, 1_000)
+      if ('requestIdleCallback' in globalThis) {
+        idleId = globalThis.requestIdleCallback(() => setReady(true), { timeout: 1_200 })
+      } else {
+        setReady(true)
+      }
     }
 
     if (document.readyState === 'complete') {
@@ -72,18 +70,29 @@ export function DeferredVisualEffects() {
 
     return () => {
       globalThis.removeEventListener('load', scheduleAfterCriticalWork)
-      if (delayId !== undefined) globalThis.clearTimeout(delayId)
       if (idleId !== undefined && 'cancelIdleCallback' in globalThis) {
         globalThis.cancelIdleCallback(idleId)
       }
     }
-  }, [enhancedSupported, isEnhancedRoute])
+  }, [enhancedSupported])
 
-  if (!isEnhancedRoute) return null
   return (
     <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0"
+        data-testid="global-visual-base"
+        style={{
+          background: 'radial-gradient(circle at 75% 20%, rgba(0,196,224,0.08), transparent 32%), radial-gradient(circle at 15% 80%, rgba(56,217,245,0.05), transparent 30%), #04090f',
+        }}
+      />
       <MobileVisualEffects />
-      {ready && enhancedSupported ? <Suspense fallback={null}><VisualEffects /></Suspense> : null}
+      {!enhancedSupported || !ready ? <MobileVisualEffects desktopFallback /> : null}
+      {ready && enhancedSupported ? (
+        <Suspense fallback={<MobileVisualEffects desktopFallback />}>
+          <VisualEffects />
+        </Suspense>
+      ) : null}
     </>
   )
 }

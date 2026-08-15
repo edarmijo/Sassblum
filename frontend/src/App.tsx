@@ -111,7 +111,7 @@ function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
   const { isBootstrapping } = useAuth()
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#04090f' }}>
+      <div className="relative z-10 min-h-screen flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-2 border-brand-cyan border-t-transparent animate-spin" aria-label="Restaurando sesión" />
       </div>
     )
@@ -125,15 +125,6 @@ function SiteLayout() {
 
   const tree = (
     <>
-      {/* Lightweight base paints immediately; richer desktop effects load on idle. */}
-      <div
-        aria-hidden
-        className="fixed inset-0 z-0"
-        style={{
-          background: 'radial-gradient(circle at 75% 20%, rgba(0,196,224,0.08), transparent 32%), radial-gradient(circle at 15% 80%, rgba(56,217,245,0.05), transparent 30%), #04090f',
-        }}
-      />
-      <DeferredVisualEffects />
       <div className="min-h-screen flex flex-col text-[#eeeef5]">
         <Navbar />
         <main className="grow relative z-10">
@@ -320,6 +311,8 @@ export default function App() {
     <>
       {showIntro ? <PageLoader onComplete={finishIntro} /> : null}
       <BrowserRouter>
+      {/* One persistent visual layer for public, auth and every authenticated role. */}
+      <DeferredVisualEffects />
       <ScrollToTop />
       <AuthProvider service={authService}>
         <SessionGate>
