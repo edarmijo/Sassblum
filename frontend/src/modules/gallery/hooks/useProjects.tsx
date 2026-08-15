@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../../../infrastructure/http/ApiClient'
+import { PUBLIC_PROJECTS } from '../../../generated/publicContentSnapshot'
 
 export interface PublicProject {
   id: string
@@ -22,8 +23,10 @@ interface BeProject {
  * DIP: depende de apiClient; los componentes públicos dependen de este hook.
  */
 export function useProjects() {
-  const [projects, setProjects] = useState<PublicProject[]>([])
-  const [loading, setLoading] = useState(true)
+  const [projects, setProjects] = useState<PublicProject[]>(() =>
+    PUBLIC_PROJECTS.map((project) => ({ ...project })),
+  )
+  const [loading, setLoading] = useState(PUBLIC_PROJECTS.length === 0)
 
   useEffect(() => {
     let alive = true
@@ -41,7 +44,8 @@ export function useProjects() {
           })),
         )
       })
-      .catch(() => { if (alive) setProjects([]) })
+      // Keep the build-time snapshot when Render is cold or temporarily down.
+      .catch(() => undefined)
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
   }, [])

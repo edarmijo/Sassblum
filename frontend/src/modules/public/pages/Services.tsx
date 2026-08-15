@@ -1,5 +1,4 @@
 import { createElement, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Headphones, Wifi, Printer, Server, Camera, Home as HomeIcon, Wrench, ArrowRight } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
@@ -19,6 +18,7 @@ import { Reveal, RevealGroup, RevealItem } from '../../../core/ui/motion'
 import { useCatalog } from '../../catalog/hooks/useCatalog'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { env } from '../../../infrastructure/config/env'
+import { SmoothLink as Link } from '../../../core/ui/SmoothLink'
 
 const CATEGORY_ICON: Record<string, typeof Wrench> = {
   soporte: Headphones,

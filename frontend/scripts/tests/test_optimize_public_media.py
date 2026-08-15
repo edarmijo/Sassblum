@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import sys
+import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -234,6 +235,25 @@ class NetworkBoundaryTests(unittest.TestCase):
             stream=True,
             allow_redirects=False,
         )
+
+    def test_content_snapshot_contains_only_active_public_records(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            snapshot_path = Path(temporary_directory) / "publicContentSnapshot.ts"
+            services = [
+                {"id": 1, "nombre": "Visible", "activo": True, "imagen_url": "https://example.com/a.webp"},
+                {"id": 2, "nombre": "Oculto", "activo": False, "imagen_url": "https://example.com/b.webp"},
+            ]
+            projects = [{"id": 3, "titulo": "Proyecto", "activo": True}]
+            clients = [{"id": 4, "nombre": "Cliente", "logo_url": "https://example.com/logo.webp"}]
+
+            with patch.object(MEDIA_OPTIMIZER, "CONTENT_SNAPSHOT_PATH", snapshot_path):
+                MEDIA_OPTIMIZER._write_content_snapshot(services, projects, clients)
+
+            generated = snapshot_path.read_text(encoding="utf-8")
+            self.assertIn('"nombre": "Visible"', generated)
+            self.assertNotIn('"nombre": "Oculto"', generated)
+            self.assertIn('"titulo": "Proyecto"', generated)
+            self.assertIn('"nombre": "Cliente"', generated)
 
 
 if __name__ == "__main__":

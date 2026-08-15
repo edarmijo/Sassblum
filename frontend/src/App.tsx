@@ -9,11 +9,12 @@
  * Notification/Ticket providers (mounted only when a session exists).
  */
 
-import { BrowserRouter, Routes, Route, Outlet, Navigate, Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { useEffect, lazy, Suspense, useState, type ReactNode } from 'react'
 import { DeferredVisualEffects } from './core/ui/DeferredVisualEffects'
 import { PageLoader } from './core/ui/PageLoader'
 import { PageTransition } from './core/ui/PageTransition'
+import { SmoothLink as Link } from './core/ui/SmoothLink'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'

@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
 import { MailCheck, Clock, Inbox } from 'lucide-react'
 import { Button } from '../../../../core/ui/button'
+import { SmoothLink as Link } from '../../../../core/ui/SmoothLink'
 
 interface VerifyPendingPageProps {
   /** Correo al que se envió el enlace. Vacío si la página se abrió directamente. */

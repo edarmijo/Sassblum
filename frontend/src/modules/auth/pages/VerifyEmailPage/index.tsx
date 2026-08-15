@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { useAuthService } from '../../hooks/useAuthService'
 import { apiError } from '../../../../infrastructure/http/apiError'
 import { Button } from '../../../../core/ui/button'
+import { SmoothLink as Link } from '../../../../core/ui/SmoothLink'
 
 interface VerifyEmailPageProps {
   token: string

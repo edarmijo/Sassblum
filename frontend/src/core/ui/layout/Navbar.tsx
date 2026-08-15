@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
 import type { AuthUser, UserRole } from '../../../modules/auth/interfaces/IAuthService'
+import { SmoothLink as Link } from '../SmoothLink'
 
 const AuthenticatedNavbarActions = lazy(() =>
   import('./AuthenticatedNavbarActions').then((module) => ({ default: module.AuthenticatedNavbarActions })),

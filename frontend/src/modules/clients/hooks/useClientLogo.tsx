@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ClientLogo, ClientLogoPayload, IClientLogoService } from '../interfaces/IClientLogoService'
+import { PUBLIC_CLIENT_LOGOS } from '../../../generated/publicContentSnapshot'
 
 export const ClientLogoServiceContext = createContext<IClientLogoService | null>(null)
 
@@ -46,14 +47,17 @@ export function useClientLogoAdmin() {
 /** Estado de solo lectura para el carrusel público de clientes. */
 export function usePublicClientLogos() {
   const service = useClientLogoService()
-  const [clientLogos, setClientLogos] = useState<ClientLogo[]>([])
-  const [loading, setLoading] = useState(true)
+  const [clientLogos, setClientLogos] = useState<ClientLogo[]>(() =>
+    PUBLIC_CLIENT_LOGOS.map((logo) => ({ ...logo })),
+  )
+  const [loading, setLoading] = useState(PUBLIC_CLIENT_LOGOS.length === 0)
 
   useEffect(() => {
     let mounted = true
     service.getPublicClientLogos()
       .then((logos) => { if (mounted) setClientLogos(logos) })
-      .catch(() => { if (mounted) setClientLogos([]) })
+      // Keep the build-time snapshot when the public API is unavailable.
+      .catch(() => undefined)
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [service])

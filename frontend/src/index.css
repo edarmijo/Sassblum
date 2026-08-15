@@ -8,6 +8,13 @@
    ════════════════════════════════════════════════════════════════════ */
 :root {
   --font-size: 16px;
+  --motion-fast: 120ms;
+  --motion-state: 240ms;
+  --motion-route-enter: 320ms;
+  --motion-route-exit: 180ms;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-quart: cubic-bezier(0.5, 0, 0.75, 0);
 
   /* Superficies + texto */
   --background: #06060a;
@@ -247,6 +254,37 @@ html {
 /* ════════════════════════════════════════════════════════════════════
    Cinematic kit — animaciones premium
    ════════════════════════════════════════════════════════════════════ */
+
+/* Shared magnetic feedback. JS updates only the two translation variables;
+   transform, shadow and color stay compositor-friendly and centralized. */
+.ui-magnetic {
+  --magnetic-x: 0px;
+  --magnetic-y: 0px;
+  --magnetic-scale: 1;
+  transition-property: transform, color, background-color, border-color, box-shadow, filter;
+  transition-duration: var(--motion-state), var(--motion-state), var(--motion-state), var(--motion-state), var(--motion-state), var(--motion-state);
+  transition-timing-function: var(--ease-out-quint);
+  transform-origin: center;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .ui-magnetic {
+    transform: translate3d(var(--magnetic-x), var(--magnetic-y), 0) scale(var(--magnetic-scale));
+  }
+
+  .ui-magnetic:hover {
+    --magnetic-scale: 1.025;
+  }
+
+  .ui-magnetic:active {
+    --magnetic-scale: 0.975;
+    transition-duration: 80ms;
+  }
+
+  .ui-magnetic[data-magnetic-active='true'] {
+    transition-duration: 80ms, var(--motion-state), var(--motion-state), var(--motion-state), var(--motion-state), var(--motion-state);
+  }
+}
 
 @keyframes galleryInfinite {
   0%   { transform: translateX(0); }
@@ -630,14 +668,37 @@ html {
   to { opacity: 0; transform: scale3d(4, 4, 1); }
 }
 
-/* Route entry: short compositor-only cue, including the auth routes. */
+/* Route navigation: native View Transitions provide the exit/entry crossfade.
+   .route-enter remains as a lightweight fallback for unsupported browsers. */
 @keyframes route-enter {
-  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.998); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 .route-enter {
-  animation: route-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: route-enter var(--motion-route-enter) var(--ease-out-quint) both;
+}
+
+html:active-view-transition .route-enter {
+  animation: none;
+}
+
+@keyframes view-route-exit {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.998); }
+}
+
+@keyframes view-route-enter {
+  from { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.998); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+::view-transition-old(root) {
+  animation: view-route-exit var(--motion-route-exit) var(--ease-in-quart) both;
+}
+
+::view-transition-new(root) {
+  animation: view-route-enter var(--motion-route-enter) var(--ease-out-quint) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -646,5 +707,10 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }

@@ -1,8 +1,9 @@
 import { useRef, useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { Server, Network, Cctv } from 'lucide-react';
 import { EASE_APPLE } from '../../../core/ui/motion/ease';
+import { SmoothLink as Link } from '../../../core/ui/SmoothLink';
+import { useMagneticPointer } from '../../../core/hooks/useMagneticPointer';
 
 /* ─── colour palette — SassBlum brand teal ─── */
 const C = {
@@ -67,6 +68,7 @@ const STATS = [
    ──────────────────────────────────────────────────────────────────── */
 export function Home() {
   const reduceMotion = useReducedMotion() ?? false;
+  const magnetic = useMagneticPointer<HTMLAnchorElement>(0.28);
 
   /* ── section in-view refs ── */
   const aboutRef = useRef<HTMLDivElement>(null);
@@ -134,22 +136,6 @@ export function Home() {
     .glow-card:hover::before { opacity:1; }
   `;
 
-  /* ── magnetic button handlers ── */
-  const onMagneticMove = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (window.innerWidth < 768) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    e.currentTarget.style.transform = `translate(${x * 0.35}px, ${y * 0.35}px)`;
-  };
-  const onMagneticLeave = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (window.innerWidth < 768) return;
-    const el = e.currentTarget;
-    el.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-    el.style.transform = '';
-    setTimeout(() => { el.style.transition = ''; }, 400);
-  };
-
   return (
     <>
       <style>{floatKeyframes}</style>
@@ -211,20 +197,18 @@ export function Home() {
           <motion.div variants={fadeUp} initial="hidden" animate="visible" transition={{ delay: 0.5 }} className="flex gap-4 flex-wrap">
             <Link
               to="/login"
-              onMouseMove={onMagneticMove}
-              onMouseLeave={onMagneticLeave}
-              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
-              style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff', transition: 'box-shadow 0.3s' }}
+              {...magnetic}
+              className="home-btn ui-magnetic inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
+              style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff' }}
             >
               <span>Enviar Ticket</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
             <Link
               to="/servicios"
-              onMouseMove={onMagneticMove}
-              onMouseLeave={onMagneticLeave}
-              className="home-btn inline-flex items-center gap-2.5 rounded-full"
-              style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: 'transparent', color: C.text, border: '1px solid rgba(255,255,255,0.12)', transition: 'border-color 0.3s' }}
+              {...magnetic}
+              className="home-btn ui-magnetic inline-flex items-center gap-2.5 rounded-full hover:border-white/30"
+              style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: 'transparent', color: C.text, border: '1px solid rgba(255,255,255,0.12)' }}
             >
               <span>Servicios</span>
             </Link>
@@ -323,10 +307,9 @@ export function Home() {
               <motion.div variants={fadeUp} initial="hidden" animate={aboutInView ? 'visible' : 'hidden'} transition={{ delay: 0.15 }}>
                 <Link
                   to="/nosotros"
-                  onMouseMove={onMagneticMove}
-                  onMouseLeave={onMagneticLeave}
-                  className="home-btn inline-flex items-center gap-2.5 rounded-full"
-                  style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: 'transparent', color: C.text, border: '1px solid rgba(255,255,255,0.12)', transition: 'border-color 0.3s' }}
+                  {...magnetic}
+                  className="home-btn ui-magnetic inline-flex items-center gap-2.5 rounded-full hover:border-white/30"
+                  style={{ padding: '0.9rem 2rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.03em', background: 'transparent', color: C.text, border: '1px solid rgba(255,255,255,0.12)' }}
                 >
                   <span>Conoce más</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
@@ -412,10 +395,9 @@ export function Home() {
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}>
             <Link
               to="/login"
-              onMouseMove={onMagneticMove}
-              onMouseLeave={onMagneticLeave}
-              className="home-btn inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
-              style={{ padding: '1rem 2.5rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff', transition: 'box-shadow 0.3s' }}
+              {...magnetic}
+              className="home-btn ui-magnetic inline-flex items-center gap-2.5 rounded-full hover:shadow-[0_12px_40px_rgba(0,196,224,0.28)]"
+              style={{ padding: '1rem 2.5rem', fontFamily: "'Space Grotesk', sans-serif", fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.03em', background: C.accent, color: '#fff' }}
             >
               <span>Comenzar ahora</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
