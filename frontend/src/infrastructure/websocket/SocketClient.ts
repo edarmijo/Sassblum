@@ -27,7 +27,7 @@ const MAX_BACKOFF_MS = 30_000
 // Tras N intentos fallidos consecutivos se deja de reintentar (evita spam infinito
 // en consola cuando el servidor no tiene WS disponible). Un nuevo connect() —
 // p. ej. al re-loguear — reinicia el ciclo.
-const MAX_RETRIES = 6
+const MAX_RETRIES = 2
 
 class SocketClient {
   private socket: WebSocket | null = null
