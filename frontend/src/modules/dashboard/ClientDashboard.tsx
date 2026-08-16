@@ -2,6 +2,7 @@ import { TicketsPanel } from './TicketsPanel'
 import { MessageSquareText } from 'lucide-react'
 import { Button } from '../../core/ui/button'
 import { SmoothLink } from '../../core/ui/SmoothLink'
+import { PublicTestimonialsSection } from '../testimonials/components/PublicTestimonialsSection'
 
 export function ClientDashboard() {
   return (
@@ -16,6 +17,7 @@ export function ClientDashboard() {
           <SmoothLink to="/clientes#compartir-opinion">Escribir testimonio</SmoothLink>
         </Button>
       </aside>
+      <PublicTestimonialsSection />
     </>
   )
 }

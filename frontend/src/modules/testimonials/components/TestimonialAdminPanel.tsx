@@ -19,7 +19,7 @@ const FILTERS: ReadonlyArray<{ value: Filter; label: string }> = [
 
 export function TestimonialAdminPanel() {
   const { testimonials, loading, error, reload, moderate } = useTestimonialModeration()
-  const [filter, setFilter] = useState<Filter>('pending')
+  const [filter, setFilter] = useState<Filter>('all')
   const [busyId, setBusyId] = useState<number | null>(null)
 
   const visible = useMemo(
