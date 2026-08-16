@@ -1,0 +1,57 @@
+\chapter{Seguridad y respuesta a incidentes}
+
+\section{Controles implementados}
+
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}Y@{}}
+\toprule
+\textbf{Riesgo} & \textbf{Control}\\
+\midrule
+Robo de sesión & access token en memoria; refresh en cookie `HttpOnly` y `Secure`\\
+Acceso indebido & permisos por rol y consultas filtradas en backend\\
+Abuso de API & throttling anónimo/autenticado y paginación\\
+Origen no autorizado & CORS, CSRF y WebSocket limitados a orígenes exactos\\
+Archivos inseguros & validación de tipo/tamaño y Storage solo desde backend\\
+Secretos & variables de entorno, ejemplos con marcadores y archivos reales ignorados\\
+Transporte & HTTPS, HSTS y cookies seguras fuera de `DEBUG`\\
+\bottomrule
+\end{tabularx}
+
+Ocultar un botón en React no es un control de seguridad. Toda decisión autoritativa reside en
+permisos, servicios y repositorios del backend.
+
+\section{Manejo de secretos}
+
+Use el gestor de secretos de cada plataforma. Entregue valores únicamente a personas autorizadas y
+por un canal separado del código. Mantenga un inventario con propietario, propósito, última rotación
+y procedimiento de revocación.
+
+Nunca publique `.env`, claves Supabase, secretos Django, tokens, contraseñas de correo, exportaciones,
+capturas con PII ni copias de base de datos. Si un secreto entra en Git, rotarlo es obligatorio;
+borrarlo del último commit no invalida su historial.
+
+\section{Datos demo}
+
+`seed\_demo` requiere confirmación explícita y, con `DEBUG=False`, autorización adicional para un
+staging aislado. Su propósito es demostración o prueba. Las cuentas generadas son activas y pueden
+incluir privilegios administrativos; no habilite la excepción en producción.
+
+\section{Reporte responsable}
+
+No abra un issue público para una vulnerabilidad. Use un Security Advisory privado de GitHub o el
+canal privado designado por SassBlum. Incluya componente, versión/SHA, reproducción mínima sin datos
+reales, impacto y mitigación propuesta.
+
+\section{Respuesta a incidentes}
+
+\begin{enumerate}
+  \item preserve logs, hora, entorno y SHA sin destruir evidencia;
+  \item contenga el acceso y determine alcance;
+  \item revoque sesiones y rote secretos comprometidos;
+  \item corrija y añada prueba de regresión;
+  \item valide en staging y despliegue con rollback;
+  \item notifique según el procedimiento acordado;
+  \item documente causa, tiempos y acciones preventivas.
+\end{enumerate}
+
+\ManualNote{Solo la rama `main` desplegada recibe soporte hasta que exista una release estable. La
+política de versiones debe actualizarse al publicar el primer tag contractual.}

@@ -10,16 +10,15 @@ Cubre el contrato que el frontend asume:
 Run: pytest apps/authentication/tests/test_cookie_session.py -v
 """
 
-from core.testing import random_credential
-
 import pytest
 from django.test import override_settings
-
-pytestmark = pytest.mark.django_db
 from rest_framework.test import APIClient
 
 from apps.authentication.cookies import REFRESH_COOKIE_NAME
 from apps.authentication.models import User
+from core.testing import random_credential
+
+pytestmark = pytest.mark.django_db
 
 TEST_PASSWORD = random_credential()
 
@@ -59,11 +58,8 @@ def test_login_sets_httponly_refresh_cookie(active_user, client):
 
 
 @override_settings(AUTH_COOKIE_SAMESITE="None", AUTH_COOKIE_SECURE=True)
-def test_production_cookie_is_secure_and_cross_site(active_user, client):
-    """
-    La config que realmente se despliega: vercel.app y onrender.com son sitios
-    distintos, así que la cookie necesita SameSite=None, y eso exige Secure.
-    """
+def test_cookie_policy_can_be_overridden_for_an_explicit_cross_site_deployment(active_user, client):
+    """SameSite=None solo se habilita de forma explícita y siempre con Secure."""
     res = _login(client)
 
     cookie = res.cookies[REFRESH_COOKIE_NAME]
@@ -115,17 +111,26 @@ def test_refresh_with_garbage_cookie_clears_it(db, client):
     assert res.cookies[REFRESH_COOKIE_NAME].value == ""
 
 
-def test_refresh_still_accepts_body_token(active_user, client):
-    """Compatibilidad durante el despliegue: clientes viejos mandan el body."""
+def test_refresh_rejects_body_token_without_cookie(active_user, client):
+    """El refresh nunca se acepta desde un body legible por JavaScript."""
     login = _login(client)
-    body_refresh = login.data["tokens"]["refresh"]
+    body_refresh = login.cookies[REFRESH_COOKIE_NAME].value
     client.cookies.clear()
 
     res = client.post(
         "/api/auth/token/refresh", {"refresh": body_refresh}, format="json"
     )
 
-    assert res.status_code == 200
+    assert res.status_code == 401
+
+
+def test_tokens_are_not_exposed_in_response_bodies(active_user, client):
+    login = _login(client)
+    assert "refresh" not in login.data["tokens"]
+
+    refresh = client.post("/api/auth/token/refresh", {}, format="json")
+    assert refresh.status_code == 200
+    assert "refresh" not in refresh.data
 
 
 # ── logout ────────────────────────────────────────────────────────────────────

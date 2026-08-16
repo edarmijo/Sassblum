@@ -9,9 +9,10 @@
 #   crontab -e → 0 2 * * * /path/to/backup  # Backup diario a las 2am
 #
 # Requisitos:
-#   - pg_dump instalado (postgresql-client)
+#   - pg_dump y pg_restore instalados (postgresql-client)
+#   - sha256sum instalado
 #   - Variable DATABASE_URL configurada o pasada como argumento
-#   - Directorio /backups/ con permisos de escritura
+#   - Directorio /backups/ cifrado en reposo y con permisos restringidos
 #
 # Restaurar:
 #   pg_restore -d sassblum_db backup_2026-06-25.dump
@@ -44,18 +45,27 @@ pg_dump "$DB_URL" \
     --verbose \
     --file="${BACKUP_DIR}/${FILENAME}" 2>&1
 
-# Verify backup file exists and has size > 0
+# Verify backup file exists, has size > 0, and is a readable custom archive
 if [[ ! -s "${BACKUP_DIR}/${FILENAME}" ]]; then
     echo "ERROR: Backup file is empty or missing!" >&2
     exit 1
 fi
+pg_restore --list "${BACKUP_DIR}/${FILENAME}" >/dev/null
+
+# Create a checksum sidecar without embedding the database URL or other secrets
+(
+    cd "$BACKUP_DIR"
+    sha256sum "$FILENAME" > "${FILENAME}.sha256"
+)
 
 FILESIZE=$(du -h "${BACKUP_DIR}/${FILENAME}" | cut -f1)
-echo "[$(date)] Backup complete: ${FILENAME} (${FILESIZE})"
+echo "[$(date)] Backup complete and archive verified: ${FILENAME} (${FILESIZE})"
+echo "[$(date)] Checksum: ${FILENAME}.sha256"
 
 # Cleanup old backups (keep last N days)
 echo "[$(date)] Cleaning backups older than ${RETENTION_DAYS} days..."
 find "$BACKUP_DIR" -name "sassblum_backup_*.dump" -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
+find "$BACKUP_DIR" -name "sassblum_backup_*.dump.sha256" -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 
 # List current backups
 echo "[$(date)] Current backups:"

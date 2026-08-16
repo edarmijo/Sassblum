@@ -1,4 +1,9 @@
-# 🔌 Conexiones y puesta en marcha — SassBlum
+# Conexiones y puesta en marcha - registro histórico
+
+> Este documento conserva una fotografía del 28-06-2026 y no es la fuente de verdad actual. Para
+> puesta en marcha usa el [README](../README.md); para producción usa
+> [DEPLOYMENT.md](DEPLOYMENT.md). Los conteos y pendientes siguientes no deben citarse sin
+> revalidación.
 
 **Fecha:** 2026-06-28
 **Estado del código:** ✅ **0 errores de compilación / tests / build.** Lo único pendiente para
@@ -50,7 +55,7 @@ desde los paneles de **Catálogo** y **Galería** no se almacenan de verdad. Mie
 4. Agrega estas 3 líneas a **`backend/.env`**:
    ```env
    SUPABASE_URL=https://xxxx.supabase.co
-   SUPABASE_SERVICE_KEY=eyJ...tu_service_role_key...
+   SUPABASE_SERVICE_KEY=REPLACE_WITH_YOUR_SUPABASE_SERVICE_KEY
    SUPABASE_STORAGE_BUCKET=sassblum
    ```
 5. Implementa la subida real en **`backend/apps/tickets/services/storage_service.py`** (hoy es stub,

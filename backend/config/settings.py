@@ -70,39 +70,23 @@ CORS_ALLOWED_ORIGINS = [
     ).split(',')
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    if origin.strip()
+]
+
 # CORS preflight cache — reduce OPTIONS requests
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
-
-# El frontend envía X-Device-Id en el refresh de tokens (H#4: device binding).
-# Sin esto, el preflight CORS rechaza el refresh en producción → cascada de 401.
-from corsheaders.defaults import default_headers  # noqa: E402
-CORS_ALLOW_HEADERS = (*default_headers, 'x-device-id')
-
-# Permitir cualquier subdominio de vercel.app (deploys y previews)
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.vercel\.app$",
-]
 
 # WEBSOCKETS — orígenes permitidos en el handshake (ver config/asgi.py)
 # El WS va DIRECTO a Render (el rewrite de Vercel NO proxea WebSockets), así que
 # el Origin del handshake es el dominio del frontend, no el de la API. Con
 # AllowedHostsOriginValidator (que valida contra ALLOWED_HOSTS) todo handshake
 # desde Vercel se rechazaba antes de llegar al consumer.
-# Un patrón que empieza con punto cubre el dominio y todos sus subdominios.
-WS_ALLOWED_ORIGINS = [
-    *CORS_ALLOWED_ORIGINS,
-    '.vercel.app',  # producción + previews (mismo criterio que CORS_ALLOWED_ORIGIN_REGEXES)
-]
-
-# Content-Security-Policy — OWASP A03:2021 defense-in-depth
-SELF_SRC = "'self'"
-CSP_DEFAULT_SRC = (SELF_SRC,)
-CSP_SCRIPT_SRC = (SELF_SRC,)
-CSP_STYLE_SRC = (SELF_SRC, "'unsafe-inline'")
-CSP_IMG_SRC = (SELF_SRC, "data:", "https://images.unsplash.com")
-CSP_FONT_SRC = (SELF_SRC, "https://fonts.gstatic.com")
-CSP_CONNECT_SRC = (SELF_SRC,)
-
+# Solo se aceptan orígenes exactos controlados. Cada preview que necesite acceso
+# debe añadirse explícitamente mediante CORS_ALLOWED_ORIGINS.
+WS_ALLOWED_ORIGINS = [*CORS_ALLOWED_ORIGINS]
 
 # URLS Y WSGI / ASGI
 ROOT_URLCONF = 'config.urls'
@@ -205,25 +189,11 @@ if not DEBUG:
 
 # COOKIE DE REFRESH TOKEN (BUG-06) — ver apps/authentication/cookies.py
 #
-# Default 'None' porque HOY el frontend (vercel.app) y la API (onrender.com) son
-# sitios distintos: con 'Lax' el navegador NO enviaría la cookie y la sesión no
-# sobreviviría a una recarga. Se pone el valor que funciona en la topología real,
-# no el que se ve mejor en el papel.
-#
-# Análisis del riesgo CSRF que 'None' deja abierto:
-#   La cookie SOLO transporta el refresh token y SOLO se acepta en /api/auth/.
-#   Ningún endpoint de negocio autentica por cookie: todos exigen el header
-#   Bearer, que un atacante cross-site no puede fijar. Y CORS le impide leer la
-#   respuesta, así que tampoco puede robar el access token.
-#   Peor caso: forzar una rotación o un logout ajeno. Molesto, no un compromiso.
-#
-# Cuando el rewrite de Vercel (/api/* → Render) esté activo, ambos pasan a ser
-# el mismo sitio: poner AUTH_COOKIE_SAMESITE=Lax y ese riesgo residual desaparece.
-#
-# En local el default es 'Lax': localhost:5173 y localhost:8000 son el MISMO sitio
-# (el puerto no cuenta), y 'None' sería inservible porque exige Secure=True, que
-# sobre http el navegador rechaza.
-AUTH_COOKIE_SAMESITE = config('AUTH_COOKIE_SAMESITE', default='Lax' if DEBUG else 'None')
+# El frontend productivo consume /api mediante el rewrite de Vercel, por lo que
+# la cookie es first-party y SameSite=Lax funciona en local y producción. Cambiar
+# a None requiere una revisión CSRF explícita y nunca debe combinarse con un
+# comodín de orígenes credentialed.
+AUTH_COOKIE_SAMESITE = config('AUTH_COOKIE_SAMESITE', default='Lax')
 AUTH_COOKIE_SECURE = config('AUTH_COOKIE_SECURE', default=not DEBUG, cast=bool)
 
 # El navegador solo adjunta cookies cross-origin si el servidor lo permite

@@ -1,4 +1,7 @@
-# REPARTO_EQUIPO — Workflow modular de SassBlum (5 integrantes)
+# REPARTO_EQUIPO - evidencia histórica
+
+> Registra la asignación académica original. No describe de forma canónica el árbol actual ni
+> sustituye [ARCHITECTURE.md](ARCHITECTURE.md).
 
 > Guía para reconstruir SassBlum en el **repositorio nuevo**, repartido entre los 5 integrantes con
 > commits progresivos por autor. Copia este archivo al repo nuevo.

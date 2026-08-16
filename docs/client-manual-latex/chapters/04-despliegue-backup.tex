@@ -1,0 +1,90 @@
+\chapter{Despliegue, respaldo y recuperación}
+
+\section{Inventario operativo}
+
+Antes de transferir la operación, registre para cada servicio: propietario, segundo administrador,
+facturación, dominio, método de recuperación y ubicación segura de secretos.
+
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}Y Y@{}}
+\toprule
+\textbf{Servicio} & \textbf{Responsabilidad} & \textbf{Verificación mínima}\\
+\midrule
+GitHub & código, PR, CI y releases & ownership, protección de `main`, tag final\\
+Vercel & frontend y rewrite `/api` & build, variables, dominio, ruta profunda\\
+Render & API/ASGI y logs & health, comando, variables, rollback\\
+Supabase & PostgreSQL y Storage & backups, acceso, bucket y límites\\
+Redis & channel layer & conectividad, aislamiento y persistencia requerida\\
+Correo & Brevo o SMTP & remitente validado y entrega controlada\\
+\bottomrule
+\end{tabularx}
+
+\section{Variables}
+
+Las plantillas canónicas son \path{backend/.env.example}, \path{frontend/.env.example} y
+\path{docker-compose.prod.env.example}. Nunca copie un archivo `.env` real al repositorio.
+
+\begin{itemize}
+  \item Backend base: \path{DJANGO_SECRET_KEY}, \path{DJANGO_DEBUG},
+  \path{DATABASE_URL} y \path{ALLOWED_HOSTS}.
+  \item Orígenes y sesión: \path{CORS_ALLOWED_ORIGINS},
+  \path{CSRF_TRUSTED_ORIGINS}, \path{FRONTEND_URL},
+  \path{AUTH_COOKIE_SAMESITE} y \path{AUTH_COOKIE_SECURE}.
+  \item Frontend: \path{VITE_API_BASE_URL}, \path{VITE_WS_URL},
+  \path{VITE_ENV} y la opción de transformación de imágenes si se utiliza.
+\end{itemize}
+
+\section{Release controlada}
+
+\begin{enumerate}
+  \item Confirme PR aprobado, CI verde, SHA y notas de cambio.
+  \item Revise `showmigrations` y `migrate --plan`.
+  \item Cree un respaldo válido antes de una migración con riesgo de datos.
+  \item Ejecute migraciones una sola vez como paso de release.
+  \item Despliegue backend y frontend desde referencias inmutables.
+  \item Ejecute health y el smoke test por roles.
+  \item Cree tag/release y registre el resultado o active rollback.
+\end{enumerate}
+
+\begin{lstlisting}[language=bash]
+cd backend
+python manage.py showmigrations
+python manage.py migrate --plan
+python manage.py migrate
+python manage.py check --deploy
+\end{lstlisting}
+
+\RiskWarning{No ejecute `flush`, no borre migraciones aplicadas y no use `seed\_demo` contra
+producción. El arranque normal del contenedor no debe ejecutar migraciones.}
+
+\section{Smoke test}
+
+Compruebe, en orden: frontend y ruta profunda; `/health/`; inicio de sesión controlado; creación de
+ticket; asignación; comentario y cambio de estado; actualización del Cliente; reporte PDF/Excel;
+WebSocket con respuesta 101; y correo desde el remitente esperado.
+
+Registre fecha, SHA/tag, entorno, responsable y resultado. Use datos ficticios y elimine evidencia
+con datos personales antes de compartirla.
+
+\section{Backup}
+
+Priorice los backups administrados y PITR de Supabase cuando el plan los incluya. Para una copia
+manual:
+
+\begin{enumerate}
+  \item ejecute `pg\_dump` desde un host autorizado;
+  \item valide que `pg\_restore` pueda leer el dump;
+  \item calcule SHA-256 y registre fecha, tamaño, retención y responsable;
+  \item almacene el archivo cifrado y separado de las credenciales;
+  \item inventaríe los objetos de Storage por separado.
+\end{enumerate}
+
+El script `scripts/backup\_db.sh` automatiza dump, validación estructural y checksum. No demuestra
+por sí mismo que el sistema pueda restaurarse.
+
+\section{Restauración y rollback}
+
+Restaure primero en una base aislada. Ejecute checks y migraciones, compare conteos y relaciones,
+pruebe autenticación y un ciclo completo, confirme Storage y registre los RTO y RPO observados. Ante
+una release fallida, detenga el rollout, preserve logs, revierta a la última referencia conocida,
+aplique solo el plan de datos aprobado, repita health check y smoke tests y rote secretos si el
+incidente fue de seguridad.

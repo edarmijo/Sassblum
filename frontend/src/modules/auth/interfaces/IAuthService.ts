@@ -47,12 +47,6 @@ export interface AuthTokens {
    * NEVER stored in localStorage or sessionStorage (XSS risk).
    */
   accessToken: string
-  /**
-   * Long-lived JWT (7 d). Desde BUG-06 lo custodia una cookie httpOnly emitida
-   * por el backend; esta copia vive solo en memoria como respaldo mientras
-   * queden despliegues sin la cookie. NUNCA se persiste en disco.
-   */
-  refreshToken: string
 }
 
 export type UserRole = 'CLIENTE' | 'TRABAJADOR' | 'ADMINISTRADOR'
@@ -90,7 +84,7 @@ export interface IAuthService {
    * Invalidate the session by adding the refresh token to the backend blacklist.
    * Throws: InvalidToken | TokenAlreadyBlacklisted
    */
-  logout(refreshToken: string): Promise<void>
+  logout(): Promise<void>
 
   /**
    * HU-03 step 1: Request a password-reset email.
@@ -122,13 +116,6 @@ export interface IAuthService {
    * Returns the fresh AuthUser so the session state can be refreshed.
    */
   updateProfile(data: ProfileUpdateData): Promise<AuthUser>
-
-  /**
-   * Exchange a valid refresh token for a new token pair.
-   * Called automatically by the ApiClient interceptor on 401 responses.
-   * Throws: InvalidToken | TokenExpired
-   */
-  refreshTokens(refreshToken: string): Promise<AuthTokens>
 
   /**
    * Rehidrata la sesión al cargar la app usando la cookie httpOnly (BUG-06).

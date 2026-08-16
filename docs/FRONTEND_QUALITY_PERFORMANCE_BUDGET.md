@@ -32,7 +32,8 @@ El conjunto generado contiene 149 archivos: 108 de servicios, 17 de proyectos, 1
 - El menú cambia a navegación completa de escritorio desde 1024 px; en móvil/tablet tiene scroll y respeta safe areas.
 - La galería muestra título y categoría sin depender de hover en pantallas pequeñas o táctiles.
 - Three.js permanece en login y páginas públicas de escritorio, pero se carga después del contenido crítico y usa densidad adaptativa.
-- Build de producción correcto; TypeScript y ESLint sin errores; 74 pruebas frontend aprobadas.
+- Línea base del 2026-08-15: build de producción correcto; TypeScript y ESLint sin errores;
+  104 pruebas frontend aprobadas. Actualizar fecha, SHA y conteo después de cambios funcionales.
 
 ## Límites de las fuentes actuales
 

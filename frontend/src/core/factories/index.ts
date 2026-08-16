@@ -3,4 +3,4 @@
 // Sprint 3            — NotificationFactory:
 //   NotificationFactory.ts → build(channel) → INotificationStrategy
 // Sprint 4            — ExporterFactory:
-//   ExporterFactory.ts → build(format) → IReportExporter (PDF | CSV | Excel)
+//   ExporterFactory.ts → build(format) → IReportExporter (PDF | Excel)

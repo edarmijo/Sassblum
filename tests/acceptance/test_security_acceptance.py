@@ -6,6 +6,7 @@ Focus: OWASP Top 10, rate limiting, CORS, CSP, JWT security.
 """
 
 import pytest
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from helpers import SQLI_PAYLOAD, TEST_PASSWORD, WRONG_PASSWORD
@@ -28,11 +29,12 @@ class TestSecurity:
         assert response.status_code == 200
         assert response.json().get('status') == 'healthy'
 
+    @override_settings(CORS_ALLOWED_ORIGINS=['http://localhost:5173'])
     def test_cors_headers_present(self, api_client):
         """CORS headers should be configured."""
         response = api_client.options('/api/servicios/', HTTP_ORIGIN='http://localhost:5173')
-        # CORS middleware should handle this
-        assert response.status_code in (200, 204, 405)
+        assert response.status_code == 200
+        assert response['Access-Control-Allow-Origin'] == 'http://localhost:5173'
 
     def test_sql_injection_protection(self, api_client):
         """SQL injection attempts should be handled safely."""
@@ -42,15 +44,17 @@ class TestSecurity:
         })
         assert response.status_code in (400, 401)
 
-    def test_xss_in_ticket_subject(self, authenticated_client):
-        """XSS payloads in ticket subject should be escaped."""
+    def test_xss_in_ticket_subject(self, authenticated_client, catalog_service):
+        """HTML-like input remains inert JSON data for the React rendering boundary."""
         response = authenticated_client.post('/api/tickets/', {
             'asunto': '<script>alert("xss")</script>',
             'descripcion': 'Test XSS protection in the ticket description field',
+            'servicio_id': catalog_service.id,
+            'prioridad': 'Media',
         })
-        # Should either reject or escape the HTML
-        if response.status_code in (200, 201):
-            assert '<script>' not in str(response.data.get('asunto', ''))
+        assert response.status_code == 201
+        assert response['Content-Type'].startswith('application/json')
+        assert response.data['asunto'] == '<script>alert("xss")</script>'
 
     def test_password_not_returned_in_response(self, api_client, client_user):
         """Password hash should never appear in API responses."""
@@ -58,10 +62,10 @@ class TestSecurity:
             'email': client_user.email,
             'password': TEST_PASSWORD,
         })
-        if response.status_code == 200:
-            response_str = str(response.data)
-            assert TEST_PASSWORD not in response_str
-            assert 'password' not in response_str.lower() or 'access' in response_str
+        assert response.status_code == 200
+        response_str = str(response.data)
+        assert TEST_PASSWORD not in response_str
+        assert 'password' not in response_str.lower()
 
     def test_rate_limiting_on_login(self, api_client, client_user):
         """Rate limiting should protect login endpoint."""
@@ -72,8 +76,7 @@ class TestSecurity:
                 'password': WRONG_PASSWORD,
             })
             responses.append(resp.status_code)
-        # Should see 429 after exceeding rate limit
-        assert 429 in responses or all(r == 401 for r in responses)
+        assert 429 in responses
 
     def test_admin_required_for_admin_endpoints(self, authenticated_client):
         """Admin-only endpoints should reject client users."""
@@ -83,4 +86,4 @@ class TestSecurity:
         ]
         for endpoint in admin_endpoints:
             response = authenticated_client.get(endpoint)
-            assert response.status_code in (403, 404), f"{endpoint} should require admin"
+            assert response.status_code == 403, f"{endpoint} should require admin"

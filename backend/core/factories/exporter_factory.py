@@ -16,10 +16,9 @@ class ExporterFactory:
 
     @staticmethod
     def build(fmt: str) -> IReportExporter:
-        from apps.reports.exporters import CSVExporter, PDFExporter, ExcelExporter  # noqa: PLC0415
+        from apps.reports.exporters import ExcelExporter, PDFExporter  # noqa: PLC0415
 
         FORMAT_MAP = {
-            "csv": CSVExporter,
             "pdf": PDFExporter,
             "excel": ExcelExporter,
             "xlsx": ExcelExporter,

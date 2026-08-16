@@ -79,6 +79,20 @@ def worker_user(db):
 
 
 @pytest.fixture
+def second_worker_user(db):
+    """A second active worker for reassignment scenarios."""
+    return User.objects.create_user(
+        email='trabajador2@sassblum.com',
+        password=TEST_PASSWORD,
+        first_name='Ana',
+        last_name='Soporte',
+        role=User.Role.WORKER,
+        estado=User.Estado.ACTIVE,
+        email_verificado=True,
+    )
+
+
+@pytest.fixture
 def admin_user(db):
     """An admin user."""
     user = User.objects.create_user(
@@ -113,3 +127,57 @@ def authenticated_admin(api_client, admin_user):
     """DRF client authenticated as admin."""
     api_client.force_authenticate(user=admin_user)
     return api_client
+
+
+def _ticket(*, numero, catalog_service, client_user, estado, worker_user=None):
+    """Create an isolated acceptance ticket with an explicit lifecycle state."""
+    from apps.tickets.models import Ticket
+    return Ticket.objects.create(
+        numero=numero,
+        asunto='Ticket de aceptación',
+        descripcion='Dato aislado para una prueba de aceptación reproducible.',
+        servicio=catalog_service,
+        cliente=client_user,
+        asignado=worker_user,
+        estado=estado,
+        prioridad=Ticket.Prioridad.ALTA,
+    )
+
+
+@pytest.fixture
+def new_ticket(catalog_service, client_user):
+    from apps.tickets.models import Ticket
+    return _ticket(
+        numero='T-2026-9101', catalog_service=catalog_service,
+        client_user=client_user, estado=Ticket.Estado.NUEVO,
+    )
+
+
+@pytest.fixture
+def in_progress_ticket(catalog_service, client_user, worker_user):
+    from apps.tickets.models import Ticket
+    return _ticket(
+        numero='T-2026-9102', catalog_service=catalog_service,
+        client_user=client_user, worker_user=worker_user,
+        estado=Ticket.Estado.EN_PROCESO,
+    )
+
+
+@pytest.fixture
+def resolved_ticket(catalog_service, client_user, worker_user):
+    from apps.tickets.models import Ticket
+    return _ticket(
+        numero='T-2026-9103', catalog_service=catalog_service,
+        client_user=client_user, worker_user=worker_user,
+        estado=Ticket.Estado.RESUELTO,
+    )
+
+
+@pytest.fixture
+def closed_ticket(catalog_service, client_user, worker_user):
+    from apps.tickets.models import Ticket
+    return _ticket(
+        numero='T-2026-9104', catalog_service=catalog_service,
+        client_user=client_user, worker_user=worker_user,
+        estado=Ticket.Estado.CERRADO,
+    )

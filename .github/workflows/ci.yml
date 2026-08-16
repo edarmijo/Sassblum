@@ -1,13 +1,38 @@
 name: CI SassBlum
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -42,12 +67,14 @@ jobs:
       - name: Django System Check
         run: python manage.py check
 
-      - name: Run Unit Tests
-        run: pytest -v -m "not django_db"
-
-      - name: Run Flake8 (non-blocking)
+      - name: Run Flake8
         run: flake8 apps config core --max-line-length=120 --exclude=migrations
-        continue-on-error: true
+
+      - name: Run Backend Test Suite
+        run: pytest -v
+
+      - name: Run API Acceptance Suite
+        run: pytest ../tests/acceptance -v
 
   frontend:
     runs-on: ubuntu-latest
@@ -80,5 +107,14 @@ jobs:
         # descarga ni ejecuta un paquete on-demand.
         run: npx --no-install tsc --noEmit
 
+      - name: Run ESLint
+        run: npm run lint
+
       - name: Run Unit Tests
         run: npm run test
+
+      - name: Audit Production Dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build Production Bundle
+        run: npm run build

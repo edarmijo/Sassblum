@@ -1,0 +1,84 @@
+\chapter{Arquitectura e interfaces}
+
+\section{Topología}
+
+La topología activa separa presentación, API, datos y servicios externos:
+
+\begin{lstlisting}
+Navegador
+  |-- HTTPS --> React/Vite en Vercel
+  |               |-- /api/* --> Django/DRF/Daphne en Render
+  |-- WSS --------------------> Django Channels en Render
+                                  |-- PostgreSQL (Supabase)
+                                  |-- Storage (Supabase)
+                                  |-- Redis (si hay multiples procesos)
+                                  `-- Brevo API o SMTP
+\end{lstlisting}
+
+El rewrite `/api` hace que la cookie de renovación sea first-party. WebSocket conecta directamente
+a Render porque ese rewrite no actúa como proxy WebSocket.
+
+\section{Responsabilidades por capa}
+
+\begin{tabularx}{\textwidth}{@{}L{0.2\textwidth}Y Y@{}}
+\toprule
+\textbf{Capa} & \textbf{Responsabilidad} & \textbf{Regla de mantenimiento}\\
+\midrule
+React & páginas, componentes y estado de interfaz & componentes dependen de interfaces/contextos\\
+Infraestructura FE & HTTP, WebSocket y configuración & una fuente tipada para variables y clientes\\
+Views/serializers & HTTP, permisos y validación de entrada & no contienen consultas o reglas complejas\\
+Services & casos de uso y reglas de negocio & una responsabilidad y dependencias explícitas\\
+Repositories & consultas ORM & no exponen decisiones de presentación\\
+Models/events & estado persistente e historial & cambios mediante migraciones versionadas\\
+\bottomrule
+\end{tabularx}
+
+\section{API principal}
+
+Las rutas no llevan barra final salvo donde se indica. La referencia exhaustiva está en los archivos
+`urls.py` de cada aplicación.
+
+\begin{longtable}{@{}L{0.16\textwidth}L{0.43\textwidth}L{0.31\textwidth}@{}}
+\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Propósito}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Propósito}\\
+\midrule
+\endhead
+POST & /api/auth/register & registro de cliente\\
+POST & /api/auth/login & acceso y cookie de renovación\\
+POST & /api/auth/token/refresh & renovar sesión\\
+POST & /api/auth/verify-email & confirmar correo\\
+GET/POST & /api/tickets/ & listar por rol o crear como Cliente\\
+GET & /api/tickets/\{id\} & detalle autorizado\\
+GET & /api/tickets/\{id\}/historial & eventos del ticket\\
+PATCH & /api/tickets/\{id\}/asignar & asignar como Administrador\\
+PATCH & /api/tickets/\{id\}/reasignar & reasignar como Administrador\\
+PATCH & /api/tickets/\{id\}/estado & cambiar estado como personal\\
+POST & /api/tickets/\{id\}/comentario & añadir comentario\\
+GET & /api/reportes/tickets & indicadores administrativos\\
+POST & /api/reportes/exportar & exportar PDF o Excel\\
+GET & /health/ & salud de aplicación y base\\
+\bottomrule
+\end{longtable}
+
+\section{Autenticación y tiempo real}
+
+El access token vive en memoria y se envía como Bearer. El refresh token viaja en cookie
+`HttpOnly`, `Secure` en producción y `SameSite=Lax` con el rewrite first-party.
+
+Los WebSocket disponibles son `/ws/notifications/` y `/ws/tickets/\{ticket\_id\}/`. El token de
+acceso viaja como subprotocolo, no en la URL. El servidor valida origen, autenticación y acceso al
+ticket antes de aceptar el canal.
+
+\section{Datos y archivos}
+
+{\hbadness=10000 PostgreSQL conserva usuarios, servicios, tickets, eventos, notificaciones y
+reportes derivados. Supabase Storage guarda archivos cuando está configurado. La service role key
+pertenece únicamente al backend. Los objetos, backups y exportaciones deben seguir la misma
+política de retención y acceso que los registros relacionados.\par}
+
+\RiskWarning{No exponga `SUPABASE\_SERVICE\_KEY` en variables `VITE\_*`, JavaScript, capturas,
+logs o archivos de soporte.}

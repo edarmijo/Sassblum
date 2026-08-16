@@ -3,13 +3,8 @@ End-to-end ticket lifecycle through TicketService (requires DB).
 create → assign → update_status → close. Run: pytest apps/tickets/tests/test_ticket_lifecycle.py -v
 """
 
-from core.testing import random_credential
-
 import pytest
 from django.core import mail
-
-# Generada por corrida (core.testing): sin credenciales hardcodeadas.
-TEST_PASSWORD = random_credential()
 
 from apps.authentication.models import User
 from apps.catalog.models import Service
@@ -17,6 +12,10 @@ from apps.notifications.models import Notification
 from apps.tickets.models import Ticket, TicketEvent
 from apps.tickets.services.ticket_service import TicketService
 from core.exceptions.domain_exceptions import InvalidTransitionError
+from core.testing import random_credential
+
+# Generada por corrida (core.testing): sin credenciales hardcodeadas.
+TEST_PASSWORD = random_credential()
 
 
 @pytest.fixture

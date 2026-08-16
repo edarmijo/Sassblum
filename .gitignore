@@ -5,10 +5,15 @@ __pycache__/
 venv/
 .venv/
 .pytest_cache/
+.coverage
+coverage.xml
+coverage-critical.xml
+htmlcov/
 
 # Node
 node_modules/
 dist/
+coverage/
 .env
 .env.local
 
@@ -20,12 +25,19 @@ dist/
 
 # Agentes / sesiones locales
 .claude/
+/.agents/
+
+# Material local ajeno o sensible que no forma parte del entregable público
+/guion_exposicion.md
+/docs/INFORME_CONVIVENCIA_Y_CUTOVER.md
+/tmp/
 
 # Supabase
 supabase/.branches/
 
 # Artefactos
 *.tar.gz
+/output/
 
 # Copia de trabajo del cPanel (contiene credenciales — NUNCA subir al repo)
 legacy_cpanel/

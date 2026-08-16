@@ -1,0 +1,60 @@
+\chapter{Cambios, limitaciones y cierre}
+
+\section{Resumen de la entrega}
+
+La preparación de cierre incorporó un portal README, documentación por audiencia, guía de usuario,
+arquitectura, despliegue/recuperación, plan de pruebas, seguridad, contribución, CODEOWNERS,
+plantillas y este manual versionado.
+
+También se alineó la documentación con el comportamiento actual: reportes en PDF/Excel, reapertura
+de tickets cerrados, autenticación con access token en memoria y refresh cookie, topología
+Vercel/Render, demo protegida y migraciones como paso controlado.
+
+\section{Formatos y compatibilidad}
+
+\begin{itemize}
+  \item Reportes: PDF y Excel. CSV no forma parte del alcance actual.
+  \item Backend: Python 3.12 en CI, Django 6 y ASGI mediante Daphne.
+  \item Frontend: Node 24 en CI, React 19, TypeScript 6 y Vite 8.
+  \item Base: PostgreSQL 15 mediante Supabase.
+  \item Tiempo real: Channels; Redis requerido para más de un proceso.
+\end{itemize}
+
+\section{Limitaciones conocidas}
+
+\begin{enumerate}
+  \item no hay contrato OpenAPI publicado;
+  \item existe cobertura crítica reproducible, pero no un umbral bloqueante en CI;
+  \item no hay un E2E completo automatizado en navegador;
+  \item backup y restauración necesitan evidencia periódica con RTO/RPO;
+  \item disponibilidad, correo y WebSocket dependen de proveedores externos;
+  \item ownership, licencia/cesión y soporte requieren acuerdo escrito;
+  \item el commit final necesita PR, CI y tag antes de considerarse release contractual.
+\end{enumerate}
+
+\section{Checklist de transferencia}
+
+\begin{tabularx}{\textwidth}{@{}L{0.08\textwidth}Y@{}}
+\toprule
+\textbf{Estado} & \textbf{Control}\\
+\midrule
+$\square$ & Commit final publicado, PR aprobado y CI verde.\\
+$\square$ & Tag/release y checksums registrados.\\
+$\square$ & Smoke por roles, correo y WebSocket documentados.\\
+$\square$ & Restore de backup probado y RTO/RPO registrados.\\
+$\square$ & Propietario y segundo administrador transferidos para cada plataforma.\\
+$\square$ & Secretos entregados por canal seguro y rotados cuando corresponde.\\
+$\square$ & Licencia/cesión, soporte y aceptación firmados.\\
+$\square$ & Manual PDF archivado junto al tag correspondiente.\\
+\bottomrule
+\end{tabularx}
+
+\section{Fuentes canónicas}
+
+El mantenimiento debe comenzar en `README.md`, `docs/README.md`, `docs/ARCHITECTURE.md`,
+`docs/USER\_GUIDE.md`, `docs/DEPLOYMENT.md`, `docs/TESTING.md`, `SECURITY.md`,
+`CONTRIBUTING.md` y `CHANGELOG.md`. Este manual consolida esas fuentes para el cliente; cuando
+exista una discrepancia, corrija primero el documento dueño del tema y regenere el PDF.
+
+\ManualNote{No entregue una copia comprimida del workspace. Use un clon limpio, `git archive` o una
+release para excluir `.env`, backups, cachés, herramientas locales y material legado.}

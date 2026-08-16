@@ -1,0 +1,60 @@
+\documentclass[11pt,letterpaper,oneside]{report}
+\input{config/project-data}
+\input{config/preamble}
+
+\begin{document}
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+  \vspace*{1.2cm}
+  \includegraphics[width=0.72\textwidth]{assets/sassblum-wordmark-v3.pdf}
+  \vspace{1.8cm}
+
+  {\color{SassCyan}\rule{\textwidth}{1.5pt}}\\[1.1cm]
+  {\sffamily\bfseries\fontsize{28}{34}\selectfont\color{SassNavy}\DocumentTitle\par}
+  \vspace{0.8cm}
+  {\Large\sffamily\color{SassGray}Producto, uso, operación y mantenimiento\par}
+  \vspace{1.1cm}
+  {\color{SassCyan}\rule{\textwidth}{1.5pt}}
+
+  \vfill
+  \begin{tabular}{@{}rl@{}}
+    \textbf{Cliente:} & \ClientName\\
+    \textbf{Preparado por:} & \PreparedBy\\
+    \textbf{Edición:} & \DocumentEdition\\
+    \textbf{Repositorio:} & \href{\RepositoryUrl}{\RepositoryUrl}
+  \end{tabular}
+  \vspace*{1.2cm}
+\end{titlepage}
+
+\thispagestyle{empty}
+\vspace*{\fill}
+\section*{Control del documento}
+Este manual describe el comportamiento y los procedimientos verificados en el árbol de entrega del
+15 de agosto de 2026. El tag y el SHA definitivos deben registrarse en la release publicada; una
+copia sin esa trazabilidad no sustituye la aceptación ni el acuerdo de propiedad intelectual.
+
+No contiene credenciales, datos personales, exportaciones de producción ni comunicaciones privadas.
+Las variables sensibles se transfieren mediante un canal seguro y nunca dentro del repositorio.
+
+El wordmark se incorpora desde el activo auténtico ya versionado por SassBlum. La ausencia de una
+licencia abierta no concede derechos de redistribución; la licencia o cesión de la entrega se rige por
+el acuerdo escrito entre las partes.
+\vspace*{\fill}
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\input{chapters/01-producto}
+\input{chapters/02-usuario}
+\input{chapters/03-arquitectura-api}
+\input{chapters/04-despliegue-backup}
+\input{chapters/05-pruebas}
+\input{chapters/06-seguridad}
+\input{chapters/07-contribucion}
+\input{chapters/08-cambios}
+
+\end{document}

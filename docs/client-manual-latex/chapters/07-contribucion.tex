@@ -1,0 +1,59 @@
+\chapter{Contribución y mantenimiento}
+
+\section{Flujo de cambio}
+
+\begin{enumerate}
+  \item Cree una rama desde `main` con prefijo `feat/`, `fix/`, `docs/`, `test/` o `chore/`.
+  \item Mantenga un alcance pequeño y describa el comportamiento observable.
+  \item Añada pruebas y documentación según el riesgo.
+  \item Ejecute la verificación local aplicable.
+  \item Abra un PR con impacto, evidencia, riesgos, migraciones y rollback.
+  \item Obtenga al menos una revisión y CI verde antes de fusionar.
+\end{enumerate}
+
+Los commits siguen Conventional Commits: `tipo(scope): descripción`. No mezcle una corrección
+funcional con limpieza masiva o artefactos de una ejecución local.
+
+\section{Definition of Done}
+
+Un cambio está listo cuando:
+
+\begin{itemize}
+  \item sus criterios de aceptación son demostrables;
+  \item pruebas, linters, tipos y build aplicables pasan;
+  \item no quedan regresiones P0/P1 sin decisión;
+  \item documentación y ejemplos de entorno están sincronizados;
+  \item migración y rollback están definidos cuando corresponde;
+  \item logs y capturas están sanitizados;
+  \item revisión y CI fueron aprobados.
+\end{itemize}
+
+\section{Reglas de arquitectura}
+
+En backend, las views orquestan HTTP, los servicios contienen reglas y los repositorios aíslan ORM.
+Todas las firmas Python deben usar type hints y los secretos provienen de configuración.
+
+En frontend, los componentes usan export nombrado, TypeScript sin `any`, servicios inyectados por
+Context/hooks y Tailwind con tokens compartidos. Las animaciones respetan
+`prefers-reduced-motion`.
+
+\section{Documentación como código}
+
+El índice `docs/README.md` define las fuentes canónicas. Cuando cambie una ruta, variable, flujo,
+permiso, comando o formato exportable, actualice el documento dueño del tema y enlace desde los
+demás. No copie bloques divergentes.
+
+Los conteos y resultados incluyen fecha, SHA y entorno. Un documento histórico debe indicarlo de
+forma visible y no competir con la guía canónica.
+
+\section{Release}
+
+Antes de convertir `Unreleased` en una versión:
+
+\begin{enumerate}
+  \item ejecute todas las suites y el smoke de producción;
+  \item confirme licencia/cesión, aceptación y soporte;
+  \item registre SHA, fecha y notas de migración/rollback;
+  \item publique un tag protegido y una release;
+  \item archive el PDF de este manual junto con checksums y evidencias autorizadas.
+\end{enumerate}

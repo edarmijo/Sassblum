@@ -20,8 +20,8 @@ export interface AuthContextValue {
   isLoading: boolean
   /**
    * True mientras se canjea el refresh token persistido por un access nuevo
-   * (solo al montar, y solo si había sesión previa). Nada autenticado debe
-   * montarse en ese lapso: aún no hay Bearer y las peticiones darían 401.
+   * (solo al montar, y solo si había sesión previa). Las rutas autenticadas
+   * esperan en su propio contenido; el shell y las páginas públicas no se bloquean.
    */
   isBootstrapping: boolean
   login: (credentials: LoginCredentials) => Promise<void>

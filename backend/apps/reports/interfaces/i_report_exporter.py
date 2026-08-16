@@ -6,7 +6,7 @@ Pattern: Strategy (each format is an exporter) + DIP anchor.
 SOLID: DIP · OCP · LSP
 
 OCP: JSONExporter = new class implementing this + one entry in ExporterFactory.
-    PDFExporter / CSVExporter / ExcelExporter are never modified.
+    PDFExporter / ExcelExporter are never modified.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ class IReportExporter(ABC):
 
     @abstractmethod
     def get_extension(self) -> str:
-        """File extension without the dot, e.g. 'csv'."""
+        """File extension without the dot, e.g. 'pdf'."""
         ...
 
     @abstractmethod

@@ -28,6 +28,14 @@ class TestTicketAPIIntegration:
         assert response.status_code == 200
         assert response.json()['status'] == 'healthy'
 
+    def test_api_health_check_returns_200(self):
+        """The frontend warm-up alias should be public and verify the database."""
+        client = APIClient()
+        response = client.get('/api/health/')
+        assert response.status_code == 200
+        assert response.json()['status'] == 'healthy'
+        assert response.json()['database'] == 'ok'
+
     def test_services_list_public(self):
         """Service catalog should be publicly accessible."""
         client = APIClient()

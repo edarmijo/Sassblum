@@ -35,7 +35,7 @@ class TestTCA1AdminLogin:
     def test_admin_can_list_all_users(self, authenticated_admin):
         """Given an admin, when listing users, all users are visible."""
         response = authenticated_admin.get('/api/usuarios/')
-        assert response.status_code in (200, 404)  # 404 if endpoint path differs
+        assert response.status_code == 200
 
 
 # ── TC-A2: Assignment ─────────────────────────────────────────────────────────
@@ -46,19 +46,22 @@ class TestTCA1AdminLogin:
 class TestTCA2Assignment:
     """TC-A2: HU-05 — Ticket assignment to worker."""
 
-    def test_assign_ticket_to_worker(self, authenticated_admin):
+    def test_assign_ticket_to_worker(self, authenticated_admin, new_ticket, worker_user):
         """Given a new ticket, when assigning to worker, status changes to EnProceso."""
-        response = authenticated_admin.post('/api/tickets/1/assign', {
-            'worker_id': 2,
+        response = authenticated_admin.patch(f'/api/tickets/{new_ticket.id}/asignar', {
+            'worker_id': worker_user.id,
         })
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 200
+        new_ticket.refresh_from_db()
+        assert new_ticket.asignado_id == worker_user.id
+        assert new_ticket.estado == 'EnProceso'
 
-    def test_assign_ticket_requires_admin_role(self, authenticated_client):
+    def test_assign_ticket_requires_admin_role(self, authenticated_client, new_ticket, worker_user):
         """Given a client user, when trying to assign, access is denied."""
-        response = authenticated_client.post('/api/tickets/1/assign', {
-            'worker_id': 2,
+        response = authenticated_client.patch(f'/api/tickets/{new_ticket.id}/asignar', {
+            'worker_id': worker_user.id,
         })
-        assert response.status_code in (403, 404, 405)
+        assert response.status_code == 403
 
 
 # ── TC-A3: Reassignment ──────────────────────────────────────────────────────
@@ -69,12 +72,16 @@ class TestTCA2Assignment:
 class TestTCA3Reassignment:
     """TC-A3: HU-08 — Ticket reassignment."""
 
-    def test_reassign_ticket_to_different_worker(self, authenticated_admin):
+    def test_reassign_ticket_to_different_worker(
+        self, authenticated_admin, in_progress_ticket, second_worker_user
+    ):
         """Given an assigned ticket, when reassigning, change is recorded."""
-        response = authenticated_admin.post('/api/tickets/1/reassign', {
-            'new_worker_id': 3,
+        response = authenticated_admin.patch(f'/api/tickets/{in_progress_ticket.id}/reasignar', {
+            'worker_id': second_worker_user.id,
         })
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 200
+        in_progress_ticket.refresh_from_db()
+        assert in_progress_ticket.asignado_id == second_worker_user.id
 
 
 # ── TC-A4: Reports ────────────────────────────────────────────────────────────
@@ -110,33 +117,38 @@ class TestTCA4Reports:
 
 
 # ── TC-A5: Export ─────────────────────────────────────────────────────────────
-# Given a report, when exporting, then a CSV / PDF / Excel file downloads
-# correctly.
+# Given a report, when exporting, then a PDF / Excel file downloads correctly.
 
 @pytest.mark.django_db
 class TestTCA5Export:
-    """TC-A5: HU-18 — Data export (CSV, PDF, Excel)."""
+    """TC-A5: HU-18 — Data export (PDF, Excel)."""
 
-    def test_export_csv(self, authenticated_admin):
-        """Given report data, when exporting CSV, file is returned."""
+    def test_export_csv_is_rejected(self, authenticated_admin):
+        """Given CSV was retired, when requesting it, the API rejects it."""
         response = authenticated_admin.post('/api/reportes/exportar', {
             'formato': 'csv',
         })
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 400
 
     def test_export_excel(self, authenticated_admin):
         """Given report data, when exporting Excel, file is returned."""
         response = authenticated_admin.post('/api/reportes/exportar', {
             'formato': 'excel',
         })
-        assert response.status_code in (200, 404, 405, 501)
+        assert response.status_code == 200
+        assert response['Content-Type'] == (
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        assert 'reporte_tickets.xlsx' in response['Content-Disposition']
 
     def test_export_pdf(self, authenticated_admin):
         """Given report data, when exporting PDF, file is returned."""
         response = authenticated_admin.post('/api/reportes/exportar', {
             'formato': 'pdf',
         })
-        assert response.status_code in (200, 404, 405, 501)
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/pdf'
+        assert 'reporte_tickets.pdf' in response['Content-Disposition']
 
 
 # ── TC-A6: User Management ───────────────────────────────────────────────────
@@ -150,12 +162,14 @@ class TestTCA6UserManagement:
     def test_admin_can_list_users(self, authenticated_admin):
         """Given an admin, when viewing users, list is returned."""
         response = authenticated_admin.get('/api/usuarios/')
-        assert response.status_code in (200, 404)
+        assert response.status_code == 200
 
-    def test_admin_can_block_user(self, authenticated_admin):
+    def test_admin_can_block_user(self, authenticated_admin, client_user):
         """Given an active user, when blocking, status changes."""
-        response = authenticated_admin.patch('/api/usuarios/2/bloquear')
-        assert response.status_code in (200, 404, 405)
+        response = authenticated_admin.patch(f'/api/usuarios/{client_user.id}/bloquear')
+        assert response.status_code == 200
+        client_user.refresh_from_db()
+        assert client_user.estado == client_user.Estado.BLOCKED
 
     def test_blocked_user_cannot_login(self, api_client, db):
         """Given a blocked user, when logging in, access is denied."""
@@ -174,4 +188,4 @@ class TestTCA6UserManagement:
             'password': TEST_PASSWORD,
         })
         # 423 Locked es la respuesta canónica del AuthService para cuentas bloqueadas
-        assert response.status_code in (401, 403, 423)
+        assert response.status_code == 423

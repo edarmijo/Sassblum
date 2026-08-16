@@ -2,7 +2,7 @@
 Report DRF views — HTTP orchestration (SRP + DIP). Admin-only.
 
     GET  /api/reportes/tickets   → dashboard KPIs/aggregations
-    POST /api/reportes/exportar  → file download (csv|pdf|excel)
+    POST /api/reportes/exportar  → file download (pdf|excel)
 """
 
 from django.http import HttpResponse
@@ -31,7 +31,7 @@ class ReportExportView(APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request):
-        fmt = request.data.get("formato", "csv")
+        fmt = request.data.get("formato", "excel")
         filters = {k: request.data[k] for k in _FILTER_KEYS if k in request.data}
         try:
             content, mime, filename = get_report_service().export(fmt, filters)

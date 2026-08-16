@@ -31,7 +31,7 @@ class TestTCC1Registration:
             'nombre': 'Nuevo',
             'apellido': 'Cliente',
         })
-        assert response.status_code in (200, 201)
+        assert response.status_code == 201
         user = User.objects.get(email='nuevo@sassblum.com')
         assert user.email_verificado is False
 
@@ -44,7 +44,7 @@ class TestTCC1Registration:
             'nombre': 'Dup',
             'apellido': 'User',
         })
-        assert response.status_code in (400, 409)
+        assert response.status_code == 409
 
 
 # ── TC-C2: Email Verification & Recovery ──────────────────────────────────────
@@ -60,15 +60,14 @@ class TestTCC2EmailVerification:
         response = api_client.post('/api/auth/forgot-password', {
             'email': client_user.email,
         })
-        assert response.status_code in (200, 202)
+        assert response.status_code == 200
 
     def test_forgot_password_with_unknown_email_returns_ok(self, api_client):
         """Given an unknown email, when requesting reset, still returns OK (no leak)."""
         response = api_client.post('/api/auth/forgot-password', {
             'email': 'unknown@example.com',
         })
-        # Should return 200 to prevent email enumeration
-        assert response.status_code in (200, 202, 404)
+        assert response.status_code == 200
 
 
 # ── TC-C3: Login ──────────────────────────────────────────────────────────────
@@ -111,8 +110,7 @@ class TestTCC3Login:
             'email': user.email,
             'password': TEST_PASSWORD,
         })
-        # Should reject unverified users
-        assert response.status_code in (401, 403)
+        assert response.status_code == 403
 
 
 # ── TC-C4: Ticket Creation ────────────────────────────────────────────────────
@@ -131,7 +129,8 @@ class TestTCC4TicketCreation:
             'servicio_id': catalog_service.id,
             'prioridad': 'Alta',
         })
-        assert response.status_code in (200, 201)
+        assert response.status_code == 201
+        assert response.data['estado'] == 'Nuevo'
 
     def test_create_ticket_with_empty_subject_rejected(self, authenticated_client):
         """Given empty subject, when creating ticket, validation fails."""
@@ -139,7 +138,7 @@ class TestTCC4TicketCreation:
             'asunto': '',
             'descripcion': 'El servidor no responde desde ayer',
         })
-        assert response.status_code in (400, 422)
+        assert response.status_code == 400
 
     def test_create_ticket_with_short_description_rejected(self, authenticated_client):
         """Given description < 10 chars, when creating ticket, validation fails."""
@@ -147,7 +146,7 @@ class TestTCC4TicketCreation:
             'asunto': 'Problema',
             'descripcion': 'Corto',
         })
-        assert response.status_code in (400, 422)
+        assert response.status_code == 400
 
     def test_create_ticket_with_long_subject_rejected(self, authenticated_client):
         """Given subject > 80 chars, when creating ticket, validation fails."""
@@ -155,7 +154,7 @@ class TestTCC4TicketCreation:
             'asunto': 'A' * 81,
             'descripcion': 'El servidor no responde desde ayer por la tarde',
         })
-        assert response.status_code in (400, 422)
+        assert response.status_code == 400
 
 
 # ── TC-C5: Ticket Visualization ──────────────────────────────────────────────
@@ -166,19 +165,12 @@ class TestTCC4TicketCreation:
 class TestTCC5Visualization:
     """TC-C5: HU-06 — Ticket detail visualization."""
 
-    def test_view_ticket_detail_returns_all_fields(self, authenticated_client, client_user):
+    def test_view_ticket_detail_returns_all_fields(self, authenticated_client, new_ticket):
         """Given an existing ticket, when viewing, all fields are present."""
-        # Create a ticket first
-        create_resp = authenticated_client.post('/api/tickets/', {
-            'asunto': 'Test visualización',
-            'descripcion': 'Descripción detallada del problema para visualización',
-            'prioridad': 'Media',
-        })
-        if create_resp.status_code in (200, 201):
-            ticket_id = create_resp.data.get('id')
-            response = authenticated_client.get(f'/api/tickets/{ticket_id}/')
-            assert response.status_code == 200
-            assert 'asunto' in response.data or 'numero' in response.data
+        response = authenticated_client.get(f'/api/tickets/{new_ticket.id}')
+        assert response.status_code == 200
+        assert response.data['asunto'] == new_ticket.asunto
+        assert response.data['numero'] == new_ticket.numero
 
 
 # ── TC-C6: Ticket History ─────────────────────────────────────────────────────
@@ -189,19 +181,18 @@ class TestTCC5Visualization:
 class TestTCC6History:
     """TC-C6: HU-09 — Ticket event history."""
 
-    def test_ticket_history_returns_events(self, authenticated_client, client_user):
+    def test_ticket_history_returns_events(self, authenticated_client, catalog_service):
         """Given a ticket with activity, when viewing history, events are shown."""
         create_resp = authenticated_client.post('/api/tickets/', {
             'asunto': 'Test historial',
             'descripcion': 'Descripción detallada del problema para historial',
+            'servicio_id': catalog_service.id,
+            'prioridad': 'Media',
         })
-        if create_resp.status_code in (200, 201):
-            ticket_id = create_resp.data.get('id')
-            response = authenticated_client.get(f'/api/tickets/{ticket_id}/')
-            if response.status_code == 200:
-                # Should have at least the creation event
-                eventos = response.data.get('eventos', [])
-                assert len(eventos) >= 1
+        assert create_resp.status_code == 201
+        response = authenticated_client.get(f"/api/tickets/{create_resp.data['id']}")
+        assert response.status_code == 200
+        assert len(response.data['eventos']) >= 1
 
 
 # ── TC-C7: Filter & Search ────────────────────────────────────────────────────
@@ -212,15 +203,18 @@ class TestTCC6History:
 class TestTCC7FilterSearch:
     """TC-C7: HU-10 — Filter and search tickets."""
 
-    def test_filter_tickets_by_status(self, authenticated_client):
+    def test_filter_tickets_by_status(self, authenticated_client, new_ticket, in_progress_ticket):
         """Given tickets with different statuses, when filtering, only matches return."""
         response = authenticated_client.get('/api/tickets/?estado=Nuevo')
         assert response.status_code == 200
+        assert response.data['total'] == 1
+        assert all(ticket['estado'] == 'Nuevo' for ticket in response.data['items'])
 
     def test_ticket_list_is_paginated(self, authenticated_client):
         """Given many tickets, when listing, response is paginated."""
         response = authenticated_client.get('/api/tickets/')
         assert response.status_code == 200
+        assert {'items', 'total', 'page', 'page_size'} <= set(response.data)
 
 
 # ── TC-C8: Notifications ──────────────────────────────────────────────────────
@@ -238,5 +232,5 @@ class TestTCC8Notifications:
 
     def test_notification_preferences_readable(self, authenticated_client):
         """Given a user, when reading preferences, current settings are returned."""
-        response = authenticated_client.get('/api/notificaciones/preferencias/')
-        assert response.status_code in (200, 404)  # 404 if endpoint not wired
+        response = authenticated_client.get('/api/notificaciones/preferencias')
+        assert response.status_code == 200

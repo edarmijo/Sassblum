@@ -11,7 +11,7 @@ export interface ReportSummary {
   porPrioridad: Record<string, number>
 }
 
-export type ReportFormat = 'csv' | 'pdf' | 'excel'
+export type ReportFormat = 'pdf' | 'excel'
 
 export interface ReportFilters {
   estado?: string

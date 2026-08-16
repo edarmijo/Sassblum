@@ -1,0 +1,41 @@
+name: Reporte de error
+description: Registra un comportamiento reproducible sin incluir datos sensibles.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción
+      description: ¿Qué ocurrió y qué esperabas?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+      placeholder: "1. ...\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión o commit
+      placeholder: SHA, tag o fecha del despliegue
+  - type: dropdown
+    id: role
+    attributes:
+      label: Rol afectado
+      options: [Cliente, Trabajador, Administrador, Público, No aplica]
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia sanitizada
+      description: Elimina tokens, correos, nombres y datos del cliente.
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Seguridad
+      options:
+        - label: Confirmo que no es una vulnerabilidad; los problemas de seguridad se reportan en privado.
+          required: true

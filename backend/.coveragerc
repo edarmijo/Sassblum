@@ -1,0 +1,34 @@
+[run]
+branch = True
+source =
+    apps.authentication
+    apps.tickets
+    apps.notifications
+    apps.reports
+omit =
+    */tests/*
+    */migrations/*
+    */admin.py
+    */apps.py
+    */__init__.py
+    */management/commands/import_legacy.py
+
+[report]
+show_missing = True
+skip_covered = True
+precision = 1
+omit =
+    */tests/*
+    */tests.py
+    */migrations/*
+    */admin.py
+    */apps.py
+    */__init__.py
+    */management/commands/import_legacy.py
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError
+
+[xml]
+output = coverage-critical.xml

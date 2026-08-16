@@ -61,15 +61,5 @@ def clear_refresh_cookie(response):
 
 
 def read_refresh_token(request) -> str | None:
-    """
-    Obtiene el refresh token: primero la cookie, luego el body.
-
-    El fallback al body mantiene vivos a los clientes que aún no se han
-    actualizado durante el despliegue (Render y Vercel no despliegan a la vez).
-    Puede retirarse cuando todos los clientes usen cookie.
-    """
-    from_cookie = request.COOKIES.get(REFRESH_COOKIE_NAME)
-    if from_cookie:
-        return from_cookie
-    body_value = request.data.get("refresh") if hasattr(request, "data") else None
-    return body_value or None
+    """Obtiene el refresh token exclusivamente desde la cookie httpOnly."""
+    return request.COOKIES.get(REFRESH_COOKIE_NAME) or None

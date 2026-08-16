@@ -54,13 +54,13 @@ function mapUser(u: BackendUser): AuthUser {
   }
 }
 
-function mapTokens(t: { access: string; refresh: string }): AuthTokens {
-  return { accessToken: t.access, refreshToken: t.refresh }
+function mapTokens(t: { access: string }): AuthTokens {
+  return { accessToken: t.access }
 }
 
 class AuthService implements IAuthService {
   async login(credentials: LoginCredentials) {
-    const data = await apiClient.post<{ user: BackendUser; tokens: { access: string; refresh: string } }>(
+    const data = await apiClient.post<{ user: BackendUser; tokens: { access: string } }>(
       '/auth/login',
       credentials,
     )
@@ -79,8 +79,8 @@ class AuthService implements IAuthService {
     })
   }
 
-  async logout(refreshToken: string) {
-    await apiClient.post('/auth/logout', { refresh: refreshToken })
+  async logout() {
+    await apiClient.post('/auth/logout', {})
   }
 
   async forgotPassword(email: string) {
@@ -104,24 +104,15 @@ class AuthService implements IAuthService {
     return mapUser(u)
   }
 
-  async refreshTokens(refreshToken: string): Promise<AuthTokens> {
-    const data = await apiClient.post<{ access: string; refresh?: string }>(
-      '/auth/token/refresh',
-      { refresh: refreshToken },
-    )
-    return { accessToken: data.access, refreshToken: data.refresh ?? refreshToken }
-  }
-
   async refreshSession(): Promise<{ user: AuthUser; tokens: AuthTokens }> {
     // Sin body: el refresh token lo adjunta el navegador vía cookie httpOnly.
     const data = await apiClient.post<{
       access: string
-      refresh?: string
       user: BackendUser
     }>('/auth/token/refresh', {})
     return {
       user: mapUser(data.user),
-      tokens: { accessToken: data.access, refreshToken: data.refresh ?? '' },
+      tokens: { accessToken: data.access },
     }
   }
 }

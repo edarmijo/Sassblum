@@ -12,6 +12,7 @@
 import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { SessionRestoreFallback } from './SessionRestoreFallback'
 
 interface PublicRouteProps {
   children: ReactNode
@@ -22,7 +23,7 @@ interface PublicRouteProps {
 export function PublicRoute({ children, redirectTo = '/app' }: Readonly<PublicRouteProps>) {
   const { isAuthenticated, isBootstrapping } = useAuth()
 
-  if (isBootstrapping) return null
+  if (isBootstrapping) return <SessionRestoreFallback />
   if (isAuthenticated) return <Navigate to={redirectTo} replace />
   return <>{children}</>
 }

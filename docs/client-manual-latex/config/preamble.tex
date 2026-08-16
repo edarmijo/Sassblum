@@ -1,0 +1,84 @@
+\usepackage[letterpaper,top=2.3cm,bottom=2.3cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{microtype}
+\usepackage{xcolor}
+\definecolor{SassNavy}{HTML}{0B375A}
+\definecolor{SassCyan}{HTML}{13A9BF}
+\definecolor{SassInk}{HTML}{172B3A}
+\definecolor{SassSoft}{HTML}{EDF6F8}
+\definecolor{SassGray}{HTML}{5F6F79}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  hypertexnames=false,
+  linkcolor=SassNavy,
+  urlcolor=SassCyan,
+  citecolor=SassNavy,
+  pdftitle={SassBlum - Manual integral de entrega y operación},
+  pdfauthor={Equipo de desarrollo de SassBlum}
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\setlist{nosep,leftmargin=1.6em,topsep=0.35em}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries\color{SassNavy}}
+  {\filleft\Large\color{SassCyan}\chaptername\ \thechapter}
+  {0.7ex}{\titlerule\vspace{1ex}\Huge}
+\titleformat{\section}{\Large\sffamily\bfseries\color{SassNavy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\sffamily\bfseries\color{SassNavy}}{\thesubsection}{0.6em}{}
+\pagestyle{fancy}
+\setlength{\headheight}{22pt}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{SassGray}\ProjectName}
+\fancyhead[R]{\sffamily\small\color{SassGray}Manual de entrega y operación}
+\fancyfoot[C]{\sffamily\small\color{SassGray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{SassCyan}\leaders\hrule height \headrulewidth\hfill}}
+\lstdefinestyle{sasscode}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{SassSoft},
+  frame=single,
+  rulecolor=\color{SassCyan},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em
+}
+\lstset{style=sasscode}
+\newcommand{\ManualNote}[1]{%
+  \begin{center}
+  \fcolorbox{SassCyan}{SassSoft}{\parbox{0.91\textwidth}{\raggedright\hbadness=10000\textbf{Nota operativa.} #1}}
+  \end{center}
+}
+\newcommand{\RiskWarning}[1]{%
+  \begin{center}
+  \fcolorbox{SassNavy}{white}{\parbox{0.91\textwidth}{\raggedright\hbadness=10000\textbf{Control obligatorio.} #1}}
+  \end{center}
+}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\captionsetup{font=small,labelfont={bf,color=SassNavy}}
+\emergencystretch=2em
+\hbadness=10000
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000

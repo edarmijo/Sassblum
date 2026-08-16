@@ -8,7 +8,6 @@ interface ExportButtonProps {
 }
 
 const FORMATS: { value: ReportFormat; label: string }[] = [
-  { value: 'csv', label: 'CSV' },
   { value: 'excel', label: 'Excel' },
   { value: 'pdf', label: 'PDF' },
 ]

@@ -1,0 +1,87 @@
+\chapter{Calidad y pruebas}
+
+\section{Estrategia basada en riesgo}
+
+La prioridad más alta corresponde a sesión/JWT, autorización por rol, aislamiento de tickets,
+máquina de estados, asignaciones y archivos. Reportes y contenido público tienen riesgo medio; los
+efectos decorativos no deben bloquear un flujo crítico.
+
+\begin{tabularx}{\textwidth}{@{}L{0.21\textwidth}L{0.22\textwidth}Y@{}}
+\toprule
+\textbf{Nivel} & \textbf{Herramienta} & \textbf{Qué demuestra}\\
+\midrule
+Estático & Flake8, ESLint, TypeScript & reglas, tipos y consistencia\\
+Unitario & pytest, Vitest & lógica y componentes aislados\\
+Integración & pytest-django, DRF APIClient & ORM, permisos, señales y endpoints\\
+Aceptación API & pytest en `tests/acceptance` & casos por Cliente, Trabajador y Administrador\\
+Build & Vite & empaquetado de producción\\
+Smoke & health y recorrido manual & plataforma y dependencias externas\\
+\bottomrule
+\end{tabularx}
+
+\section{Comandos reproducibles}
+
+\begin{lstlisting}[language=bash]
+cd backend
+python manage.py check
+flake8 apps config core --max-line-length=120 --exclude=migrations
+pytest -q
+pytest -q --cov --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml
+pytest ../tests/acceptance -q
+
+cd ../frontend
+npm run lint
+npm run typecheck
+npm run build
+npm run test
+npm run test:coverage:critical
+\end{lstlisting}
+
+\section{Línea base de cierre}
+
+Ejecución local del 15 de agosto de 2026:
+
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Control} & \textbf{Resultado}\\
+\midrule
+Django system check & 0 issues\\
+Backend pytest & 190 aprobadas\\
+Aceptación API & 51 aprobadas\\
+Frontend Vitest & 104 aprobadas\\
+Backend crítico: líneas/statements & 74.0\%\\
+Backend crítico: combinado con ramas & 71.1\%\\
+Frontend crítico: líneas/statements & 29.35\% / 29.07\%\\
+Frontend crítico: ramas & 19.96\%\\
+Flake8 y ESLint & sin errores\\
+TypeScript y build Vite & completados\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Resultados del 15 de agosto de 2026. El alcance crítico del backend comprende `authentication`,
+`tickets`, `notifications` y `reports`; el del frontend comprende `auth`, `tickets`, `notifications`
+y `reports`. Los porcentajes no representan todo el repositorio. Estos conteos son aserciones
+automatizadas, no recorridos completos en navegador. Deben actualizarse si cambia el código. La
+evidencia de release debe incluir SHA/tag y URL del job de CI.
+
+\section{Criterios de salida}
+
+\begin{enumerate}
+  \item pruebas automatizadas de riesgo alto aprobadas;
+  \item cero errores de checks, linters, tipos y build;
+  \item cero defectos P0/P1 sin decisión documentada;
+  \item smoke de producción por los tres roles;
+  \item evidencia ligada al SHA/tag;
+  \item aceptación y transferencia registradas por el canal acordado.
+\end{enumerate}
+
+\section{Limitaciones}
+
+La cobertura está configurada y tiene una línea base reproducible, pero todavía no existe un umbral
+bloqueante en CI. La meta académica es 70\%: el backend crítico la supera con 74.0\% de
+líneas/statements y 71.1\% combinada con ramas; el frontend crítico no la alcanza con 29.35\% de
+líneas, 29.07\% de statements y 19.96\% de ramas. La entrega real de correo, disponibilidad de
+proveedores, carga sostenida y E2E completo de navegador requieren evidencia adicional. Un test
+verde no reemplaza una restauración probada ni un smoke de producción.

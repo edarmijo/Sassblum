@@ -15,12 +15,11 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { env } from '../config/env'
 import { backendWarmupService } from '../health/BackendWarmupService'
 
-type TokenRefreshHandler = (accessToken: string, refreshToken: string | null) => void
+type TokenRefreshHandler = (accessToken: string) => void
 
 class ApiClient {
   private readonly http: AxiosInstance
   private accessToken: string | null = null
-  private refreshToken: string | null = null
   private onForcedLogout: (() => void) | null = null
   private onTokenRefreshed: TokenRefreshHandler | null = null
   private refreshPromise: Promise<boolean> | null = null
@@ -75,10 +74,9 @@ class ApiClient {
 
   // ── Token / session wiring (called by useAuth) ──────────────────────────────
 
-  setTokens(access: string | null, refresh: string | null): void {
+  setAccessToken(access: string | null): void {
     this.sessionVersion++
     this.accessToken = access
-    this.refreshToken = refresh
   }
 
   setForcedLogoutHandler(handler: () => void): void {
@@ -91,7 +89,7 @@ class ApiClient {
   }
 
   private forceLogout(): void {
-    this.setTokens(null, null)
+    this.setAccessToken(null)
     this.onForcedLogout?.()
   }
 
@@ -105,15 +103,7 @@ class ApiClient {
   private async tryRefresh(): Promise<boolean> {
     const sessionVersion = this.sessionVersion
     try {
-      // H#4 (audit): Send device fingerprint with refresh token for binding.
-      // simplejwt rotation + blacklist mitigates token theft.
-      const fingerprint = this._getDeviceFingerprint()
-      const { data } = await axios.post(`${env.apiBaseUrl}/auth/token/refresh`, {
-        // Respaldo en memoria: si la cookie httpOnly está presente, el backend
-        // la prefiere e ignora este campo (BUG-06).
-        refresh: this.refreshToken ?? undefined,
-      }, {
-        headers: fingerprint ? { 'X-Device-Id': fingerprint } : {},
+      const { data } = await axios.post(`${env.apiBaseUrl}/auth/token/refresh`, {}, {
         // Must match the main client timeout — without this, a sleeping Render
         // instance causes tryRefresh() to hang indefinitely, blocking the
         // original request's Promise and producing an infinite spinner.
@@ -122,37 +112,11 @@ class ApiClient {
       })
       if (sessionVersion !== this.sessionVersion) return this.accessToken !== null
       this.accessToken = data.access
-      // La rotación emite un refresh nuevo; el viejo queda en blacklist.
-      if (data.refresh) this.refreshToken = data.refresh
-      this.onTokenRefreshed?.(data.access, this.refreshToken)
+      this.onTokenRefreshed?.(data.access)
       return true
     } catch {
       if (sessionVersion !== this.sessionVersion) return this.accessToken !== null
       return false
-    }
-  }
-
-  /** H#4: Generate a simple device fingerprint for token binding. */
-  private _getDeviceFingerprint(): string {
-    try {
-      const nav = typeof navigator === 'undefined' ? null : navigator
-      const screen = globalThis.window === undefined ? null : globalThis.window.screen
-      const parts = [
-        nav?.userAgent ?? '',
-        nav?.language ?? '',
-        screen?.width ?? 0,
-        screen?.height ?? 0,
-        new Date().getTimezoneOffset(),
-      ]
-      // Simple hash — not cryptographic, just a binding signal
-      let hash = 0
-      const str = parts.join('|')
-      for (let i = 0; i < str.length; i++) {
-        hash = Math.trunc(((hash << 5) - hash + (str.codePointAt(i) ?? 0)))
-      }
-      return `fp-${Math.abs(hash).toString(36)}`
-    } catch {
-      return ''
     }
   }
 

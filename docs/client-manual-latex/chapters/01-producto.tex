@@ -1,0 +1,68 @@
+\chapter{Producto y alcance}
+
+\section{Propósito}
+
+SassBlum es una plataforma web para registrar, asignar, atender y auditar solicitudes de servicio
+técnico. Sustituye el seguimiento disperso por un flujo único en el que cada ticket conserva
+cliente, responsable, prioridad, estado, comentarios, adjuntos e historial.
+
+El sistema combina un sitio público, autenticación y paneles separados para Cliente, Trabajador y
+Administrador. También ofrece notificaciones, catálogo de servicios, contenido institucional,
+testimonios moderados y reportes exportables en PDF y Excel.
+
+\section{Valor entregado}
+
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}Y Y@{}}
+\toprule
+\textbf{Necesidad} & \textbf{Respuesta del sistema} & \textbf{Resultado operativo}\\
+\midrule
+Ingreso de solicitudes & Formulario de ticket con servicio, prioridad, descripción y adjuntos & Entrada uniforme y consultable\\
+Responsabilidad & Asignación y reasignación por administradores & Responsable visible y trazable\\
+Seguimiento & Estados, comentarios e historial de eventos & Menos pérdida de contexto\\
+Información oportuna & Notificaciones en aplicación, correo y WebSocket según configuración & Actualizaciones por el canal disponible\\
+Gestión & Indicadores y exportación PDF/Excel & Seguimiento de volumen y estado\\
+\bottomrule
+\end{tabularx}
+
+\section{Roles}
+
+\begin{description}
+  \item[Cliente.] Se registra, verifica su correo, crea tickets y consulta únicamente los propios.
+  Puede revisar historial, notificaciones y administrar su testimonio.
+  \item[Trabajador.] Consulta los tickets que le corresponden, añade comentarios y cambia estados
+  operativos con una explicación obligatoria.
+  \item[Administrador.] Gestiona usuarios, contenido, asignaciones, todos los tickets y reportes.
+\end{description}
+
+La interfaz oculta acciones no permitidas, pero la autorización definitiva siempre ocurre en el
+backend. El aislamiento de tickets se implementa mediante permisos y consultas filtradas; no debe
+describirse como RLS general de Supabase.
+
+\section{Ciclo de vida del ticket}
+
+\begin{center}
+\fbox{\parbox{0.88\textwidth}{
+\centering\sffamily
+Nuevo $\xrightarrow{\text{asignación + comentario}}$ EnProceso
+$\leftrightarrow$ EnEspera $\leftrightarrow$ Resuelto $\leftrightarrow$ Cerrado
+}}
+\end{center}
+
+Un ticket \textbf{Nuevo} solo entra en trabajo cuando un administrador lo asigna. El personal
+autorizado puede moverlo entre los cuatro estados operativos. \textbf{Cerrado no es terminal}: puede
+reabrirse conservando la trazabilidad. Cada transición requiere un comentario no vacío.
+
+\section{Límites declarados}
+
+\begin{itemize}
+  \item El WebSocket depende de una configuración compatible de Channels y Redis cuando hay más de
+  un proceso.
+  \item La entrega real de correo depende del proveedor y de un remitente validado.
+  \item Supabase Storage funciona únicamente cuando sus credenciales y bucket están configurados.
+  \item Existe una línea base de cobertura crítica, pero todavía no un umbral bloqueante ni un E2E
+        completo en navegador.
+  \item La licencia, cesión y soporte deben formalizarse por escrito antes de una transferencia final.
+\end{itemize}
+
+\ManualNote{La fuente canónica de capacidades es el código y sus pruebas. Este manual resume; no
+reemplaza los permisos del backend ni los procedimientos de la plataforma de despliegue.}

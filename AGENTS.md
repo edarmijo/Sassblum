@@ -12,7 +12,7 @@
 - **Stack:** React 19 + TypeScript + Tailwind CSS 4 + Framer Motion | Django 6 + DRF + Channels
 - **Database:** Supabase (PostgreSQL 15)
 - **Real-time:** Django Channels + Redis
-- **Deployment:** Docker Compose + Nginx + Jenkins CI/CD
+- **Deployment:** Vercel + Render; Docker Compose/Nginx for self-hosting; GitHub Actions CI
 - **Client:** Vicky Pinto (SassBlum CEO)
 
 ---
@@ -27,8 +27,11 @@ frontend/                  # React 19 SPA
 │   │   ├── auth/          # Login, register, password reset
 │   │   ├── tickets/       # Ticket CRUD, state machine, detail, history
 │   │   ├── catalog/       # Service catalog (admin CRUD + client browse)
+│   │   ├── clients/       # Public client-logo carousel + admin management
+│   │   ├── gallery/       # Public projects + admin management
 │   │   ├── notifications/ # Bell, panel, preferences, WebSocket observer
-│   │   ├── reports/       # KPI dashboard, export (CSV/Excel/PDF)
+│   │   ├── reports/       # KPI dashboard, export (Excel/PDF)
+│   │   ├── testimonials/  # Client submissions + moderation
 │   │   ├── contracts/     # Contract template generator
 │   │   ├── dashboard/     # Role-specific dashboards (Client/Worker/Admin)
 │   │   └── public/        # Marketing pages (Home, About, Services, Gallery, Clients)
@@ -39,9 +42,12 @@ backend/                   # Django 6 + DRF
 │   ├── authentication/    # User model, JWT, RBAC, email verification
 │   ├── tickets/           # Ticket, TicketEvent, Attachment, StateMachine, Validators
 │   ├── catalog/           # Service model, CRUD, image upload (Supabase Storage)
+│   ├── clientes/          # Client logos, public list + admin CRUD
+│   ├── gallery/           # Public projects + admin CRUD
 │   ├── notifications/     # 3 strategies: Email, InApp, WebSocket
-│   ├── reports/           # Aggregation, export (CSV/PDF/Excel via ExporterFactory)
-│   └── realtime/          # Django Channels consumers for WebSocket
+│   ├── reports/           # Aggregation, export (PDF/Excel via ExporterFactory)
+│   ├── realtime/          # Django Channels consumers for WebSocket
+│   └── testimonials/      # Client testimonials + moderation
 ├── core/                  # BaseRepository, BaseValidator, RBAC permissions, exceptions
 └── config/                # Settings, URLs, ASGI, WSGI
 ```
@@ -93,8 +99,9 @@ Every module must follow:
 
 ### Git
 - **Commits:** Conventional Commits: `feat(scope): description`, `fix(scope): description`
-- **Branches:** Feature branches merged via PR with at least 1 reviewer.
-- **Protected:** `main` branch requires PR + CI passing.
+- **Branches:** Target workflow is feature branches merged through PR with at least 1 reviewer.
+- **Protection:** Configure `main` to require PR + passing CI; do not assume that rule is enforced
+  until the GitHub repository settings confirm it.
 
 ---
 
@@ -120,13 +127,13 @@ Every module must follow:
 | POST | /api/auth/login | Public | Login, returns JWT |
 | GET | /api/tickets/ | Auth | List tickets (filtered by role) |
 | POST | /api/tickets/ | IsClient | Create ticket |
-| POST | /api/tickets/:id/status | IsWorker | Update status + comment |
-| POST | /api/tickets/:id/assign | IsAdmin | Assign to worker |
+| PATCH | /api/tickets/:id/estado | IsWorker\|IsAdmin | Update status + comment |
+| PATCH | /api/tickets/:id/asignar | IsAdmin | Assign to worker |
 | GET | /api/servicios/ | Public | Service catalog |
 | POST | /api/servicios/admin | IsWorker\|IsAdmin | Create service |
 | PATCH | /api/servicios/admin/:id | IsWorker\|IsAdmin | Edit service |
 | GET | /api/reportes/tickets | IsAdmin | Report KPIs |
-| POST | /api/reportes/exportar | IsAdmin | Export CSV/PDF/Excel |
+| POST | /api/reportes/exportar | IsAdmin | Export PDF/Excel |
 | GET | /health/ | Public | Health check |
 
 ---
@@ -139,11 +146,11 @@ DJANGO_SECRET_KEY=        # 50+ random chars
 DJANGO_DEBUG=False
 DATABASE_URL=             # Supabase PostgreSQL connection string
 REDIS_URL=                # redis://redis:6379/0
-CORS_ALLOWED_ORIGINS=     # https://app.sassblum.com
-ALLOWED_HOSTS=            # api.sassblum.com
+CORS_ALLOWED_ORIGINS=     # https://sassblum.vercel.app
+ALLOWED_HOSTS=            # sassblum.onrender.com
 EMAIL_HOST=               # smtp.gmail.com
 EMAIL_HOST_PASSWORD=      # SMTP app password
-FRONTEND_URL=             # https://app.sassblum.com
+FRONTEND_URL=             # https://sassblum.vercel.app  (base de los enlaces de verificación)
 SUPABASE_URL=             # For file uploads
 SUPABASE_SERVICE_KEY=     # Server-side only
 ```
@@ -195,12 +202,14 @@ docker-compose -f docker-compose.prod.yml up -d  # Production
 
 ## Known Issues & TODO
 
-The full audit (30 findings) was completed and all findings addressed; the one-off report files were removed from the repo (see git history if needed).
+Operational limitations and release prerequisites are documented in `README.md`,
+`docs/DEPLOYMENT.md`, `docs/TESTING.md`, and `SECURITY.md`. Do not claim a release complete until
+CI, deployment smoke checks, client acceptance, and the immutable release reference are recorded.
 
 ---
 
 ## Contact
 
 - **Client:** Vicky Pinto (SassBlum)
-- **Repository:** https://github.com/edarmijo/SassBlumRedise-oWeb
+- **Repository:** https://github.com/edarmijo/Sassblum
 - **Team:** Erick Armijos, Juan Pérez, Elías Rubio, Jahir Cajas, Jairo Rodríguez

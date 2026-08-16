@@ -68,9 +68,15 @@ class LoginView(APIView):
         except EmailNotVerified as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
 
-        # BUG-06: el refresh token viaja en cookie httpOnly (inaccesible a JS).
-        # Se mantiene además en el body mientras haya clientes sin actualizar.
-        response = Response(result, status=status.HTTP_200_OK)
+        # El refresh token solo viaja en cookie httpOnly; JavaScript recibe el
+        # access token de corta vida y el perfil.
+        response = Response(
+            {
+                "user": result["user"],
+                "tokens": {"access": result["tokens"]["access"]},
+            },
+            status=status.HTTP_200_OK,
+        )
         return set_refresh_cookie(response, result["tokens"]["refresh"])
 
 

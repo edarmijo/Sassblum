@@ -1,311 +1,188 @@
-# SassBlum — Ticket Management System
+# SassBlum
 
-**Institution:** ESPOL — FIEC  
-**Client:** SassBlum · Vicky Pinto  
-**Team:** Erick Armijos · Juan Pérez · Elías Rubio · Jahir Cajas · Jairo Rodríguez
+[![CI](https://github.com/edarmijo/Sassblum/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/edarmijo/Sassblum/actions/workflows/ci.yml)
+[![React](https://img.shields.io/badge/React-19-149ECA?logo=react)](frontend/package.json)
+[![Django](https://img.shields.io/badge/Django-6-0C4B33?logo=django)](backend/requirements.txt)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript)](frontend/package.json)
 
----
+Plataforma web de gestión de tickets para SassBlum, empresa de servicios tecnológicos de
+Guayaquil. Centraliza solicitudes, asignaciones, seguimiento, notificaciones y reportes en un
+flujo trazable para clientes, trabajadores y administradores.
 
-## Presentation Structure (10 minutes · English · Equal participation)
+[Aplicación](https://sassblum.vercel.app/) ·
+[Estado de la API](https://sassblum.onrender.com/health/) ·
+[Documentación](docs/README.md) ·
+[Guía de usuario](docs/USER_GUIDE.md) ·
+[Manual de entrega al cliente](docs/client-manual-latex/README.md) ·
+[Despliegue](docs/DEPLOYMENT.md)
 
-| # | Section (from rubric) | Speaker | Time |
-|---|----------------------|---------|------|
-| 1 | System Introduction | Juan Pérez | ~2 min |
-| 2 | User Stories & Sprints | Jahir Cajas | ~1.5 min |
-| 3 | Architecture (deployment + component) | Jairo Rodríguez | ~2 min |
-| 4 | Demo — Client & Admin roles (acceptance tests) | Erick Armijos | ~2.5 min |
-| 5 | Demo — Worker role + Notifications + Test plan review | Elías Rubio | ~2 min |
+> Estado de entrega: aplicación desplegada y suites locales verificadas el 15 de agosto de 2026.
+> Los resultados son una línea base reproducible, no una garantía de disponibilidad futura.
 
----
+## Qué resuelve
 
-## Demo Setup — Test Data & Credentials
+- Los clientes registran solicitudes, adjuntan evidencia y consultan su historial.
+- Los administradores gestionan usuarios, asignan o reasignan tickets y consultan reportes.
+- Los trabajadores documentan avances y cambian estados con un comentario obligatorio.
+- Los eventos generan notificaciones en la aplicación, por correo y mediante WebSocket según la
+  configuración del entorno.
+- El historial conserva autor, fecha, comentario, asignación y transición para auditoría.
+- Los reportes se exportan en PDF y Excel.
 
-Before any section, load the seed data (idempotent — safe to re-run):
+## Arquitectura
+
+```mermaid
+flowchart LR
+    U["Navegador"] --> V["React 19 + Vite\nVercel"]
+    V -->|"REST /api"| A["Django 6 + DRF\nRender"]
+    V -->|"WebSocket /ws"| C["Django Channels"]
+    A --> P[("Supabase PostgreSQL")]
+    A --> S["Supabase Storage"]
+    A --> E["Proveedor de correo"]
+    C --> R["Redis o canal en memoria"]
+    C --> P
+```
+
+El frontend usa módulos por dominio y consume servicios mediante Context/hooks. En el backend,
+las vistas orquestan HTTP, los servicios contienen reglas de negocio y los repositorios aíslan el
+ORM. Los detalles y decisiones están en [Arquitectura](docs/ARCHITECTURE.md).
+
+### Ciclo de vida del ticket
+
+```mermaid
+stateDiagram-v2
+    [*] --> Nuevo
+    Nuevo --> EnProceso: asignación + comentario
+    EnProceso --> EnEspera
+    EnProceso --> Resuelto
+    EnProceso --> Cerrado
+    EnEspera --> EnProceso
+    EnEspera --> Resuelto
+    EnEspera --> Cerrado
+    Resuelto --> EnProceso: reapertura
+    Resuelto --> EnEspera
+    Resuelto --> Cerrado
+    Cerrado --> EnProceso: reapertura
+    Cerrado --> EnEspera: reapertura
+    Cerrado --> Resuelto: reapertura
+```
+
+`Nuevo` solo puede pasar a `EnProceso` después de asignar un trabajador. Los cuatro estados
+operativos son intercambiables por personal autorizado; `Cerrado` no es terminal. Toda transición
+requiere un comentario no vacío (BR-35).
+
+## Tecnologías principales
+
+| Capa | Tecnología |
+|---|---|
+| Interfaz | React 19, TypeScript 6, Vite 8, Tailwind CSS 4, Framer Motion |
+| API | Django 6, Django REST Framework, SimpleJWT |
+| Datos | Supabase PostgreSQL 15, Supabase Storage |
+| Tiempo real | Django Channels, Redis |
+| Reportes | ReportLab, OpenPyXL, Recharts |
+| Calidad | pytest, Vitest, React Testing Library, ESLint, Flake8, SonarCloud |
+| Entrega | Vercel, Render, Docker Compose, GitHub Actions; Jenkins disponible para self-hosting |
+
+## Inicio rápido local
+
+### Requisitos
+
+- Python 3.12 o compatible con Django 6
+- Node.js 24 y npm 11 (versiones usadas por CI)
+- PostgreSQL accesible mediante `DATABASE_URL`
+- Redis opcional en desarrollo; obligatorio si se ejecutan varios procesos de Channels
+
+### Backend
 
 ```bash
 cd backend
-python manage.py seed_demo
-```
-
-This loads the **6 real SassBlum services** (Infraestructura IT, Soporte Técnico, Cableado Estructurado, CCTV, Domótica, Venta de Servidores) plus the accounts and sample tickets below.
-
-### Test accounts (password for all: `SassBlum2026`)
-
-| Role | Email | Use in demo |
-|------|-------|-------------|
-| Admin | `admin@sassblum.com` | Assign/reassign tickets, reports, user management |
-| Worker | `trabajador1@sassblum.com` | Update status, add comments (Carlos Técnico) |
-| Worker | `trabajador2@sassblum.com` | Update status, add comments (Ana Soporte) |
-| Client | `cliente@sassblum.com` | Create/view tickets |
-| Client | `erick2003kimi@gmail.com` | Real verified client account |
-
-### Seeded tickets (one per lifecycle state)
-
-| Number | Subject | State | Assigned |
-|--------|---------|-------|----------|
-| T-2026-9001 | Servidor de correo caído | **Nuevo** (unassigned) | — |
-| T-2026-9002 | Cámara de seguridad sin señal | **En Proceso** | Carlos |
-| T-2026-9003 | Cableado para nueva oficina | **En Espera** | Carlos |
-| T-2026-9004 | Configurar domótica en sala de reuniones | **Resuelto** | Ana |
-| T-2026-9005 | Mantenimiento preventivo de servidores | **Cerrado** | Ana |
-
-> **T-2026-9001** is left in *Nuevo* and unassigned on purpose so the Admin demo (Step 2: assign to a worker) has a ready target. The other tickets cover history, status badges, and filtering.
-
-### Start the stack
-
-```bash
-# Backend (terminal 1)
-cd backend && daphne config.asgi:application
-# Frontend (terminal 2)
-cd frontend && npm run dev      # http://localhost:5173
-```
-
----
-
-## Section 1 — System Introduction · Juan Pérez (~2 min)
-
-**Who the client is:** SassBlum, a service company managed by Vicky Pinto.
-
-**System scope:** Full-stack ticket management platform built for 3 user roles — Client, Worker, and Admin — allowing end-to-end tracking of service requests from creation through resolution.
-
-**What the system does:**
-- Clients submit service tickets with attachments and descriptions.
-- Admins assign tickets to workers and manage users.
-- Workers update ticket status and add comments.
-- An Observer pattern triggers real-time notifications (email + in-app + WebSocket) on every state change.
-- Reports and exports are available for data analysis.
-
-**Technology stack:**
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19 + TypeScript + Vite + Tailwind CSS + Zustand |
-| Backend | Django 6 + Django REST Framework + SimpleJWT |
-| Database | Supabase (PostgreSQL 15) + Row Level Security |
-| Realtime | Django Channels + Redis |
-| Reports | ReportLab (PDF) + OpenPyXL (Excel) + CSV + Recharts |
-| Email | Django send_mail + SMTP |
-| Tests FE | Vitest + React Testing Library |
-| Tests BE | pytest + pytest-django + DRF APIClient |
-| CI/CD | GitHub Actions + Jenkins + Docker |
-
----
-
-## Section 2 — User Stories & Sprints · Jahir Cajas (~1.5 min)
-
-### 18 User Stories (HU-01 to HU-18)
-
-| ID | Story |
-|----|-------|
-| HU-01 | Login with credentials |
-| HU-02 | Client registration |
-| HU-03 | Password recovery |
-| HU-04 | Ticket creation |
-| HU-05 | Ticket assignment |
-| HU-06 | Ticket visualization |
-| HU-07 | Status update |
-| HU-08 | Ticket reassignment |
-| HU-09 | Ticket history |
-| HU-10 | Filtering and search |
-| HU-11 | Comments on tickets |
-| HU-12 | Ticket closure |
-| HU-13 | Real-time visualization |
-| HU-14 | Notification dispatch |
-| HU-15 | Notification preferences |
-| HU-16 | Notification history |
-| HU-17 | Report generation |
-| HU-18 | Data export |
-
-### 4 Sprints
-
-| Sprint | Dates | Modules | Sessions |
-|--------|-------|---------|----------|
-| Sprint 1 | May 25–31 | Authentication (FE + BE) | S1–S10 |
-| Sprint 2 | Jun 15–21 | Catalog + Tickets (creation & state machine) | S11–S18 |
-| Sprint 3 | Jul 6–26 | Notifications + History + Password Reset | S19–S27 |
-| Sprint 4 | Jul 27–Aug 16 | Assignment + Reports + Realtime | S28–S34 |
-
-**Total:** 34 sessions across 4 sprints · MVP fully delivered end-to-end.
-
----
-
-## Section 3 — Architecture · Jairo Rodríguez (~2 min)
-
-### Deployment Diagram
-
-```
-Browser
-  └─► Nginx (reverse proxy)
-        ├─► React SPA (static files)
-        ├─► /api/    → Daphne → Django + DRF (REST)
-        └─► /ws/     → Daphne → Django Channels (WebSocket)
-                              └─► Redis (channel layer)
-                              └─► Supabase PostgreSQL 15 (+ RLS)
-CI/CD: GitHub Actions → Docker Build → Jenkins → Production Server
-```
-
-### Component Diagram (Layer Architecture)
-
-```
-Frontend (React 19)                    Backend (Django 6)
-─────────────────────────              ─────────────────────────────
-Pages                                  Views (HTTP orchestration only)
-  └─► Hooks (useAuth, useTickets…)      └─► Services (business logic)
-        └─► Services (Singletons)             └─► Repositories (ORM isolation)
-              └─► ApiClient (Axios)                  └─► Models (data only)
-              └─► SocketClient (WS)
-                                        Channels Consumers (WebSocket)
-Interfaces (IAuthService,               Signals → NotificationService
-  ITicketService, IRepository<T>…)        └─► Strategy (Email/InApp/WS)
-```
-
-### Design Patterns Applied
-
-| Pattern | Where |
-|---------|-------|
-| Repository | `AuthRepository`, `TicketRepository`, `NotificationRepository` |
-| Factory | `NotificationFactory`, `ExporterFactory`, `ValidatorFactory` |
-| Strategy | `EmailStrategy`, `InAppStrategy`, `PDFExporter`, `CSVExporter` |
-| Observer | Django Signals: `post_save` on `TicketEvent` → `NotificationService` |
-| Singleton | `AuthService`, `TicketService`, `NotificationService`, `ApiClient` |
-| Chain of Responsibility | `EmailValidator → PasswordValidator → RegistrationValidatorChain` |
-
-**SOLID principles** applied in every module (SRP · OCP · LSP · ISP · DIP).
-
----
-
-## Section 4 — Demo: Client & Admin Roles · Erick Armijos (~2.5 min)
-
-### Acceptance Tests — Client Role (HU-01, HU-02, HU-04, HU-06, HU-09, HU-10)
-
-| Step | Action | Expected Result |
-|------|--------|----------------|
-| 1 | Register new client account | Account created, verification email sent |
-| 2 | Verify email via link | Email confirmed, login enabled |
-| 3 | Login with credentials | JWT issued, redirected to client dashboard |
-| 4 | Create a ticket (title, description, service, attachment) | Ticket created with status **Nuevo**, Observer fires notification |
-| 5 | View ticket list with search/filters | Paginated list with status badges and filters working |
-| 6 | Open ticket detail and view history | Full history with timestamps and comments shown |
-
-### Acceptance Tests — Admin Role (HU-05, HU-07, HU-08, HU-17, HU-18)
-
-| Step | Action | Expected Result |
-|------|--------|----------------|
-| 1 | Login as admin | Admin dashboard visible with all tickets |
-| 2 | Assign ticket to a worker | Status changes to **En Proceso**, worker notified |
-| 3 | Reassign ticket to different worker | Reassignment recorded in history |
-| 4 | Generate report (date range, status filter) | Charts render with Recharts |
-| 5 | Export report to PDF / CSV / Excel | File downloads correctly |
-| 6 | Create / block / unblock a user | User state persisted in database |
-
-### Ticket State Machine
-
-```
-[Nuevo] ──► [En Proceso] ──► [En Espera] ──► [En Proceso]
-                         └──► [Resuelto] ──► [Cerrado] (terminal)
-```
-Every transition requires a non-empty comment (BR-35).
-
----
-
-## Section 5 — Demo: Worker Role + Notifications + Test Plan · Elías Rubio (~2 min)
-
-### Acceptance Tests — Worker Role (HU-07, HU-11, HU-12)
-
-| Step | Action | Expected Result |
-|------|--------|----------------|
-| 1 | Login as worker | Worker dashboard with assigned tickets |
-| 2 | Open ticket and add comment | Comment saved, shown in history |
-| 3 | Update status: En Proceso → En Espera | Transition validated, Observer fires notification |
-| 4 | Resume: En Espera → En Proceso | Admin and client notified |
-| 5 | Mark as Resuelto → Cerrado | Terminal state reached, ticket locked |
-
-### Notifications & Real-time (HU-13, HU-14, HU-15, HU-16)
-
-| Feature | Implementation |
-|---------|---------------|
-| Email notifications | SMTP via `EmailNotificationStrategy` (Django Signals) |
-| In-app notifications | `InAppNotificationStrategy` + REST endpoint |
-| Real-time updates | `WebSocketStrategy` + Django Channels + Redis |
-| Notification bell | React component polling + WebSocket push |
-| Notification preferences | Per-user toggles (email / in-app / WS) |
-
-**WebSocket events:**
-- `ticket_updated` — full ticket payload on any state change
-- `notification_new` — notification object pushed to connected clients
-- `user_connected` — presence event with userId, name, role
-
-### Test Plan Overview
-
-**Backend (pytest):**
-- `test_auth_service.py` — login, registration, 5-attempt lockout, JWT refresh
-- `test_password_reset.py` — forgot/reset flow with token expiry
-- `test_ticket_lifecycle.py` — full state machine transitions + invalid transitions
-- `test_validators.py` — Chain of Responsibility: each validator node tested individually
-- `test_ticket_repository.py` — CRUD and filter queries with real DB
-- `test_notification_service.py` — Observer dispatch mock verification
-- `test_strategies.py` — Email/InApp/WebSocket strategy isolation
-- `test_exporters.py` — PDF, CSV, Excel output validation
-
-**Frontend (Vitest + React Testing Library):**
-- `LoginForm.test.tsx` — form validation, submission, error states
-- `TicketStatusBadge.test.tsx` — renders correct badge per status
-- `CreateTicketForm.test.tsx` — field validation, file upload
-- `NotificationBell.test.tsx` — unread count, panel toggle
-- `useNotifications.test.tsx` — hook state after WebSocket event
-
-**CI:** GitHub Actions pipeline (`ci.yml`) — lint → tsc → pytest → vitest → Docker build.
-
----
-
-## Other Important Information
-
-### Security
-
-- JWT stored **in memory only** (never `localStorage`) — prevents XSS token theft.
-- Supabase Row Level Security (RLS) — each user can only query their own data.
-- RBAC with segregated permission classes: `IsClient`, `IsWorker`, `IsAdmin` (ISP).
-- Account lockout after 5 failed login attempts with configurable cooldown.
-
-### API Surface (30+ endpoints)
-
-```
-POST /api/auth/register        GET  /api/tickets
-POST /api/auth/login           GET  /api/tickets/:id
-POST /api/auth/logout          PATCH /api/tickets/:id/estado
-GET  /api/auth/verify-email    PATCH /api/tickets/:id/asignar
-POST /api/auth/forgot-password GET  /api/tickets/:id/historial
-POST /api/auth/reset-password  GET  /api/notificaciones
-GET  /api/catalog/services     PATCH /api/notificaciones/:id/marcar-leida
-GET  /api/usuarios             GET  /api/reportes/tickets
-POST /api/usuarios             POST /api/reportes/exportar
-PATCH /api/usuarios/:id/bloquear
-```
-
-**WebSocket:** `ws://.../ws/tickets/` · `ws://.../ws/notifications/`
-
-### How to Run
-
-```bash
-# Backend
-cd backend
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+cp .env.example .env
 python manage.py migrate
-python manage.py createsuperuser
 daphne config.asgi:application
+```
 
-# Frontend (separate terminal)
+Edita `backend/.env` antes de migrar. Nunca confirmes ese archivo en Git.
+
+### Frontend
+
+```bash
 cd frontend
-npm install
+npm ci
+cp .env.example .env
 npm run dev
 ```
 
-### Team Responsibilities
+En desarrollo, configura `VITE_API_BASE_URL=http://localhost:8000/api` y
+`VITE_WS_URL=ws://localhost:8000`. La aplicación queda disponible en
+`http://localhost:5173` y el health check en `http://localhost:8000/health/`.
 
-| Member | Modules |
-|--------|---------|
-| **Erick Armijos** | Tickets (FE + BE) + ValidatorFactory |
-| **Juan Pérez** | Core foundation + Authentication (FE + BE) + Integration |
-| **Elías Rubio** | Notifications + Realtime + SocketClient |
-| **Jahir Cajas** | Catalog + Public site + UI kit + styles |
-| **Jairo Rodríguez** | Reports + Dashboards + DevOps / Infra + ExporterFactory |
+### Datos de demostración
+
+```bash
+cd backend
+SEED_DEMO_PASSWORD='<contraseña-temporal>' python manage.py seed_demo --confirm-demo
+```
+
+En PowerShell usa `$env:SEED_DEMO_PASSWORD='<contraseña-temporal>'`. Si no se define, el comando
+genera una contraseña aleatoria y la muestra una sola vez. Con `DEBUG=False`, un staging aislado
+también debe definir `ALLOW_DEMO_SEED=True`. No habilites esa variable ni uses cuentas demo en
+producción.
+
+## Verificación
+
+```bash
+# Backend: sistema, linter y suite completa
+cd backend
+python manage.py check
+flake8 apps config core --max-line-length=120 --exclude=migrations
+pytest
+
+# Aceptación
+pytest ../tests/acceptance
+
+# Frontend
+cd ../frontend
+npm run lint
+npm run build
+npm run test
+```
+
+Línea base local del 15-08-2026: **190** pruebas backend, **51** de aceptación y **104** frontend
+aprobadas; build y linters sin errores después de las correcciones de este cierre. Consulta el
+[plan de pruebas](docs/TESTING.md) para alcance, riesgos y criterios de salida.
+
+## Documentación
+
+| Audiencia | Documento |
+|---|---|
+| Cliente y usuarios | [Guía de usuario](docs/USER_GUIDE.md) |
+| Desarrollo | [Arquitectura](docs/ARCHITECTURE.md) y [contribución](CONTRIBUTING.md) |
+| Operaciones | [Despliegue, respaldo y rollback](docs/DEPLOYMENT.md) |
+| Calidad | [Plan de pruebas](docs/TESTING.md) |
+| Cliente y responsables operativos | [Manual integral de entrega](docs/client-manual-latex/README.md) |
+| Seguridad | [Política de seguridad](SECURITY.md) |
+| Historial | [Changelog](CHANGELOG.md) |
+
+## Seguridad y datos
+
+- El backend aplica permisos por rol y filtra los tickets por usuario.
+- El access token vive en memoria; el refresh token se transporta en cookie `HttpOnly`.
+- Los secretos se leen desde variables de entorno y los ejemplos solo contienen marcadores.
+- No publiques capturas, comunicaciones ni exportaciones con datos personales del cliente.
+
+Reporta vulnerabilidades siguiendo [SECURITY.md](SECURITY.md), no mediante un issue público.
+
+## Equipo
+
+Proyecto desarrollado en ESPOL - FIEC por Erick Armijos, Juan Pérez, Elías Rubio, Jahir Cajas y
+Jairo Rodríguez para SassBlum, representada por Vicky Pinto.
+
+## Licencia y propiedad intelectual
+
+Este repositorio no declara una licencia de código abierto. La ausencia de una licencia no concede
+permiso de uso, copia, modificación o redistribución. La titularidad y cualquier licencia de entrega
+deben formalizarse por escrito entre SassBlum, el equipo y ESPOL antes de una transferencia final.

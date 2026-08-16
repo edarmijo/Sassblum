@@ -101,24 +101,6 @@ function PageFallback() {
   )
 }
 
-/**
- * SessionGate — retiene el árbol mientras AuthProvider canjea el refresh token
- * persistido por un access nuevo (BUG-06). Sin esto, los providers autenticados
- * montarían con `user` restaurado pero sin Bearer en memoria → 401 en cascada.
- * Solo bloquea al recargar con sesión previa; el arranque en frío es inmediato.
- */
-function SessionGate({ children }: Readonly<{ children: ReactNode }>) {
-  const { isBootstrapping } = useAuth()
-  if (isBootstrapping) {
-    return (
-      <div className="relative z-10 min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-brand-cyan border-t-transparent animate-spin" aria-label="Restaurando sesión" />
-      </div>
-    )
-  }
-  return <>{children}</>
-}
-
 function SiteLayout() {
   const { user } = useAuth()
   const { pathname } = useLocation()
@@ -315,7 +297,6 @@ export default function App() {
       <DeferredVisualEffects />
       <ScrollToTop />
       <AuthProvider service={authService}>
-        <SessionGate>
         <CatalogProvider service={catalogService}>
           <TestimonialProvider service={testimonialService}>
           <Routes>
@@ -349,7 +330,6 @@ export default function App() {
           </Routes>
           </TestimonialProvider>
         </CatalogProvider>
-        </SessionGate>
       </AuthProvider>
       </BrowserRouter>
     </>

@@ -11,6 +11,7 @@ import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import type { UserRole } from '../interfaces/IAuthService'
+import { SessionRestoreFallback } from './SessionRestoreFallback'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -20,7 +21,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, roles }: Readonly<ProtectedRouteProps>) {
   const { user, isAuthenticated, isBootstrapping } = useAuth()
 
-  if (isBootstrapping) return null
+  if (isBootstrapping) return <SessionRestoreFallback />
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (roles && user && !roles.includes(user.rol)) {
     return <Navigate to="/" replace />

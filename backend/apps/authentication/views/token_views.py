@@ -27,7 +27,7 @@ from apps.authentication.services.auth_service import InvalidRefreshToken
 
 
 class CookieTokenRefreshView(APIView):
-    """POST /api/auth/token/refresh — canjea el refresh (cookie o body) por un access."""
+    """POST /api/auth/token/refresh — canjea la cookie refresh por un access."""
 
     # Sin autenticador: el access token entrante está vencido por definición aquí,
     # y JWTAuthentication respondería 401 antes de que AllowAny actúe (ver BUG-02).
@@ -55,9 +55,6 @@ class CookieTokenRefreshView(APIView):
             {
                 "access": result["access"],
                 "user": result["user"],
-                # DEPRECADO — solo para clientes que aún no leen la cookie.
-                # Retirar cuando todos los clientes usen cookie (ver cookies.py).
-                "refresh": result["refresh"],
             },
             status=status.HTTP_200_OK,
         )

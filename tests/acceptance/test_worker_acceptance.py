@@ -4,7 +4,7 @@ WORKER Role Acceptance Tests — TC-W1 to TC-W6
 Source: Template FIEC — SassBlum Ticket Management System
 Role: Worker · Account: trabajador1@sassblum.com (Carlos Técnico)
 
-State machine: [Nuevo] → [EnProceso] → [EnEspera] → [EnProceso] → [Resuelto] → [Cerrado]
+State machine: Nuevo → EnProceso; staff can move freely among operational states.
 """
 
 import pytest
@@ -44,25 +44,23 @@ class TestTCW1WorkerLogin:
 class TestTCW2StatusUpdate:
     """TC-W2: HU-07 — Status update with mandatory comment."""
 
-    def test_update_status_with_valid_comment_accepted(self, authenticated_worker):
+    def test_update_status_with_valid_comment_accepted(self, authenticated_worker, in_progress_ticket):
         """Given a valid transition with comment, when updating, it's accepted."""
-        # This test verifies the endpoint exists and accepts the request
-        # Actual ticket creation requires a full setup
-        response = authenticated_worker.post('/api/tickets/1/status', {
+        response = authenticated_worker.patch(f'/api/tickets/{in_progress_ticket.id}/estado', {
             'estado': 'EnEspera',
             'comentario': 'Esperando respuesta del cliente',
         })
-        # 200 if ticket exists, 404 if not — both are valid for this test
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 200
+        in_progress_ticket.refresh_from_db()
+        assert in_progress_ticket.estado == 'EnEspera'
 
-    def test_update_status_without_comment_rejected(self, authenticated_worker):
+    def test_update_status_without_comment_rejected(self, authenticated_worker, in_progress_ticket):
         """Given an empty comment, when updating status, it's rejected."""
-        response = authenticated_worker.post('/api/tickets/1/status', {
+        response = authenticated_worker.patch(f'/api/tickets/{in_progress_ticket.id}/estado', {
             'estado': 'EnEspera',
             'comentario': '',
         })
-        # Should reject empty comment (BR-35)
-        assert response.status_code in (400, 404, 405, 422)
+        assert response.status_code == 400
 
 
 # ── TC-W3: Comments ──────────────────────────────────────────────────────────
@@ -73,12 +71,13 @@ class TestTCW2StatusUpdate:
 class TestTCW3Comments:
     """TC-W3: HU-11 — Add comments to ticket."""
 
-    def test_add_comment_endpoint_exists(self, authenticated_worker):
+    def test_add_comment_endpoint_exists(self, authenticated_worker, in_progress_ticket):
         """Given an assigned ticket, when adding a comment, it's recorded."""
-        response = authenticated_worker.post('/api/tickets/1/comments', {
+        response = authenticated_worker.post(f'/api/tickets/{in_progress_ticket.id}/comentario', {
             'comentario': 'Revisé el servidor, problema de DNS',
         })
-        assert response.status_code in (200, 201, 404, 405)
+        assert response.status_code == 200
+        assert response.data['comentario'] == 'Revisé el servidor, problema de DNS'
 
 
 # ── TC-W4: State Machine ─────────────────────────────────────────────────────
@@ -89,50 +88,52 @@ class TestTCW3Comments:
 class TestTCW4StateMachine:
     """TC-W4: HU-07 — State machine valid/invalid transitions."""
 
-    def test_invalid_transition_returns_error(self, authenticated_worker):
-        """Given an invalid transition (e.g., Nuevo→Cerrado), when attempted, it's rejected."""
-        response = authenticated_worker.post('/api/tickets/1/status', {
-            'estado': 'Cerrado',
-            'comentario': 'Intento de cierre directo',
+    def test_invalid_transition_returns_error(self, authenticated_worker, in_progress_ticket):
+        """Given an invalid operational→Nuevo transition, when attempted, it's rejected."""
+        response = authenticated_worker.patch(f'/api/tickets/{in_progress_ticket.id}/estado', {
+            'estado': 'Nuevo',
+            'comentario': 'Intento de volver al estado previo a asignación',
         })
-        # Should reject invalid transition
-        assert response.status_code in (400, 404, 405, 422)
+        assert response.status_code == 422
 
-    def test_valid_transition_path(self, authenticated_worker):
+    def test_valid_transition_path(self, authenticated_worker, in_progress_ticket):
         """Given valid lifecycle path, when following it, transitions succeed."""
-        # This tests the state machine logic exists
-        # Full integration requires seeded data
-        response = authenticated_worker.post('/api/tickets/1/status', {
-            'estado': 'EnProceso',
-            'comentario': 'Iniciando trabajo',
+        response = authenticated_worker.patch(f'/api/tickets/{in_progress_ticket.id}/estado', {
+            'estado': 'Resuelto',
+            'comentario': 'Trabajo verificado y resuelto',
         })
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 200
+        in_progress_ticket.refresh_from_db()
+        assert in_progress_ticket.estado == 'Resuelto'
 
 
 # ── TC-W5: Closure ────────────────────────────────────────────────────────────
-# Given a "Resuelto" ticket, when closing it, then it reaches the terminal
-# "Cerrado" state and can no longer transition.
+# Given a "Resuelto" ticket, when closing it, then it reaches "Cerrado";
+# authorized staff can reopen it later with a comment.
 
 @pytest.mark.django_db
 class TestTCW5Closure:
-    """TC-W5: HU-12 — Ticket closure (terminal state)."""
+    """TC-W5: HU-12 — Ticket closure and reopening."""
 
-    def test_closing_resolved_ticket_succeeds(self, authenticated_worker):
+    def test_closing_resolved_ticket_succeeds(self, authenticated_worker, resolved_ticket):
         """Given a Resuelto ticket, when closing, it becomes Cerrado."""
-        response = authenticated_worker.post('/api/tickets/1/status', {
+        response = authenticated_worker.patch(f'/api/tickets/{resolved_ticket.id}/estado', {
             'estado': 'Cerrado',
             'comentario': 'Cliente confirmó solución',
         })
-        assert response.status_code in (200, 404, 405)
+        assert response.status_code == 200
+        resolved_ticket.refresh_from_db()
+        assert resolved_ticket.estado == 'Cerrado'
 
-    def test_closed_ticket_cannot_transition(self, authenticated_worker):
-        """Given a Cerrado ticket, when trying to reopen, it's rejected."""
-        response = authenticated_worker.post('/api/tickets/1/status', {
+    def test_closed_ticket_can_reopen(self, authenticated_worker, closed_ticket):
+        """Given a Cerrado ticket, authorized staff can request reopening."""
+        response = authenticated_worker.patch(f'/api/tickets/{closed_ticket.id}/estado', {
             'estado': 'EnProceso',
             'comentario': 'Reabrir ticket',
         })
-        # Cerrado is terminal — should reject
-        assert response.status_code in (400, 404, 405, 422)
+        assert response.status_code == 200
+        closed_ticket.refresh_from_db()
+        assert closed_ticket.estado == 'EnProceso'
 
 
 # ── TC-W6: Real-time Updates ─────────────────────────────────────────────────

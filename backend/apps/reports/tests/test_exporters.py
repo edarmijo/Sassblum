@@ -3,9 +3,12 @@ Tests for report exporters + ExporterFactory (no database required).
 Run: pytest apps/reports/tests/test_exporters.py -v
 """
 
-import pytest
+from io import BytesIO
 
-from apps.reports.exporters import CSVExporter
+import pytest
+from openpyxl import load_workbook
+
+from apps.reports.exporters import ExcelExporter, PDFExporter
 from core.factories.exporter_factory import ExporterFactory
 
 ROWS = [
@@ -15,30 +18,33 @@ ROWS = [
 COLUMNS = ["numero", "estado", "prioridad"]
 
 
-class TestCSVExporter:
-    def test_export_includes_header_and_rows(self):
-        content = CSVExporter().export(ROWS, COLUMNS).decode("utf-8-sig")
-        assert "numero,estado,prioridad" in content
-        assert "T-2026-0001,Nuevo,Alta" in content
-        assert "T-2026-0002,Cerrado,Baja" in content
-
+class TestExcelExporter:
     def test_extension_and_mime(self):
-        exp = CSVExporter()
-        assert exp.get_extension() == "csv"
-        assert exp.get_mime_type() == "text/csv"
+        exporter = ExcelExporter()
+        assert exporter.get_extension() == "xlsx"
+        assert exporter.get_mime_type() == (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-    def test_ignores_extra_keys(self):
-        rows = [{"numero": "X", "estado": "Y", "prioridad": "Z", "extra": "ignored"}]
-        content = CSVExporter().export(rows, COLUMNS).decode("utf-8-sig")
-        assert "ignored" not in content
+    def test_export_includes_columns_and_rows(self):
+        workbook = load_workbook(BytesIO(ExcelExporter().export(ROWS, COLUMNS)))
+        values = list(workbook.active.values)
+
+        assert values[0] == tuple(COLUMNS)
+        assert values[1] == ("T-2026-0001", "Nuevo", "Alta")
+        assert values[2] == ("T-2026-0002", "Cerrado", "Baja")
 
 
 class TestExporterFactory:
-    def test_build_csv(self):
-        assert isinstance(ExporterFactory.build("csv"), CSVExporter)
+    def test_build_excel(self):
+        assert isinstance(ExporterFactory.build("excel"), ExcelExporter)
 
     def test_build_is_case_insensitive(self):
-        assert isinstance(ExporterFactory.build("CSV"), CSVExporter)
+        assert isinstance(ExporterFactory.build("EXCEL"), ExcelExporter)
+
+    def test_csv_is_no_longer_supported(self):
+        with pytest.raises(ValueError, match="Formato no soportado"):
+            ExporterFactory.build("csv")
 
     def test_unknown_format_raises(self):
         with pytest.raises(ValueError):
@@ -49,3 +55,32 @@ class TestExporterFactory:
         # the ImportError only surfaces when export() is called.
         assert ExporterFactory.build("pdf") is not None
         assert ExporterFactory.build("excel") is not None
+
+
+class TestPDFExporter:
+    def test_export_uses_landscape_letter_page(self):
+        columns = [
+            "numero", "asunto", "estado", "prioridad",
+            "servicio", "cliente", "asignado", "creado_en",
+        ]
+        rows = [{column: f"Contenido extenso para {column} " * 4 for column in columns}]
+
+        content = PDFExporter().export(rows, columns)
+
+        assert content.startswith(b"%PDF-")
+        assert b"/MediaBox [ 0 0 792 612 ]" in content
+
+    def test_export_handles_multiple_pages_and_long_cells(self):
+        columns = [
+            "numero", "asunto", "estado", "prioridad",
+            "servicio", "cliente", "asignado", "creado_en",
+        ]
+        rows = [
+            {column: f"Fila {index}: valor largo de {column} " * 3 for column in columns}
+            for index in range(80)
+        ]
+
+        content = PDFExporter().export(rows, columns)
+
+        assert content.startswith(b"%PDF-")
+        assert len(content) > 1_000

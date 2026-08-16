@@ -1,0 +1,77 @@
+\chapter{Guía de usuario}
+
+\section{Acceso y sesión}
+
+Abra \href{\FrontendUrl}{\FrontendUrl}. Los clientes nuevos completan el registro y confirman su
+correo antes de iniciar sesión. Los trabajadores y administradores reciben sus cuentas por el canal
+definido por el responsable operativo.
+
+Si una sesión expira, la aplicación intenta renovarla mediante una cookie segura. Si no puede,
+solicita un nuevo inicio de sesión. No comparta contraseñas ni utilice cuentas demo en producción.
+
+\section{Flujo del Cliente}
+
+\begin{enumerate}
+  \item Inicie sesión y abra el panel de tickets.
+  \item Seleccione \textbf{Crear ticket}.
+  \item Elija el servicio y la prioridad; escriba asunto y descripción suficiente para reproducir el
+  problema.
+  \item Adjunte únicamente archivos necesarios y sin secretos.
+  \item Envíe y conserve el número generado.
+  \item Consulte el detalle para revisar estado, responsable, comentarios e historial.
+\end{enumerate}
+
+El Cliente no asigna trabajadores ni modifica directamente los estados operativos. Si necesita
+corregir información, debe añadir un comentario o contactar al responsable indicado.
+
+\section{Flujo del Trabajador}
+
+\begin{enumerate}
+  \item Revise los tickets asignados y filtre por estado o prioridad.
+  \item Abra el detalle antes de actuar; confirme servicio, evidencia e historial.
+  \item Registre avances como comentarios concretos y sin datos sensibles innecesarios.
+  \item Cambie el estado e incluya el motivo. Un comentario vacío es rechazado.
+  \item Marque como resuelto o cerrado solo cuando exista evidencia operativa suficiente.
+\end{enumerate}
+
+La reapertura está permitida. Debe explicar la razón para mantener una línea de tiempo útil.
+
+\section{Flujo del Administrador}
+
+El Administrador puede ver el conjunto de tickets, asignar o reasignar, gestionar usuarios,
+catálogo, galería, logos y testimonios, y consultar reportes.
+
+Para asignar un ticket:
+
+\begin{enumerate}
+  \item abra un ticket \textbf{Nuevo};
+  \item seleccione un trabajador activo;
+  \item registre el comentario de asignación;
+  \item confirme que el estado cambió a \textbf{EnProceso} y que el evento aparece en el historial.
+\end{enumerate}
+
+Para bloquear un usuario, registre primero la razón operativa y confirme el impacto sobre sesiones
+activas. No elimine evidencia de un incidente en curso.
+
+\section{Notificaciones y reportes}
+
+El panel de notificaciones permite consultar y marcar eventos como leídos y ajustar preferencias.
+La ausencia temporal de WebSocket no impide usar la API; la actualización puede requerir recargar.
+
+Los reportes administrativos admiten filtros y exportación en \textbf{PDF} o \textbf{Excel}. Antes
+de compartir un archivo, revise nombres, correos, comentarios y cualquier otro dato personal.
+
+\section{Problemas frecuentes}
+
+\begin{tabularx}{\textwidth}{@{}L{0.28\textwidth}Y@{}}
+\toprule
+\textbf{Síntoma} & \textbf{Acción recomendada}\\
+\midrule
+No inicia sesión & Verifique correo confirmado, credenciales y estado de la cuenta; luego revise la API.\\
+El backend tarda & Espere el despertar del servicio y compruebe \href{\ApiHealthUrl}{el health check}.\\
+No hay tiempo real & Recargue, valide `VITE\_WS\_URL`, origen permitido y disponibilidad de Redis.\\
+No llega correo & Revise spam, remitente, proveedor y logs; no repita el registro de forma masiva.\\
+Adjunto rechazado & Compruebe tamaño y tipo; no desactive la validación para forzar una carga.\\
+Exportación vacía & Revise filtros, periodo y permisos del usuario administrador.\\
+\bottomrule
+\end{tabularx}

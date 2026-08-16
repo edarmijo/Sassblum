@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type {
   IReportsService,
   ReportSummary,
@@ -20,24 +20,33 @@ export function useReports(filters?: ReportFilters) {
   const [summary, setSummary] = useState<ReportSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
+  const invalidateRequests = useCallback(() => { requestIdRef.current++ }, [])
 
   const filtersKey = useMemo(() => JSON.stringify(filters ?? {}), [filters])
 
   const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current
     setIsLoading(true)
     setError(null)
     try {
       // Deps exactas: se reconstruye desde la clave serializada (exhaustive-deps).
       const parsed: ReportFilters = JSON.parse(filtersKey)
-      setSummary(await service.getDashboard(parsed))
+      const result = await service.getDashboard(parsed)
+      if (requestId === requestIdRef.current) setSummary(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar el reporte')
+      if (requestId === requestIdRef.current) {
+        setError(err instanceof Error ? err.message : 'Error al cargar el reporte')
+      }
     } finally {
-      setIsLoading(false)
+      if (requestId === requestIdRef.current) setIsLoading(false)
     }
   }, [service, filtersKey])
 
-  useEffect(() => { load().catch(console.error) }, [load])
+  useEffect(() => {
+    load().catch(console.error)
+    return invalidateRequests
+  }, [load, invalidateRequests])
 
   const exportReport = useCallback(
     (formato: ReportFormat) => service.exportReport(formato, filters),

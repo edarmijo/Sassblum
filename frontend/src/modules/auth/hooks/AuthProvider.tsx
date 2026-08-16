@@ -16,8 +16,8 @@
  *
  *   Al montar con sesión previa, `refreshSession()` canjea la cookie por un access
  *   nuevo Y devuelve el usuario, así que tampoco hace falta guardar el perfil.
- *   Mientras dura ese canje `isBootstrapping` es true y App.tsx no monta nada
- *   autenticado (evitaría peticiones sin Bearer → 401 en cascada).
+ *   Mientras dura ese canje `isBootstrapping` es true. Las rutas que dependen
+ *   de sesión esperan, pero el shell y las páginas públicas siguen disponibles.
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
@@ -42,6 +42,7 @@ import { AuthContext } from './useAuth'
 const SESSION_HINT_KEY = 'sb_has_session'
 /** Claves heredadas — se purgan al arrancar: guardaban tokens en disco (BUG-06). */
 const LEGACY_KEYS = ['auth_tokens', 'auth_session', 'auth_user']
+const SESSION_HINT_TTL_MS = 8 * 24 * 60 * 60 * 1_000
 const SESSION_REFRESH_AFTER_HIDDEN_MS = 60_000
 const ACCESS_TOKEN_EXPIRY_SKEW_MS = 30_000
 
@@ -62,7 +63,20 @@ function jwtExpiresAt(accessToken: string): number {
 
 function hasSessionHint(): boolean {
   try {
-    return localStorage.getItem(SESSION_HINT_KEY) === '1'
+    const storedHint = localStorage.getItem(SESSION_HINT_KEY)
+    if (storedHint === null) return false
+
+    // Compatibilidad con la pista booleana de versiones anteriores. Tras una
+    // restauración correcta se reemplaza por una marca temporal con caducidad.
+    if (storedHint === '1') return true
+
+    const createdAt = Number(storedHint)
+    const age = Date.now() - createdAt
+    const isCurrent = Number.isFinite(createdAt) && createdAt > 0 && age >= 0 && age <= SESSION_HINT_TTL_MS
+    if (isCurrent) return true
+
+    localStorage.removeItem(SESSION_HINT_KEY)
+    return false
   } catch {
     return false
   }
@@ -70,7 +84,7 @@ function hasSessionHint(): boolean {
 
 function setSessionHint(): void {
   try {
-    localStorage.setItem(SESSION_HINT_KEY, '1')
+    localStorage.setItem(SESSION_HINT_KEY, String(Date.now()))
   } catch {
     /* modo privado sin storage: la sesión sigue viva, solo no sobrevive recargas */
   }
@@ -91,13 +105,16 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, service = defaultAuthService }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [refreshToken, setRefreshToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isBootstrapping, setIsBootstrapping] = useState(hasSessionHint)
   const isResumingSession = useRef(false)
   const hiddenAtRef = useRef<number | null>(null)
   const sessionGenerationRef = useRef(0)
   const accessTokenExpiresAtRef = useRef(0)
+  const bootstrapAttemptRef = useRef<{
+    service: IAuthService
+    promise: ReturnType<IAuthService['refreshSession']>
+  } | null>(null)
 
   // Rehidratación: la cookie httpOnly se canjea por access + usuario.
   useEffect(() => {
@@ -112,22 +129,26 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
 
     if (!hasSessionHint()) return
 
+    if (bootstrapAttemptRef.current?.service !== service) {
+      bootstrapAttemptRef.current = { service, promise: service.refreshSession() }
+    }
+
+    const bootstrapAttempt = bootstrapAttemptRef.current.promise
     let cancelled = false
     void (async () => {
       try {
-        const { user: u, tokens } = await service.refreshSession()
+        const { user: u, tokens } = await bootstrapAttempt
         if (cancelled) return
-        apiClient.setTokens(tokens.accessToken, tokens.refreshToken || null)
+        apiClient.setAccessToken(tokens.accessToken)
         accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
         socketClient.connect(tokens.accessToken)
-        setRefreshToken(tokens.refreshToken || null)
+        setSessionHint()
         setUser(u)
       } catch {
         // Cookie ausente, vencida o revocada: sesión muerta, se limpia sin ruido.
         if (cancelled) return
         clearSessionHint()
         setUser(null)
-        setRefreshToken(null)
       } finally {
         if (!cancelled) setIsBootstrapping(false)
       }
@@ -147,14 +168,12 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
       accessTokenExpiresAtRef.current = 0
       socketClient.disconnect()
       setUser(null)
-      setRefreshToken(null)
     })
   }, [])
 
   // Keep real-time authentication in sync when Axios silently rotates a token.
   useEffect(() => {
-    apiClient.setTokenRefreshHandler((accessToken, nextRefreshToken) => {
-      setRefreshToken(nextRefreshToken)
+    apiClient.setTokenRefreshHandler((accessToken) => {
       accessTokenExpiresAtRef.current = jwtExpiresAt(accessToken)
       socketClient.updateToken(accessToken)
     })
@@ -172,15 +191,15 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
       try {
         const { user: refreshedUser, tokens } = await service.refreshSession()
         if (sessionGeneration !== sessionGenerationRef.current) return
-        apiClient.setTokens(tokens.accessToken, tokens.refreshToken || null)
+        apiClient.setAccessToken(tokens.accessToken)
         accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
+        setSessionHint()
         if (!document.hidden) {
           socketClient.connect(tokens.accessToken)
           requestNotificationsRevalidation()
         } else {
           socketClient.updateToken(tokens.accessToken)
         }
-        setRefreshToken(tokens.refreshToken || null)
         setUser(refreshedUser)
       } catch {
         // Do not force a logout on a transient offline/cold-start failure. The
@@ -225,11 +244,10 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
     try {
       const { user: u, tokens } = await service.login(credentials)
       if (sessionGeneration !== sessionGenerationRef.current) return
-      apiClient.setTokens(tokens.accessToken, tokens.refreshToken)
+      apiClient.setAccessToken(tokens.accessToken)
       accessTokenExpiresAtRef.current = jwtExpiresAt(tokens.accessToken)
       socketClient.connect(tokens.accessToken)  // live notifications (Observer FE)
       setSessionHint()  // la credencial la custodia la cookie httpOnly, no nosotros
-      setRefreshToken(tokens.refreshToken)
       setUser(u)
     } finally {
       setIsLoading(false)
@@ -241,20 +259,19 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
   const logout = useCallback(async () => {
     sessionGenerationRef.current++
     // H#4 (audit): Optimistic logout — clear UI instantly, fire API in background.
-    // El backend lee el refresh de la cookie; el valor en memoria es respaldo.
-    service.logout(refreshToken ?? '').catch(() => {
+    // El backend lee el refresh exclusivamente desde la cookie httpOnly.
+    service.logout().catch(() => {
       // Silently ignore if backend fails to invalidate (e.g. network error)
     })
 
     // Immediately clear all local state to avoid UI lag
-    apiClient.setTokens(null, null)
+    apiClient.setAccessToken(null)
     accessTokenExpiresAtRef.current = 0
     resetNotificationsCache()
     socketClient.disconnect()
     clearSessionHint()
     setUser(null)
-    setRefreshToken(null)
-  }, [service, refreshToken])
+  }, [service])
 
   const updateProfile = useCallback(async (data: ProfileUpdateData) => {
     const updated = await service.updateProfile(data)

@@ -11,7 +11,7 @@ El envío de correos se desvía a un backend en memoria durante la siembra para 
 mandar emails reales al disparar el Observer.
 
 Uso:
-    SEED_DEMO_PASSWORD=<contraseña> python manage.py seed_demo
+    SEED_DEMO_PASSWORD=<contraseña> python manage.py seed_demo --confirm-demo
     (si no se define, se genera una aleatoria y se imprime en el resumen)
 """
 
@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import os
 import secrets
+from typing import Any
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.test.utils import override_settings
 
@@ -94,7 +96,23 @@ ACCOUNTS = [
 class Command(BaseCommand):
     help = "Carga datos de prueba (servicios reales, cuentas y tickets) para la demo. Idempotente."
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser: Any) -> None:
+        parser.add_argument(
+            "--confirm-demo",
+            action="store_true",
+            help="Confirma explícitamente que la base configurada es exclusiva para demo o pruebas.",
+        )
+
+    def handle(self, *args: Any, **options: Any) -> None:
+        if not options["confirm_demo"]:
+            raise CommandError(
+                "Operación cancelada: use --confirm-demo solo después de verificar que la base no es producción."
+            )
+        if not settings.DEBUG and os.environ.get("ALLOW_DEMO_SEED") != "True":
+            raise CommandError(
+                "Operación cancelada con DEBUG=False. Para un staging aislado, defina "
+                "ALLOW_DEMO_SEED=True además de --confirm-demo. Nunca lo habilite en producción."
+            )
         # Evita enviar correos reales al disparar el Observer durante la siembra.
         with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
             self._seed()

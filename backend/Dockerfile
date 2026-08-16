@@ -60,5 +60,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ASGI port (Render inyecta PORT; localmente usa 8000)
 EXPOSE 8000
 
-# Run migrations and start Daphne using exec form via sh
-CMD ["sh", "-c", "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
+# Migrations are a controlled release step; container startup only launches the application.
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
