@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import { Reveal, FocusReveal } from '../../../../core/ui/motion'
-import { BackLink } from '../../../../core/ui/BackLink'
+import { BackBar } from '../../../../core/ui/layout/BackBar'
 import { dashboardRoute } from '../../../../core/utils/dashboardRoute'
 import { Button } from '../../../../core/ui/button'
 import { TicketDetail } from '../../components/TicketDetail'
@@ -52,9 +52,9 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
   )
 
   return (
-    <section className="max-w-3xl mx-auto px-4 py-8 space-y-5">
+    <section className="max-w-3xl mx-auto px-4 pb-12 space-y-5">
       <Reveal y={10}>
-        <BackLink to={back.to} label={back.backLabel} />
+        <BackBar to={back.to} label={back.backLabel} />
       </Reveal>
       <FocusReveal>
         <div className="rounded-xl p-6" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
