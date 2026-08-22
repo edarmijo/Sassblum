@@ -67,6 +67,13 @@ class Ticket(models.Model):
         blank=True,
         verbose_name="identificación histórica del contacto",
     )
+    contacto_ruc_original = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        verbose_name="identificación original del contacto legado",
+        help_text="Valor exacto anterior a la normalización de la migración histórica.",
+    )
     contacto_empresa = models.CharField(
         max_length=150,
         null=True,
@@ -76,7 +83,7 @@ class Ticket(models.Model):
 
     # ── Content ───────────────────────────────────────────────────────────────
     asunto = models.CharField(
-        max_length=80,
+        max_length=120,
         verbose_name="asunto",
     )
     descripcion = models.TextField(
@@ -117,6 +124,11 @@ class Ticket(models.Model):
         choices=Prioridad.choices,
         default=Prioridad.MEDIA,
         verbose_name="prioridad",
+    )
+    legacy_es_spam = models.BooleanField(
+        default=False,
+        verbose_name="marcado como spam legado",
+        help_text="Clasificación conservada por la importación; el ticket no se elimina.",
     )
 
     # ── Timestamps ────────────────────────────────────────────────────────────
