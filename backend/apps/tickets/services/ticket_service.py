@@ -67,12 +67,16 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             raise TicketValidationError(result.field_name, "; ".join(result.errors))
 
         numero = self.generate_ticket_number(datetime.now().year)
+        contacto_nombre = f"{user.first_name} {user.last_name}".strip() or user.email
         ticket = self._repo.create({
             "numero": numero,
             "asunto": data["asunto"],
             "descripcion": data["descripcion"],
             "servicio_id": data["servicio_id"],
             "cliente": user,
+            "contacto_nombre": contacto_nombre,
+            "contacto_ruc": user.ruc,
+            "contacto_empresa": user.empresa,
             "estado": Ticket.Estado.NUEVO,
             "prioridad": data.get("prioridad", Ticket.Prioridad.MEDIA),
         })
@@ -266,8 +270,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         return {
             **cls._summary(t),
             "descripcion": t.descripcion,
-            "cliente_nombre": f"{t.cliente.first_name} {t.cliente.last_name}".strip()
-                              or t.cliente.email,
+            "cliente_nombre": t.contacto_nombre_efectivo,
             "asignado_nombre": (
                 f"{t.asignado.first_name} {t.asignado.last_name}".strip() or t.asignado.email
             ) if t.asignado_id else None,

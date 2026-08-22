@@ -54,6 +54,26 @@ class Ticket(models.Model):
         help_text="Número del ticket en el sistema anterior (cPanel). Solo para tickets migrados.",
     )
 
+    # ── Historical client contact snapshot ──────────────────────────────────
+    contacto_nombre = models.CharField(
+        max_length=301,
+        null=True,
+        blank=True,
+        verbose_name="nombre histórico del contacto",
+    )
+    contacto_ruc = models.CharField(
+        max_length=13,
+        null=True,
+        blank=True,
+        verbose_name="identificación histórica del contacto",
+    )
+    contacto_empresa = models.CharField(
+        max_length=150,
+        null=True,
+        blank=True,
+        verbose_name="empresa histórica del contacto",
+    )
+
     # ── Content ───────────────────────────────────────────────────────────────
     asunto = models.CharField(
         max_length=80,
@@ -119,3 +139,25 @@ class Ticket(models.Model):
     def is_closed(self) -> bool:
         """True while the ticket is currently in Cerrado; it may still be reopened."""
         return self.estado == self.Estado.CERRADO
+
+    @property
+    def contacto_nombre_efectivo(self) -> str:
+        """Return the snapshot, falling back only for tickets created before B1."""
+        if self.contacto_nombre is not None:
+            return self.contacto_nombre
+        nombre_perfil = f"{self.cliente.first_name} {self.cliente.last_name}".strip()
+        return nombre_perfil or self.cliente.email
+
+    @property
+    def contacto_ruc_efectivo(self) -> str:
+        """Return the historical ID, or the profile value for a pre-B1 ticket."""
+        if self.contacto_ruc is not None:
+            return self.contacto_ruc
+        return self.cliente.ruc
+
+    @property
+    def contacto_empresa_efectiva(self) -> str:
+        """Return the historical company, or the profile value for a pre-B1 ticket."""
+        if self.contacto_empresa is not None:
+            return self.contacto_empresa
+        return self.cliente.empresa
