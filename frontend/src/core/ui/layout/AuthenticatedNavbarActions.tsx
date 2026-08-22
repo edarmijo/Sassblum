@@ -1,5 +1,6 @@
 import { Bell, LogOut, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useOriginState } from '../../hooks/useBackTarget'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
 import { useNotifications } from '../../../modules/notifications/hooks/useNotifications'
 import { Badge } from '../badge'
@@ -19,6 +20,9 @@ export function AuthenticatedNavbarActions() {
   const { user, logout } = useAuth()
   const { unreadCount } = useNotifications()
   const navigate = useNavigate()
+  // Sembrado para que el "volver" de /notificaciones y /perfil regrese a la
+  // vista exacta desde la que se abrieron, no al panel genérico del rol.
+  const origin = useOriginState()
 
   if (!user) return null
 
@@ -26,6 +30,7 @@ export function AuthenticatedNavbarActions() {
     <div className="flex items-center gap-3">
       <Link
         to="/notificaciones"
+        state={origin}
         className="relative text-white/60 hover:text-white transition-colors"
         style={{ transitionDuration: '200ms' }}
         aria-label="Notificaciones"
@@ -70,7 +75,7 @@ export function AuthenticatedNavbarActions() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
           <DropdownMenuItem
-            onClick={() => navigate('/perfil')}
+            onClick={() => navigate('/perfil', { state: origin })}
             className="text-white/70 focus:text-white focus:bg-white/6"
           >
             <User className="mr-2 h-4 w-4" />

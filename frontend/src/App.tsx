@@ -9,12 +9,14 @@
  * Notification/Ticket providers (mounted only when a session exists).
  */
 
-import { BrowserRouter, Routes, Route, Outlet, Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useNavigate, useNavigationType, useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { useEffect, lazy, Suspense, useState, type ReactNode } from 'react'
 import { DeferredVisualEffects } from './core/ui/DeferredVisualEffects'
 import { PageLoader } from './core/ui/PageLoader'
 import { PageTransition } from './core/ui/PageTransition'
 import { SmoothLink as Link } from './core/ui/SmoothLink'
+import { BackLink } from './core/ui/BackLink'
+import { dashboardRoute } from './core/utils/dashboardRoute'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'
@@ -84,12 +86,20 @@ const ProfilePage = lazy(lazyRetry(() => import('./modules/auth/pages/ProfilePag
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
-/** Al cambiar de ruta, vuelve al tope de la página (evita quedar abajo). */
+/**
+ * Al navegar hacia adelante, vuelve al tope de la página (evita quedar abajo).
+ *
+ * En POP (atrás/adelante) NO se toca el scroll: el navegador restaura la
+ * posición previa y forzar el tope destruiría esa restauración, que es
+ * justamente lo que hace útil el retorno desde una pantalla hoja.
+ */
 function ScrollToTop() {
   const { pathname } = useLocation()
+  const navigationType = useNavigationType()
   useEffect(() => {
+    if (navigationType === 'POP') return
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
-  }, [pathname])
+  }, [pathname, navigationType])
   return null
 }
 
@@ -131,13 +141,18 @@ function SiteLayout() {
   ) : tree
 }
 
-function AuthCard({ title, subtitle, children, footer }: Readonly<{ title: string; subtitle: string; children: ReactNode; footer?: ReactNode }>) {
+function AuthCard({ title, subtitle, children, footer, backTo, backLabel }: Readonly<{ title: string; subtitle: string; children: ReactNode; footer?: ReactNode; backTo?: string; backLabel?: string }>) {
   return (
     <AuthServiceProvider service={authService}>
       <div className="relative min-h-[calc(100dvh-4rem)] flex items-start justify-center overflow-hidden px-4 pb-12 pt-24 sm:items-center">
         {/* teal radial glow behind the card */}
         <div aria-hidden className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full blur-3xl" style={{ background: 'rgba(0,196,224,0.08)' }} />
         <div className="relative w-full max-w-md">
+          {backTo && backLabel && (
+            <div className="mb-4">
+              <BackLink to={backTo} label={backLabel} />
+            </div>
+          )}
           <div className="mb-6 flex justify-center">
             <Link to="/" className="inline-flex items-center rounded-full px-5 py-1.5" style={{ border: '1px solid rgba(0,196,224,0.3)', background: 'rgba(0,196,224,0.06)' }}>
               <span className="tracking-wider font-semibold" style={{ color: '#00c4e0' }}>SASS BLUM</span>
@@ -177,7 +192,9 @@ function LoginRoute() {
       <AuthCard
         title="Iniciar sesión"
         subtitle="Accede a tu cuenta de SassBlum"
-        footer={<>¿No tienes cuenta? <Link to="/register" className="text-brand-cyan-dark font-medium hover:underline">Regístrate</Link>{' · '}<Link to="/forgot-password" className="text-brand-cyan-dark font-medium hover:underline">Olvidé mi contraseña</Link></>}
+        backTo="/"
+        backLabel="Volver al inicio"
+        footer={<>¿No tienes cuenta? <Link to="/register" className="text-brand-cyan-dark font-medium hover:underline">Regístrate</Link>{' · '}<Link to="/forgot-password" state={{ from: '/login' }} className="text-brand-cyan-dark font-medium hover:underline">Olvidé mi contraseña</Link></>}
       >
         <LoginForm onSuccess={() => navigate(next, { replace: true })} />
       </AuthCard>
@@ -192,6 +209,8 @@ function RegisterRoute() {
       <AuthCard
         title="Crear cuenta"
         subtitle="Regístrate como cliente de SassBlum"
+        backTo="/"
+        backLabel="Volver al inicio"
         footer={<>¿Ya tienes cuenta? <Link to="/login" className="text-brand-cyan-dark font-medium hover:underline">Inicia sesión</Link></>}
       >
         <RegisterForm
@@ -220,7 +239,7 @@ function VerifyPendingRoute() {
 function ForgotRoute() {
   return (
     <PublicRoute>
-      <AuthCard title="Recuperar contraseña" subtitle="Te enviaremos un enlace a tu correo"><ForgotPasswordPage /></AuthCard>
+      <AuthCard title="Recuperar contraseña" subtitle="Te enviaremos un enlace a tu correo" backTo="/login" backLabel="Volver a iniciar sesión"><ForgotPasswordPage /></AuthCard>
     </PublicRoute>
   )
 }
@@ -234,7 +253,7 @@ function ResetRoute() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   return (
-    <AuthCard title="Nueva contraseña" subtitle="Define una contraseña nueva para tu cuenta">
+    <AuthCard title="Nueva contraseña" subtitle="Define una contraseña nueva para tu cuenta" backTo="/login" backLabel="Volver a iniciar sesión">
       <ResetPasswordPage token={params.get('token') ?? ''} onSuccess={() => navigate('/login')} />
     </AuthCard>
   )
@@ -250,15 +269,12 @@ function VerifyRoute() {
 function AppRedirect() {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  if (user.rol === 'ADMINISTRADOR') return <Navigate to="/admin" replace />
-  if (user.rol === 'TRABAJADOR') return <Navigate to="/panel" replace />
-  return <Navigate to="/mis-tickets" replace />
+  return <Navigate to={dashboardRoute(user.rol).to} replace />
 }
 
 function DetailRoute() {
   const { id } = useParams()
-  const navigate = useNavigate()
-  return <TicketDetailPage ticketId={id ?? ''} onBack={() => navigate('/app')} />
+  return <TicketDetailPage ticketId={id ?? ''} />
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────

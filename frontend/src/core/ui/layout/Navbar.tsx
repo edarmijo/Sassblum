@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '../../../modules/auth/hooks/useAuth'
-import type { AuthUser, UserRole } from '../../../modules/auth/interfaces/IAuthService'
+import type { AuthUser } from '../../../modules/auth/interfaces/IAuthService'
+import { dashboardRoute } from '../../utils/dashboardRoute'
 import { SmoothLink as Link } from '../SmoothLink'
 
 const AuthenticatedNavbarActions = lazy(() =>
@@ -26,12 +27,6 @@ const PUBLIC_ITEMS: NavItem[] = [
   { to: '/galeria', label: 'GALERÍA' },
   { to: '/clientes', label: 'CLIENTES' },
 ]
-
-const DASHBOARD_BY_ROLE: Record<UserRole, NavItem> = {
-  CLIENTE: { to: '/mis-tickets', label: 'MIS TICKETS' },
-  TRABAJADOR: { to: '/panel', label: 'PANEL' },
-  ADMINISTRADOR: { to: '/admin', label: 'ADMIN' },
-}
 
 /* ─── AuthedActions (desktop) ───────────────────────────────────────── */
 
@@ -211,7 +206,10 @@ export function Navbar() {
 
   /* build nav items */
   const items: NavItem[] = [...PUBLIC_ITEMS]
-  if (user) items.push(DASHBOARD_BY_ROLE[user.rol])
+  if (user) {
+    const { to, label } = dashboardRoute(user.rol)
+    items.push({ to, label })
+  }
   else items.push({ to: '/login', label: 'INGRESAR' })
 
   const isActive = (to: string) => location.pathname === to

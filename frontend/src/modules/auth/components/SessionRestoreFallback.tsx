@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { BackLink } from '../../../core/ui/BackLink'
 
 const SLOW_RESTORE_NOTICE_MS = 4_000
 
@@ -34,12 +34,9 @@ export function SessionRestoreFallback() {
             : 'Estamos comprobando tu acceso de forma segura.'}
         </p>
         {isSlow ? (
-          <Link
-            to="/"
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-brand-cyan/30 px-5 py-2 text-sm font-medium text-brand-cyan transition-colors hover:bg-brand-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-cyan"
-          >
-            Volver al inicio
-          </Link>
+          <div className="mt-5 flex justify-center">
+            <BackLink to="/" label="Volver al inicio" />
+          </div>
         ) : null}
       </div>
     </section>

@@ -6,6 +6,8 @@ import { DashboardCard, DashboardCardHeader, DashboardCardTitle, DashboardCardDe
 import { Skeleton } from '../../core/ui/skeleton'
 import { FocusReveal } from '../../core/ui/motion'
 import { PageHero } from '../../core/ui/layout/PageHero'
+import { useTabParam } from '../../core/hooks/useTabParam'
+import { useOriginState } from '../../core/hooks/useBackTarget'
 import { useTicketsList } from '../tickets/hooks/useTickets'
 import { TicketsTable } from '../tickets/components/TicketsTable'
 import { TicketFilters } from '../tickets/components/TicketFilters'
@@ -21,10 +23,15 @@ const TestimonialAdminPanel = lazy(() => import('../testimonials/components/Test
 
 const ADMIN_TAB_FALLBACK = <Skeleton className="h-48 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />
 
+/** Pestañas admitidas en `?tab=`; el orden es el de la barra de pestañas. */
+const ADMIN_TABS = ['tickets', 'users', 'catalog', 'gallery', 'clients', 'testimonials', 'reports', 'service-details'] as const
+
 export function AdminDashboard() {
   const [ticketFilters, setTicketFilters] = useState<TicketFilterOptions>({})
   const { tickets, isLoading, error } = useTicketsList(ticketFilters)
   const navigate = useNavigate()
+  const tab = useTabParam('tickets', ADMIN_TABS)
+  const origin = useOriginState()
 
   return (
     <div className="min-h-screen">
@@ -40,7 +47,7 @@ export function AdminDashboard() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-12">
         <FocusReveal>
           <DashboardTabsStyle />
-          <DashboardTabs defaultValue="tickets" className="space-y-6">
+          <DashboardTabs value={tab.value} onValueChange={tab.onValueChange} className="space-y-6">
             <DashboardTabsList>
               <DashboardTabsTrigger value="tickets"><TicketIcon className="h-4 w-4 mr-2" />Tickets</DashboardTabsTrigger>
               <DashboardTabsTrigger value="users"><Users className="h-4 w-4 mr-2" />Usuarios</DashboardTabsTrigger>
@@ -64,7 +71,7 @@ export function AdminDashboard() {
                   {isLoading ? (
                     <Skeleton className="h-48 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />
                   ) : (
-                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`)} />
+                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`, { state: origin })} />
                   )}
                 </DashboardCardContent>
               </DashboardCard>

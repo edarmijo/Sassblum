@@ -9,6 +9,7 @@ import { Label } from '../../../../core/ui/label'
 import { Button } from '../../../../core/ui/button'
 import { Alert, AlertDescription } from '../../../../core/ui/alert'
 import { PageHero } from '../../../../core/ui/layout/PageHero'
+import { dashboardRoute } from '../../../../core/utils/dashboardRoute'
 import {
   DashboardCard, DashboardCardHeader, DashboardCardTitle,
   DashboardCardDescription, DashboardCardContent,
@@ -21,6 +22,7 @@ import {
  */
 export function ProfilePage() {
   const { user, updateProfile } = useAuth()
+  const back = dashboardRoute(user?.rol)
   const [form, setForm] = useState({
     nombre: user?.nombre ?? '',
     apellido: user?.apellido ?? '',
@@ -66,6 +68,8 @@ export function ProfilePage() {
         subtitle="Actualiza tus datos de contacto"
         accent="cyan"
         orbPosition="top-right"
+        backTo={back.to}
+        backLabel={back.backLabel}
       />
 
       <div className="relative z-10 max-w-xl mx-auto px-4 sm:px-6 -mt-12 pb-16">

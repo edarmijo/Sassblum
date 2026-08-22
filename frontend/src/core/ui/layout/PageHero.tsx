@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE_APPLE } from '../motion/ease'
 import { InteractiveGlow } from '../InteractiveGlow'
+import { BackLink } from '../BackLink'
 
 const ORB_COLOR = {
   cyan: '#00d4ff',
@@ -19,6 +20,10 @@ interface PageHeroProps {
   subtitle: string
   accent?: keyof typeof ORB_COLOR
   orbPosition?: keyof typeof ORB_POSITION
+  /** Destino de retorno; omitir en pantallas raíz (dashboards, sitio público). */
+  backTo?: string
+  /** Texto del retorno. Obligatorio junto a `backTo`. */
+  backLabel?: string
 }
 
 /**
@@ -31,6 +36,8 @@ export function PageHero({
   subtitle,
   accent = 'cyan',
   orbPosition = 'top-right',
+  backTo,
+  backLabel,
 }: Readonly<PageHeroProps>) {
   const reduceMotion = useReducedMotion() ?? false
   const { primary, secondary } = ORB_POSITION[orbPosition]
@@ -61,6 +68,16 @@ export function PageHero({
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {backTo && backLabel && (
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 flex justify-start"
+          >
+            <BackLink to={backTo} label={backLabel} className="text-white/60 hover:text-brand-cyan" />
+          </motion.div>
+        )}
         <motion.p
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

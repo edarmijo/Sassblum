@@ -11,6 +11,8 @@ import { GlowCard } from '../../core/ui/GlowCard'
 import { Reveal, FocusReveal } from '../../core/ui/motion'
 import { EASE_APPLE } from '../../core/ui/motion/ease'
 import { PageHero } from '../../core/ui/layout/PageHero'
+import { useTabParam } from '../../core/hooks/useTabParam'
+import { useOriginState } from '../../core/hooks/useBackTarget'
 import { useTicketsList } from '../tickets/hooks/useTickets'
 import { TicketsTable } from '../tickets/components/TicketsTable'
 import { TicketFilters } from '../tickets/components/TicketFilters'
@@ -65,6 +67,14 @@ interface TicketsPanelProps {
   showCreate?: boolean
 }
 
+/**
+ * Pestañas admitidas en `?tab=`. El panel de trabajador no expone "create", así
+ * que un `?tab=create` manipulado allí debe degradar al listado en lugar de
+ * dejar la vista vacía.
+ */
+const PANEL_TABS = ['list', 'create'] as const
+const LIST_ONLY_TABS = ['list'] as const
+
 // Claves estables para los skeletons de las stat cards (sin índice como key)
 const STAT_SKELETON_KEYS = Array.from({ length: 4 }, (_, i) => `stat-skeleton-${i}`)
 
@@ -72,6 +82,8 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
   const [ticketFilters, setTicketFilters] = useState<TicketFilterOptions>({})
   const { tickets, isLoading, error } = useTicketsList(ticketFilters)
   const navigate = useNavigate()
+  const tab = useTabParam('list', showCreate ? PANEL_TABS : LIST_ONLY_TABS)
+  const origin = useOriginState()
   const stats = computeStats(tickets)
 
   return (
@@ -103,7 +115,7 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
         {/* Tabs with glassmorphism */}
         <Reveal y={16}>
           <DashboardTabsStyle />
-          <DashboardTabs defaultValue="list" className="space-y-6">
+          <DashboardTabs value={tab.value} onValueChange={tab.onValueChange} className="space-y-6">
             <DashboardTabsList>
               <DashboardTabsTrigger value="list"><TicketIcon className="h-4 w-4 mr-2" />Tickets</DashboardTabsTrigger>
               {showCreate && <DashboardTabsTrigger value="create"><Plus className="h-4 w-4 mr-2" />Crear Ticket</DashboardTabsTrigger>}
@@ -121,7 +133,7 @@ export function TicketsPanel({ title, subtitle, showCreate = false }: Readonly<T
                   {isLoading ? (
                     <Skeleton className="h-48 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />
                   ) : (
-                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`)} />
+                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`, { state: origin })} />
                   )}
                 </DashboardCardContent>
               </DashboardCard>
