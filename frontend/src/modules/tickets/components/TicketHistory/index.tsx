@@ -12,6 +12,7 @@ const EVENT_LABELS: Record<string, string> = {
   comentario:    'Comentario',
   asignacion:    'Asignación',
   reasignacion:  'Reasignación',
+  contacto_actualizado: 'Contacto actualizado',
 }
 
 /**
