@@ -38,6 +38,9 @@ interface BackendAttachment {
 export interface BackendTicketDetail extends BackendTicketSummary {
   descripcion: string
   cliente_nombre: string
+  cliente_email: string
+  cliente_ruc: string
+  cliente_empresa: string
   asignado_nombre: string | null
   adjuntos: BackendAttachment[]
   eventos: BackendTicketEvent[]
@@ -83,6 +86,9 @@ export function mapTicketDetail(ticket: BackendTicketDetail): TicketDetail {
     ...mapTicketSummary(ticket),
     descripcion: ticket.descripcion,
     clienteNombre: ticket.cliente_nombre,
+    clienteEmail: ticket.cliente_email,
+    clienteRuc: ticket.cliente_ruc,
+    clienteEmpresa: ticket.cliente_empresa,
     asignadoNombre: ticket.asignado_nombre,
     adjuntos: (ticket.adjuntos ?? []).map(mapAttachment),
     eventos: (ticket.eventos ?? []).map(mapTicketEvent),

@@ -7,11 +7,13 @@ import { Button } from '../../../../core/ui/button'
 import { TicketDetail } from '../../components/TicketDetail'
 import { StatusChangeForm } from '../../components/StatusChangeForm'
 import { AssignModal } from '../../components/AssignModal'
+import { ContactEditForm } from '../../components/ContactEditForm'
 import { getAssignmentMode } from '../../components/AssignModal/assignmentOperation'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { ticketService } from '../../services/TicketService'
+import { ticketAdminService } from '../../services/TicketAdminService'
 import { useTicketDetail } from '../../hooks/useTickets'
-import type { TicketEstado } from '../../interfaces/ITicketService'
+import type { TicketContactUpdate, TicketEstado } from '../../interfaces/ITicketService'
 import { TicketStateMachine } from '../../state_machine'
 
 interface TicketDetailPageProps {
@@ -41,6 +43,10 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
 
   const handleStatusChange = async (newStatus: TicketEstado, comment: string) => {
     replaceTicket(await ticketService.updateStatus(ticketId, newStatus, comment))
+  }
+
+  const handleContactUpdate = async (contact: TicketContactUpdate) => {
+    replaceTicket(await ticketAdminService.updateContact(ticketId, contact))
   }
 
   const canChangeStatus = Boolean(
@@ -80,6 +86,12 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
           onClose={() => setShowAssign(false)}
           onAssigned={replaceTicket}
         />
+      )}
+
+      {isAdmin && ticket && (
+        <FocusReveal delay={0.08}>
+          <ContactEditForm ticket={ticket} onSubmit={handleContactUpdate} />
+        </FocusReveal>
       )}
 
       {/* H#3 (cliente): Status change with observations for staff */}

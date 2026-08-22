@@ -273,3 +273,73 @@ class TestTicketActionsAPI:
             tipo_evento=TicketEvent.TipoEvento.COMENTARIO,
             autor=admin,
         ).exists()
+
+    def test_admin_corrects_ticket_contact_without_changing_login_email(
+        self, admin, ticket
+    ) -> None:
+        original_account_email = ticket.cliente.email
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/contacto",
+            {"nombre": "Contacto Corregido", "email": "Correcto@Example.COM"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        ticket.refresh_from_db()
+        ticket.cliente.refresh_from_db()
+        assert ticket.contacto_nombre == "Contacto Corregido"
+        assert ticket.contacto_email == "correcto@example.com"
+        assert ticket.cliente.email == original_account_email
+        assert response.data["cliente_nombre"] == "Contacto Corregido"
+        assert response.data["cliente_email"] == "correcto@example.com"
+        event = TicketEvent.objects.get(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
+        )
+        assert event.autor == admin
+        assert original_account_email in event.comentario
+        assert "correcto@example.com" in event.comentario
+
+    def test_only_admin_can_correct_ticket_contact(
+        self, worker, ticket
+    ) -> None:
+        client = APIClient()
+        for actor in (worker, ticket.cliente):
+            client.force_authenticate(user=actor)
+            response = client.patch(
+                f"/api/tickets/{ticket.id}/contacto",
+                {"nombre": "Intento no autorizado"},
+                format="json",
+            )
+            assert response.status_code == 403
+        assert not TicketEvent.objects.filter(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
+        ).exists()
+
+    def test_contact_correction_validates_email_and_requires_a_change(
+        self, admin, ticket
+    ) -> None:
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        invalid = client.patch(
+            f"/api/tickets/{ticket.id}/contacto",
+            {"email": "correo-invalido"},
+            format="json",
+        )
+        unchanged = client.patch(
+            f"/api/tickets/{ticket.id}/contacto",
+            {"email": ticket.cliente.email},
+            format="json",
+        )
+
+        assert invalid.status_code == 400
+        assert unchanged.status_code == 400
+        assert not TicketEvent.objects.filter(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
+        ).exists()

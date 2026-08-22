@@ -57,6 +57,7 @@ def test_new_ticket_keeps_contact_after_profile_changes(
     ticket = Ticket.objects.get(pk=created["id"])
 
     assert ticket.contacto_nombre == "Victoria Pinto"
+    assert ticket.contacto_email == "contacto@example.com"
     assert ticket.contacto_ruc == "0999999999001"
     assert ticket.contacto_empresa == "SassBlum"
 
@@ -70,9 +71,11 @@ def test_new_ticket_keeps_contact_after_profile_changes(
     detail = TicketService().get_ticket_detail(ticket.id, cliente)
 
     assert ticket.contacto_nombre == "Victoria Pinto"
+    assert ticket.contacto_email == "contacto@example.com"
     assert ticket.contacto_ruc == "0999999999001"
     assert ticket.contacto_empresa == "SassBlum"
     assert detail["cliente_nombre"] == "Victoria Pinto"
+    assert detail["cliente_email"] == "contacto@example.com"
 
 
 @pytest.mark.django_db
@@ -89,9 +92,11 @@ def test_pre_b1_ticket_falls_back_to_current_profile(
     )
 
     assert ticket.contacto_nombre is None
+    assert ticket.contacto_email is None
     assert ticket.contacto_ruc is None
     assert ticket.contacto_empresa is None
     assert ticket.contacto_nombre_efectivo == "Victoria Pinto"
+    assert ticket.contacto_email_efectivo == "contacto@example.com"
     assert ticket.contacto_ruc_efectivo == "0999999999001"
     assert ticket.contacto_empresa_efectiva == "SassBlum"
 
@@ -108,10 +113,12 @@ def test_known_empty_snapshot_does_not_fall_back_to_profile(
         servicio=service,
         cliente=cliente,
         contacto_nombre="",
+        contacto_email="",
         contacto_ruc="",
         contacto_empresa="",
     )
 
     assert ticket.contacto_nombre_efectivo == ""
+    assert ticket.contacto_email_efectivo == ""
     assert ticket.contacto_ruc_efectivo == ""
     assert ticket.contacto_empresa_efectiva == ""

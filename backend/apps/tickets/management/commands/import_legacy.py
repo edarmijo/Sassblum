@@ -770,6 +770,7 @@ class Command(BaseCommand):
                 servicio=service,
                 cliente=users[row["email"]],
                 contacto_nombre=row["usuario"],
+                contacto_email=row["email"],
                 contacto_ruc=row["ruc"],
                 contacto_ruc_original=row["ruc_original"],
                 contacto_empresa=row["empresa"],

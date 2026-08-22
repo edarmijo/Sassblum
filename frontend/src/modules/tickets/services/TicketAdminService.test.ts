@@ -24,6 +24,9 @@ function backendDetail(estado: string, asignadoNombre: string) {
     creado_en: '2026-08-10T15:00:00Z',
     descripcion: 'No existe conectividad en la oficina principal.',
     cliente_nombre: 'Cliente de prueba',
+    cliente_email: 'cliente@example.com',
+    cliente_ruc: '0999999999001',
+    cliente_empresa: 'Empresa de prueba',
     asignado_nombre: asignadoNombre,
     adjuntos: [],
     eventos: [],
@@ -31,7 +34,7 @@ function backendDetail(estado: string, asignadoNombre: string) {
   }
 }
 
-describe('TicketAdminService assignment contract', () => {
+describe('TicketAdminService contract', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -71,5 +74,25 @@ describe('TicketAdminService assignment contract', () => {
       servicioNombre: 'Soporte de red',
       creadoEn: '2026-08-10T15:00:00Z',
     })
+  })
+
+  it('corrects the per-ticket contact without using the user administration API', async () => {
+    apiClientMock.patch.mockResolvedValue({
+      ...backendDetail('EnProceso', 'Ana Técnica'),
+      cliente_nombre: 'Nombre Corregido',
+      cliente_email: 'correcto@example.com',
+    })
+
+    const ticket = await ticketAdminService.updateContact('10', {
+      nombre: 'Nombre Corregido',
+      email: 'correcto@example.com',
+    })
+
+    expect(apiClientMock.patch).toHaveBeenCalledWith('/tickets/10/contacto', {
+      nombre: 'Nombre Corregido',
+      email: 'correcto@example.com',
+    })
+    expect(ticket.clienteNombre).toBe('Nombre Corregido')
+    expect(ticket.clienteEmail).toBe('correcto@example.com')
   })
 })

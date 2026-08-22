@@ -61,6 +61,12 @@ class Ticket(models.Model):
         blank=True,
         verbose_name="nombre histórico del contacto",
     )
+    contacto_email = models.EmailField(
+        max_length=254,
+        null=True,
+        blank=True,
+        verbose_name="correo histórico del contacto",
+    )
     contacto_ruc = models.CharField(
         max_length=13,
         null=True,
@@ -159,6 +165,13 @@ class Ticket(models.Model):
             return self.contacto_nombre
         nombre_perfil = f"{self.cliente.first_name} {self.cliente.last_name}".strip()
         return nombre_perfil or self.cliente.email
+
+    @property
+    def contacto_email_efectivo(self) -> str:
+        """Return the ticket email, or the account email for a pre-B9 ticket."""
+        if self.contacto_email is not None:
+            return self.contacto_email
+        return self.cliente.email
 
     @property
     def contacto_ruc_efectivo(self) -> str:

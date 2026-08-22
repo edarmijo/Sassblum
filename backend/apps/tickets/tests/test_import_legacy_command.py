@@ -226,6 +226,7 @@ def test_import_preserves_snapshots_spam_latest_profile_and_is_idempotent(
     spam = Ticket.objects.get(legacy_codigo=1297)
     assert older.asunto == long_subject
     assert older.contacto_nombre == "Contacto Antiguo"
+    assert older.contacto_email == "shared@example.com"
     assert older.contacto_ruc == CORRECTED_DULCENAC_RUC
     assert older.contacto_ruc_original == "09992338547001"
     assert newer.contacto_nombre == "Contacto Reciente"

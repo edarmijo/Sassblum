@@ -7,6 +7,7 @@ of TicketService (via get_ticket_service()) and declares only its RBAC permissio
 Endpoints:
     PATCH /api/tickets/<id>/asignar     → AssignView      (IsAdmin)
     PATCH /api/tickets/<id>/reasignar   → ReassignView    (IsAdmin)
+    PATCH /api/tickets/<id>/contacto    → UpdateContactView (IsAdmin)
     PATCH /api/tickets/<id>/estado      → UpdateStatusView (IsStaff)
     POST  /api/tickets/<id>/comentario  → AddCommentView  (authenticated party)
 """
@@ -20,6 +21,7 @@ from apps.tickets.serializers.ticket_action_serializers import (
     AssignSerializer,
     StatusChangeSerializer,
     CommentSerializer,
+    ContactUpdateSerializer,
 )
 from apps.tickets.services import get_ticket_service
 from apps.tickets.services.ticket_service import TicketValidationError
@@ -71,6 +73,22 @@ class ReassignView(APIView):
         worker_id = serializer.validated_data["worker_id"]
         return _handle_domain_errors(
             lambda: svc.reassign_ticket(ticket_id, worker_id, request.user)
+        )
+
+
+class UpdateContactView(APIView):
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, ticket_id: int):
+        serializer = ContactUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        svc = get_ticket_service()
+        return _handle_domain_errors(
+            lambda: svc.update_contact(
+                ticket_id,
+                dict(serializer.validated_data),
+                request.user,
+            )
         )
 
 

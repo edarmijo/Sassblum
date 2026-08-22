@@ -31,6 +31,7 @@ class TicketEvent(models.Model):
         COMENTARIO    = "comentario",    "Comentario"
         ASIGNACION    = "asignacion",    "Asignación"
         REASIGNACION  = "reasignacion",  "Reasignación"
+        CONTACTO_ACTUALIZADO = "contacto_actualizado", "Contacto actualizado"
 
     # ── Relations ─────────────────────────────────────────────────────────────
     ticket = models.ForeignKey(

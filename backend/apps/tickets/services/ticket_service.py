@@ -75,6 +75,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "servicio_id": data["servicio_id"],
             "cliente": user,
             "contacto_nombre": contacto_nombre,
+            "contacto_email": user.email,
             "contacto_ruc": user.ruc,
             "contacto_empresa": user.empresa,
             "estado": Ticket.Estado.NUEVO,
@@ -219,6 +220,47 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         )
         return self._detail(ticket)
 
+    @transaction.atomic
+    def update_contact(self, ticket_id: int, data: dict, user) -> dict:
+        """Correct the ticket snapshot while preserving account identity and history."""
+        ticket = self._repo.get_by_id_for_update(ticket_id)
+        if ticket is None:
+            raise TicketNotFound(TICKETNOTFOUND)
+
+        previous = {
+            "nombre": ticket.contacto_nombre_efectivo,
+            "email": ticket.contacto_email_efectivo,
+        }
+        updated = {
+            "nombre": data.get("nombre", previous["nombre"]),
+            "email": data.get("email", previous["email"]),
+        }
+        changes = [
+            f"{label}: {previous[field]!r} → {updated[field]!r}"
+            for field, label in (("nombre", "nombre"), ("email", "correo"))
+            if previous[field] != updated[field]
+        ]
+        if not changes:
+            raise TicketValidationError(
+                "contacto",
+                "No se detectaron cambios en el contacto del ticket.",
+            )
+
+        ticket = self._repo.update(
+            ticket_id,
+            {
+                "contacto_nombre": updated["nombre"],
+                "contacto_email": updated["email"],
+            },
+        )
+        TicketEvent.objects.create(
+            ticket=ticket,
+            autor=user,
+            tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
+            comentario="Contacto corregido por administración: " + "; ".join(changes) + ".",
+        )
+        return self._detail(ticket)
+
     def get_all_tickets(self, filters: dict | None = None) -> list:
         tickets = self._repo.get_all(filters or {})
         return [self._summary(t) for t in tickets]
@@ -275,6 +317,9 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             **cls._summary(t),
             "descripcion": t.descripcion,
             "cliente_nombre": t.contacto_nombre_efectivo,
+            "cliente_email": t.contacto_email_efectivo,
+            "cliente_ruc": t.contacto_ruc_efectivo,
+            "cliente_empresa": t.contacto_empresa_efectiva,
             "asignado_nombre": (
                 f"{t.asignado.first_name} {t.asignado.last_name}".strip() or t.asignado.email
             ) if t.asignado_id else None,

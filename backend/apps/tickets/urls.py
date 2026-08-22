@@ -7,6 +7,7 @@ URL routing for the tickets API. Mounted under /api/tickets/ by config/urls.py.
     GET   /api/tickets/<id>/historial   → event timeline
     PATCH /api/tickets/<id>/asignar     → assign   (IsAdmin)
     PATCH /api/tickets/<id>/reasignar   → reassign (IsAdmin)
+    PATCH /api/tickets/<id>/contacto    → correct contact snapshot (IsAdmin)
     PATCH /api/tickets/<id>/estado      → update status (IsStaff)
     POST  /api/tickets/<id>/comentario  → add comment
 """
@@ -19,6 +20,7 @@ from apps.tickets.views import (
     TicketHistoryView,
     AssignView,
     ReassignView,
+    UpdateContactView,
     UpdateStatusView,
     AddCommentView,
 )
@@ -29,6 +31,7 @@ urlpatterns = [
     path("<int:ticket_id>/historial", TicketHistoryView.as_view(), name="ticket-history"),
     path("<int:ticket_id>/asignar", AssignView.as_view(), name="ticket-assign"),
     path("<int:ticket_id>/reasignar", ReassignView.as_view(), name="ticket-reassign"),
+    path("<int:ticket_id>/contacto", UpdateContactView.as_view(), name="ticket-contact"),
     path("<int:ticket_id>/estado", UpdateStatusView.as_view(), name="ticket-status"),
     path("<int:ticket_id>/comentario", AddCommentView.as_view(), name="ticket-comment"),
 ]
