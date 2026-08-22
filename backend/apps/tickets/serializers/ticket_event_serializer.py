@@ -38,4 +38,6 @@ class TicketEventSerializer(serializers.ModelSerializer):
 
     def get_autor_nombre(self, obj: TicketEvent) -> str:
         """Return 'nombre apellido' of the event author."""
+        if obj.autor is None:
+            return "Sistema (migración histórica)"
         return f"{obj.autor.first_name} {obj.autor.last_name}".strip() or obj.autor.email

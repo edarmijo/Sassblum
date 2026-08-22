@@ -252,16 +252,20 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     @staticmethod
     def _event_summary(event: TicketEvent) -> dict:
         """Return an event in the API shape shared by detail and comment actions."""
+        if event.autor is None:
+            author_name = "Sistema (migración histórica)"
+        else:
+            author_name = (
+                f"{event.autor.first_name} {event.autor.last_name}".strip()
+                or event.autor.email
+            )
         return {
             "id": event.id,
             "tipo_evento": event.tipo_evento,
             "estado_anterior": event.estado_anterior,
             "estado_nuevo": event.estado_nuevo,
             "comentario": event.comentario,
-            "autor_nombre": (
-                f"{event.autor.first_name} {event.autor.last_name}".strip()
-                or event.autor.email
-            ),
+            "autor_nombre": author_name,
             "creado_en": event.created_at.isoformat(),
         }
 

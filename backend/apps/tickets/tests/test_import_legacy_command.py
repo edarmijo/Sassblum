@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from rest_framework.test import APIClient
 
 from apps.authentication.models import User
 from apps.tickets.management.commands.import_legacy import (
@@ -22,6 +23,7 @@ from apps.tickets.management.commands.import_legacy import (
     parse_sql_rows,
 )
 from apps.tickets.models import Ticket, TicketEvent
+from apps.tickets.services.ticket_service import TicketService
 
 
 def legacy_row(
@@ -247,6 +249,15 @@ def test_import_preserves_snapshots_spam_latest_profile_and_is_idempotent(
     assert legacy_event.tipo_evento == TicketEvent.TipoEvento.COMENTARIO
     assert "fecha de solución no disponible" in legacy_event.comentario
     assert "Solución histórica completa" in legacy_event.comentario
+
+    detail = TicketService().get_ticket_detail(older.id, shared_user)
+    assert detail["eventos"][0]["autor_nombre"] == "Sistema (migración histórica)"
+
+    api_client = APIClient()
+    api_client.force_authenticate(user=shared_user)
+    history_response = api_client.get(f"/api/tickets/{older.id}/historial")
+    assert history_response.status_code == 200
+    assert history_response.data[0]["autor_nombre"] == "Sistema (migración histórica)"
 
     first_data = json.loads(first_manifest.read_text(encoding="utf-8"))
     assert first_data["conciliacion"] == {
