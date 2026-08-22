@@ -151,8 +151,8 @@ npm run build
 npm run test
 ```
 
-Línea base local del 15-08-2026: **190** pruebas backend, **51** de aceptación y **104** frontend
-aprobadas; build y linters sin errores después de las correcciones de este cierre. Consulta el
+Línea base local de esta rama del 22-08-2026: **194** pruebas backend, **51** de aceptación y
+**115** frontend aprobadas; checks de Django, tipos, build y linters sin errores. Consulta el
 [plan de pruebas](docs/TESTING.md) para alcance, riesgos y criterios de salida.
 
 ## Documentación

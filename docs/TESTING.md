@@ -52,6 +52,24 @@ npm run test:coverage:critical
 
 ## Resultado de cierre local
 
+### Línea base de la rama de cambios — 2026-08-22
+
+| Ejecución | Resultado | Entorno / evidencia |
+|---|---:|---|
+| Django system check | 0 issues | Windows, Python 3.14.6, Django 6.0.7 |
+| Backend | 194 passed | SQLite aislado; compatibilidad del lock PostgreSQL cubierta por prueba específica |
+| Aceptación API | 51 passed | flujos de Cliente, Trabajador, Admin y seguridad |
+| Frontend | 115 passed | Node.js 24.19.0, Vitest |
+| Flake8 | sin errores | archivos Python modificados en B0 |
+| ESLint | sin errores | `npm run lint` |
+| TypeScript | sin errores | `npm run typecheck` |
+| Build | completado | `npm run build` |
+
+Implementación backend de referencia: commit `965a9a0`. Las suites de backend, aceptación y
+frontend se ejecutaron localmente el 2026-08-22 antes de publicar la rama de cambios.
+
+### Cierre histórico — 2026-08-15
+
 | Ejecución | Resultado | Fecha | Entorno |
 |---|---:|---|---|
 | Django system check | 0 issues | 2026-08-15 | Windows, Python 3.14.6 |
