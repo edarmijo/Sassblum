@@ -98,19 +98,12 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         (`pg_advisory_xact_lock`): se libera automáticamente al terminar la
         transacción. Debe ejecutarse dentro de una transacción (create_ticket lo
         envuelve en `@transaction.atomic`, por lo que el lock se mantiene hasta que
-        el ticket queda insertado).
+        el ticket queda insertado). En otros motores, usados para pruebas locales,
+        el repositorio omite el lock y conserva la consulta portable.
         """
-        from django.db import connection  # noqa: PLC0415
         with transaction.atomic():
-            with connection.cursor() as cursor:
-                # Lock por año: dos requests concurrentes no obtienen el mismo número.
-                cursor.execute("SELECT pg_advisory_xact_lock(%s)", [year])
-                cursor.execute(
-                    "SELECT COALESCE(MAX(CAST(SUBSTRING(numero FROM 8) AS INTEGER)), 0) "
-                    "FROM tickets_ticket WHERE numero LIKE %s",
-                    [f"T-{year}-%"],
-                )
-                max_num = cursor.fetchone()[0]
+            self._repo.lock_ticket_number_sequence(year)
+            max_num = self._repo.get_max_ticket_sequence(year)
             return f"T-{year}-{max_num + 1:04d}"
 
     def get_my_tickets(self, user, filters: dict | None = None) -> list:

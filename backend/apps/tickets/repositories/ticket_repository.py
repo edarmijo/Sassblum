@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from django.db.models import Q
+from django.db import connection
+from django.db.models import IntegerField, Max, Q
+from django.db.models.functions import Cast, Substr
 
 from core.base.base_repository import BaseRepository
 from apps.tickets.models import Ticket, TicketEvent
@@ -65,6 +67,33 @@ class TicketRepository(BaseRepository[Ticket]):
 
     def delete(self, entity_id: int) -> None:
         Ticket.objects.filter(pk=entity_id).delete()
+
+    # ── Atomic ticket numbering ───────────────────────────────────────────────
+
+    @staticmethod
+    def lock_ticket_number_sequence(year: int) -> None:
+        """Serialize number allocation per year when PostgreSQL is in use."""
+        if connection.vendor != "postgresql":
+            return
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [year])
+
+    @staticmethod
+    def get_max_ticket_sequence(year: int) -> int:
+        """Return the greatest numeric suffix for a year using portable ORM."""
+        prefix = f"T-{year}-"
+        result = (
+            Ticket.objects
+            .filter(numero__startswith=prefix)
+            .annotate(
+                sequence=Cast(
+                    Substr("numero", len(prefix) + 1),
+                    output_field=IntegerField(),
+                )
+            )
+            .aggregate(max_sequence=Max("sequence"))
+        )
+        return result["max_sequence"] or 0
 
     # ── Role-scoped listing with filters + pagination ──────────────────────────
 
