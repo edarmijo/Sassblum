@@ -1,6 +1,7 @@
 import { MailCheck, Clock, Inbox } from 'lucide-react'
 import { Button } from '../../../../core/ui/button'
 import { SmoothLink as Link } from '../../../../core/ui/SmoothLink'
+import { BackLink } from '../../../../core/ui/BackLink'
 
 interface VerifyPendingPageProps {
   /** Correo al que se envió el enlace. Vacío si la página se abrió directamente. */
@@ -64,9 +65,10 @@ export function VerifyPendingPage({ email, message }: Readonly<VerifyPendingPage
         <Button asChild variant="brand" className="w-full">
           <Link to="/login">Ir a iniciar sesión</Link>
         </Button>
-        <Button asChild variant="outline" className="w-full">
-          <Link to="/">Volver al inicio</Link>
-        </Button>
+      </div>
+
+      <div className="flex justify-center">
+        <BackLink to="/" label="Volver al inicio" />
       </div>
     </div>
   )

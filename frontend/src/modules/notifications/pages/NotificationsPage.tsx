@@ -4,12 +4,17 @@ import { Button } from '../../../core/ui/button'
 import { Badge } from '../../../core/ui/badge'
 import { Skeleton } from '../../../core/ui/skeleton'
 import { Reveal, FocusReveal } from '../../../core/ui/motion'
+import { BackLink } from '../../../core/ui/BackLink'
+import { dashboardRoute } from '../../../core/utils/dashboardRoute'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { useNotifications } from '../hooks/useNotifications'
 import type { ReactNode } from 'react'
 
 
 export function NotificationsPage() {
   const SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4'] as const
+  const { user } = useAuth()
+  const back = dashboardRoute(user?.rol)
   const { notifications, unreadCount, isLoading, error, markAsRead, markAllAsRead } = useNotifications()
 
   let content: ReactNode
@@ -58,6 +63,9 @@ export function NotificationsPage() {
     <div className="min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Reveal y={20}>
+          <div className="mb-4">
+            <BackLink to={back.to} label={back.backLabel} />
+          </div>
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2.5">

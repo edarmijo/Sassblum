@@ -4,6 +4,7 @@ import { useAuthService } from '../../hooks/useAuthService'
 import { apiError } from '../../../../infrastructure/http/apiError'
 import { Button } from '../../../../core/ui/button'
 import { SmoothLink as Link } from '../../../../core/ui/SmoothLink'
+import { BackLink } from '../../../../core/ui/BackLink'
 
 interface VerifyEmailPageProps {
   token: string
@@ -59,9 +60,9 @@ export function VerifyEmailPage({ token }: Readonly<VerifyEmailPageProps>) {
           </div>
           <h2 className="text-lg font-semibold text-foreground">No se pudo verificar</h2>
           <p className="text-sm text-destructive">{message}</p>
-          <Button asChild variant="outline" className="w-full">
-            <Link to="/login">Volver a iniciar sesión</Link>
-          </Button>
+          <div className="flex justify-center pt-1">
+            <BackLink to="/login" label="Volver a iniciar sesión" />
+          </div>
         </>
       )}
     </div>
