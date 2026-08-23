@@ -60,11 +60,11 @@
   {% endif %}
 
   {% if tipo == "cambio_estado" and estado_nuevo %}
-    <p style="font-size:13px;">El estado actual de su ticket es <b>{{ estado_nuevo }}</b>.</p>
+    <p style="font-size:13px;">El estado actual de su ticket es: <b>{{ estado_nuevo }}</b>.</p>
     {% if estado_nuevo == "Resuelto" %}
-      <p style="font-size:13px;">La solicitud fue atendida. Si necesita aportar información adicional, responda a este correo.</p>
+      <p style="font-size:13px;">Gracias por confiar en nosotros</p>
     {% else %}
-      <p style="font-size:13px;">La solicitud continúa en seguimiento y recibirá nuevas actualizaciones.</p>
+      <p style="font-size:13px;">Seguiremos trabajando en su requerimiento hasta satisfacer su necesidad</p>
     {% endif %}
   {% endif %}
 

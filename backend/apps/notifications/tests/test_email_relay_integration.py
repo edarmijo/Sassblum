@@ -62,7 +62,8 @@ def test_transactional_email_reaches_relay_with_equivalent_utf8_parts(
         "Impresión detenida",
         "Observaciones/Solución",
         "Solución aplicada: calibración y revisión eléctrica.",
-        "La solicitud fue atendida",
+        "El estado actual de su ticket es:",
+        "Gracias por confiar en nosotros",
     ):
         assert expected in payload["text_body"]
         assert expected in payload["html_body"]

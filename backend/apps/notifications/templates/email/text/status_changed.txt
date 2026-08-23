@@ -14,9 +14,9 @@ Asunto: {{ ticket_asunto }}
 {% if comentario %}Observaciones/Solución
 {{ comentario }}
 {% endif %}
-{% if tipo == "cambio_estado" and estado_nuevo %}El estado actual de su ticket es {{ estado_nuevo }}.
-{% if estado_nuevo == "Resuelto" %}La solicitud fue atendida. Si necesita aportar información adicional, responda a este correo.
-{% else %}La solicitud continúa en seguimiento y recibirá nuevas actualizaciones.
+{% if tipo == "cambio_estado" and estado_nuevo %}El estado actual de su ticket es: {{ estado_nuevo }}.
+{% if estado_nuevo == "Resuelto" %}Gracias por confiar en nosotros
+{% else %}Seguiremos trabajando en su requerimiento hasta satisfacer su necesidad
 {% endif %}{% endif %}
 Soporte al usuario
 SASSBLUM

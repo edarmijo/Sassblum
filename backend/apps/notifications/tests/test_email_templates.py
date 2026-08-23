@@ -65,21 +65,26 @@ def test_creation_email_renders_only_configured_optional_channels():
 @pytest.mark.parametrize(
     ("state", "expected"),
     [
-        ("Resuelto", "La solicitud fue atendida"),
-        ("EnEspera", "La solicitud continúa en seguimiento"),
+        ("Resuelto", "Gracias por confiar en nosotros"),
+        (
+            "EnEspera",
+            "Seguiremos trabajando en su requerimiento hasta satisfacer su necesidad",
+        ),
     ],
 )
 def test_status_email_includes_operational_context_and_closure(state, expected):
-    rendered = render_to_string(
+    rendered = TemplateEmailContentRenderer().render(
         "email/status_changed.html",
         _ticket_context(tipo="cambio_estado", estado_nuevo=state),
     )
 
-    assert "Estimado(a)" in rendered
-    assert "Observaciones/Solución" in rendered
-    assert f"El estado actual de su ticket es <b>{state}</b>" in rendered
-    assert expected in rendered
-    assert "Soporte al usuario" in rendered
+    for representation in (rendered.text, rendered.html):
+        assert "Estimado(a)" in representation
+        assert "Observaciones/Solución" in representation
+        assert "El estado actual de su ticket es:" in representation
+        assert state in representation
+        assert expected in representation
+        assert "Soporte al usuario" in representation
 
 
 @pytest.mark.parametrize(
@@ -128,7 +133,8 @@ def test_rendered_email_has_no_duplicate_style_attributes(template_name):
                 "Observaciones/Solución",
                 "Equipo revisado y operativo.",
                 "Resuelto",
-                "La solicitud fue atendida",
+                "El estado actual de su ticket es:",
+                "Gracias por confiar en nosotros",
                 "Soporte al usuario",
             ),
         ),
