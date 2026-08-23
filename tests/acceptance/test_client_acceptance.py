@@ -113,6 +113,52 @@ class TestTCC3Login:
         assert response.status_code == 403
 
 
+# ── TC-C9: Complete Client Flow ─────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestTCC9CompleteClientFlow:
+    """TC-C9: Client registration through ticket history."""
+
+    def test_client_can_register_login_create_ticket_and_view_history(
+        self, api_client, catalog_service
+    ):
+        """Given a new client, the complete ticket workflow is available."""
+        registration = api_client.post('/api/auth/register', {
+            'email': 'flujo-cliente@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Flujo',
+            'apellido': 'Cliente',
+        })
+        assert registration.status_code == 201
+
+        verification = api_client.post('/api/auth/verify-email', {
+            'token': registration.data['verify_token'],
+        })
+        assert verification.status_code == 200
+
+        login = api_client.post('/api/auth/login', {
+            'email': 'flujo-cliente@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+        })
+        assert login.status_code == 200
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['tokens']['access']}")
+
+        creation = api_client.post('/api/tickets/', {
+            'asunto': 'Flujo completo del cliente',
+            'descripcion': 'El cliente necesita soporte para validar el flujo completo.',
+            'servicio_id': catalog_service.id,
+            'prioridad': 'Media',
+        })
+        assert creation.status_code == 201
+        assert creation.data['estado'] == 'Nuevo'
+
+        detail = api_client.get(f"/api/tickets/{creation.data['id']}")
+        assert detail.status_code == 200
+        assert detail.data['asunto'] == 'Flujo completo del cliente'
+        assert detail.data['eventos']
+
+
 # ── TC-C4: Ticket Creation ────────────────────────────────────────────────────
 # Given a logged-in client, when creating a ticket (subject ≤80, description ≥10,
 # optional attachment ≤5 MB), then ticket is created as "Nuevo" and Observer fires.
