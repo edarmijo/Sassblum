@@ -38,6 +38,42 @@ class TestTCA1AdminLogin:
         assert response.status_code == 200
 
 
+# ── TC-A7: Complete Admin Flow ───────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestTCA7CompleteAdminFlow:
+    """TC-A7: Admin login through ticket assignment and reporting."""
+
+    def test_admin_can_login_assign_ticket_review_history_and_report(
+        self, api_client, admin_user, new_ticket, worker_user
+    ):
+        """Given an admin, the complete ticket management workflow is available."""
+        login = api_client.post('/api/auth/login', {
+            'email': admin_user.email,
+            'password': TEST_PASSWORD,
+        })
+        assert login.status_code == 200
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['tokens']['access']}")
+
+        tickets = api_client.get('/api/tickets/')
+        assert tickets.status_code == 200
+        assert any(ticket['id'] == new_ticket.id for ticket in tickets.data['items'])
+
+        assignment = api_client.patch(f'/api/tickets/{new_ticket.id}/asignar', {
+            'worker_id': worker_user.id,
+        })
+        assert assignment.status_code == 200
+
+        detail = api_client.get(f'/api/tickets/{new_ticket.id}')
+        assert detail.status_code == 200
+        assert detail.data['estado'] == 'EnProceso'
+        assert detail.data['eventos']
+
+        report = api_client.get('/api/reportes/tickets')
+        assert report.status_code == 200
+        assert 'total' in report.data
+
+
 # ── TC-A2: Assignment ─────────────────────────────────────────────────────────
 # Given ticket T-2026-9001 in "Nuevo" (seeded, unassigned), when assigning it
 # to an active worker, then status becomes "EnProceso" and worker is notified.
