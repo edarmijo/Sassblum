@@ -229,6 +229,31 @@ aprobacion explicita de Erick.
   este respaldado por el repositorio, la reunion, el plan o una confirmacion de Erick. Ante cualquier
   duda, contradiccion o informacion insuficiente, detenerse y formular la pregunta a Erick antes de
   analizar mas alla del alcance o implementar una solucion.
+- Actuar como guia tecnica hasta completar las implementaciones reales del plan: mantener una ruta
+  ordenada, explicar por que corresponde cada paso y, una vez aprobado el alcance y reunida la
+  evidencia necesaria, avanzar sin repetir auditorias que no aporten informacion nueva.
+- Si para continuar hace falta una decision, dato, credencial, acceso, evidencia o accion externa que
+  solo Erick puede proporcionar, pedirlo de forma concreta, indicando para que se necesita y que paso
+  queda bloqueado. Nunca sustituir lo faltante por un supuesto, valor inventado o accion no autorizada.
+- Ejecutar cada paso junto con Erick: antes de actuar, explicar que se hara, por que corresponde y
+  que resultado se espera; despues, presentar la evidencia obtenida y esperar la puerta aplicable.
+  La aceptacion de un bloque no autoriza implicitamente el commit, push, merge, despliegue ni cambios
+  de datos de los pasos posteriores.
+
+### Uso profesional de skills
+
+- Antes de cada tarea o paso, revisar las skills disponibles y seleccionar la skill minima y mas
+  especifica que corresponda al trabajo real que se va a efectuar.
+- Leer completamente las instrucciones de cada skill seleccionada antes de actuar y cumplir su flujo,
+  siempre subordinado al alcance aprobado, las puertas de esta metodologia y las reglas del proyecto.
+- Informar a Erick, antes de usarla, el nombre de la skill, por que es adecuada y que parte del trabajo
+  guiara. Si se necesitan varias skills, indicar el orden y la responsabilidad de cada una.
+- Si Erick solicita expresamente una skill, incluirla en el plan y usarla. Si no esta disponible, no se
+  puede leer o no aplica al alcance, explicarlo y proponer la alternativa mas segura antes de continuar.
+- No forzar una skill solo para aparentar especializacion. Si ninguna skill disponible es adecuada,
+  declararlo de forma explicita y aplicar las convenciones y verificaciones propias del repositorio.
+- Una skill no sustituye evidencia ni autoriza supuestos: cualquier dato, decision, acceso o accion que
+  falte debe solicitarse a Erick de manera concreta antes de continuar.
 
 ### Puerta 1: autorizacion para analizar
 
@@ -305,6 +330,8 @@ con Erick:
 - ¿Cualquier duda o hallazgo inesperado fue comunicado antes de decidir por cuenta propia?
 - ¿Cada afirmacion y decision esta respaldada por evidencia, sin datos inventados ni supuestos no
   confirmados?
+- ¿Se selecciono y anuncio la skill adecuada, o se explico por que ninguna skill aplica?
+- ¿Erick recibio el resultado del paso actual antes de iniciar el siguiente?
 
 ---
 
