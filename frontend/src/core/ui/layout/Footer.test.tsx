@@ -40,6 +40,34 @@ describe('Footer', () => {
       'href',
       'tel:+593969990990',
     )
+    expect(screen.getByText('Guayaquil - Ecuador')).toBeInTheDocument()
+  })
+
+  it('restores the three legacy social destinations securely', () => {
+    renderFooter()
+
+    const socialLinks = [
+      {
+        name: /Facebook.*pestaña nueva/i,
+        href: 'https://www.facebook.com/sass.blum/',
+      },
+      {
+        name: /LinkedIn.*pestaña nueva/i,
+        href: 'https://www.linkedin.com/in/sassblum-consultor%C3%ADa-seguridad-inform%C3%A1tica-ab7a72165',
+      },
+      {
+        name: /Instagram.*pestaña nueva/i,
+        href: 'https://www.instagram.com/sassblum/',
+      },
+    ]
+
+    for (const expected of socialLinks) {
+      const link = screen.getByRole('link', { name: expected.name })
+      expect(link).toHaveAttribute('href', expected.href)
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+      expect(link.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+    }
   })
 
   it('does not render the former design credit', () => {
