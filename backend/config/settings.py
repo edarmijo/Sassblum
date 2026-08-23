@@ -36,6 +36,41 @@ if not WORKER_EMAIL_DOMAIN or not _DOMAIN_PATTERN.fullmatch(WORKER_EMAIL_DOMAIN)
         'WORKER_EMAIL_DOMAIN debe contener un dominio corporativo válido y no vacío.'
     )
 
+# B15 — proveedor de buzones corporativos. Desactivado por defecto: habilitarlo
+# exige configuración completa y nunca admite degradación silenciosa de TLS.
+CPANEL_MAILBOX_ENABLED = config(
+    'CPANEL_MAILBOX_ENABLED', default=False, cast=bool
+)
+CPANEL_HOST = config('CPANEL_HOST', default='').strip().lower()
+CPANEL_USERNAME = config('CPANEL_USERNAME', default='').strip()
+CPANEL_API_TOKEN = config('CPANEL_API_TOKEN', default='')
+CPANEL_MAILBOX_QUOTA_MB = config(
+    'CPANEL_MAILBOX_QUOTA_MB', default=0, cast=int
+)
+CPANEL_TIMEOUT_SECONDS = config('CPANEL_TIMEOUT_SECONDS', default=10, cast=int)
+
+if CPANEL_MAILBOX_ENABLED:
+    cpanel_host_pattern = re.compile(
+        r'^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+'
+        r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'
+    )
+    if not cpanel_host_pattern.fullmatch(CPANEL_HOST):
+        raise ImproperlyConfigured(
+            'CPANEL_HOST debe ser un hostname completo sin protocolo, ruta ni puerto.'
+        )
+    if not CPANEL_USERNAME or not CPANEL_API_TOKEN:
+        raise ImproperlyConfigured(
+            'CPANEL_USERNAME y CPANEL_API_TOKEN son obligatorios al habilitar buzones.'
+        )
+    if CPANEL_MAILBOX_QUOTA_MB <= 0:
+        raise ImproperlyConfigured(
+            'CPANEL_MAILBOX_QUOTA_MB debe ser mayor que cero.'
+        )
+    if CPANEL_TIMEOUT_SECONDS <= 0:
+        raise ImproperlyConfigured(
+            'CPANEL_TIMEOUT_SECONDS debe ser mayor que cero.'
+        )
+
 
 # APLICACIONES
 INSTALLED_APPS = [

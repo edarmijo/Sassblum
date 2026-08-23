@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
@@ -47,6 +49,16 @@ class User(AbstractUser):
         ACTIVE  = 'activo',    'Activo'
         BLOCKED = 'bloqueado', 'Bloqueado'
         PENDING = 'pendiente', 'Pendiente'
+
+    class BuzonEstado(models.TextChoices):
+        CREATED = 'creado', 'Creado'
+        PENDING = 'pendiente', 'Pendiente'
+        NOT_APPLICABLE = 'no_aplica', 'No aplica'
+
+    class BuzonGestion(models.TextChoices):
+        MANUAL = 'manual', 'Manual'
+        UAPI = 'uapi', 'UAPI'
+        NOT_APPLICABLE = 'no_aplica', 'No aplica'
 
     objects = UserManager()
 
@@ -102,6 +114,18 @@ class User(AbstractUser):
         default=False,
         verbose_name='email verificado',
     )
+    buzon_estado      = models.CharField(
+        max_length=16,
+        choices=BuzonEstado.choices,
+        default=BuzonEstado.NOT_APPLICABLE,
+        verbose_name='estado del buzón corporativo',
+    )
+    buzon_gestion     = models.CharField(
+        max_length=16,
+        choices=BuzonGestion.choices,
+        default=BuzonGestion.NOT_APPLICABLE,
+        verbose_name='modo de gestión del buzón corporativo',
+    )
 
     USERNAME_FIELD  = 'email'
     REQUIRED_FIELDS = []
@@ -111,6 +135,70 @@ class User(AbstractUser):
 
     def __str__(self):
         return f'{self.email} ({self.role})'
+
+
+class UserOccupantChange(models.Model):
+    """Auditoría inmutable del cambio de persona en una cuenta-puesto."""
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='cambios_ocupante',
+        verbose_name='cuenta del puesto',
+    )
+    actor = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='cambios_ocupante_realizados',
+        verbose_name='administrador responsable',
+    )
+    correo_puesto = models.EmailField(verbose_name='correo estable del puesto')
+    nombre_anterior = models.CharField(max_length=150)
+    apellido_anterior = models.CharField(max_length=150)
+    nombre_nuevo = models.CharField(max_length=150)
+    apellido_nuevo = models.CharField(max_length=150)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='creado en')
+
+    class Meta:
+        db_table = 'auth_user_occupant_change'
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['usuario', '-created_at'])]
+
+    def __str__(self) -> str:
+        return f'{self.correo_puesto}: {self.nombre_anterior} → {self.nombre_nuevo}'
+
+
+class UserMailboxEvent(models.Model):
+    """Auditoría de confirmaciones manuales; nunca almacena credenciales."""
+
+    class Action(models.TextChoices):
+        MANUAL_CONFIRMED = 'manual_confirmado', 'Buzón manual confirmado'
+        MANUAL_ROTATED = 'manual_rotado', 'Contraseña manual rotada'
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='eventos_buzon',
+        verbose_name='cuenta del puesto',
+    )
+    actor = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='eventos_buzon_realizados',
+        verbose_name='administrador responsable',
+    )
+    correo_puesto = models.EmailField(verbose_name='correo estable del puesto')
+    action = models.CharField(max_length=32, choices=Action.choices)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='creado en')
+
+    class Meta:
+        db_table = 'auth_user_mailbox_event'
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f'{self.correo_puesto}: {self.action}'
 
 
 class PasswordResetToken(models.Model):

@@ -47,3 +47,129 @@ describe('UserAdminService B13b', () => {
     })
   })
 })
+
+describe('UserAdminService B15', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('retries a pending mailbox through its explicit route', async () => {
+    apiClientMock.post.mockResolvedValue({
+      id: 17,
+      email: 'trabajador@sassblum.com',
+      nombre: 'Ana',
+      apellido: 'Técnica',
+      rol: 'worker',
+      estado: 'activo',
+      email_verificado: true,
+      buzon_estado: 'creado',
+      buzon_password: 'ephemeral-value',
+    })
+
+    const result = await userAdminService.retryMailbox('17')
+
+    expect(apiClientMock.post).toHaveBeenCalledWith(
+      '/usuarios/17/buzon/reintentar',
+      {},
+    )
+    expect(result).toMatchObject({
+      buzonEstado: 'creado',
+      buzonPassword: 'ephemeral-value',
+    })
+  })
+
+  it('confirms a manually created mailbox without sending a password', async () => {
+    apiClientMock.post.mockResolvedValue({
+      id: 17,
+      email: 'trabajador@sassblum.com',
+      nombre: 'Ana',
+      apellido: 'Técnica',
+      rol: 'worker',
+      estado: 'activo',
+      email_verificado: true,
+      buzon_estado: 'creado',
+      buzon_gestion: 'manual',
+    })
+
+    const result = await userAdminService.confirmManualMailbox(
+      '17',
+      'trabajador@sassblum.com',
+    )
+
+    expect(apiClientMock.post).toHaveBeenCalledWith(
+      '/usuarios/17/buzon/confirmar-manual',
+      { email: 'trabajador@sassblum.com' },
+    )
+    expect(result).toMatchObject({
+      buzonEstado: 'creado',
+      buzonGestion: 'manual',
+    })
+  })
+
+  it('rotates an occupant without sending email, role or credentials', async () => {
+    apiClientMock.post.mockResolvedValue({
+      id: 17,
+      email: 'tecnico1@sassblum.com',
+      nombre: 'Carlos',
+      apellido: 'Nuevo',
+      rol: 'worker',
+      estado: 'activo',
+      email_verificado: true,
+      buzon_estado: 'creado',
+      app_password: 'app-ephemeral',
+      buzon_password: 'mail-ephemeral',
+    })
+
+    const result = await userAdminService.rotateOccupant('17', {
+      nombre: 'Carlos',
+      apellido: 'Nuevo',
+    })
+
+    expect(apiClientMock.post).toHaveBeenCalledWith(
+      '/usuarios/17/rotar-ocupante',
+      { nombre: 'Carlos', apellido: 'Nuevo' },
+    )
+    expect(result).toMatchObject({
+      email: 'tecnico1@sassblum.com',
+      appPassword: 'app-ephemeral',
+      buzonPassword: 'mail-ephemeral',
+    })
+  })
+
+  it('maps the explicit manual rotation contract', async () => {
+    apiClientMock.post.mockResolvedValue({
+      id: 17,
+      email: 'tecnico1@sassblum.com',
+      nombre: 'Carlos',
+      apellido: 'Nuevo',
+      rol: 'worker',
+      estado: 'activo',
+      email_verificado: true,
+      buzon_estado: 'creado',
+      buzon_gestion: 'manual',
+      app_password: 'app-ephemeral',
+    })
+
+    const result = await userAdminService.rotateOccupantManually('17', {
+      nombre: 'Carlos',
+      apellido: 'Nuevo',
+      emailConfirmacion: 'tecnico1@sassblum.com',
+      rotacionBuzonConfirmada: true,
+    })
+
+    expect(apiClientMock.post).toHaveBeenCalledWith(
+      '/usuarios/17/rotar-ocupante-manual',
+      {
+        nombre: 'Carlos',
+        apellido: 'Nuevo',
+        email_confirmacion: 'tecnico1@sassblum.com',
+        rotacion_buzon_confirmada: true,
+      },
+    )
+    expect(result).toMatchObject({
+      appPassword: 'app-ephemeral',
+      buzonGestion: 'manual',
+    })
+    expect(result.buzonPassword).toBeUndefined()
+  })
+})
