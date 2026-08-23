@@ -42,6 +42,7 @@ export interface BackendTicketDetail extends BackendTicketSummary {
   cliente_ruc: string
   cliente_empresa: string
   asignado_nombre: string | null
+  puede_modificar: boolean
   adjuntos: BackendAttachment[]
   eventos: BackendTicketEvent[]
   actualizado_en: string
@@ -90,6 +91,7 @@ export function mapTicketDetail(ticket: BackendTicketDetail): TicketDetail {
     clienteRuc: ticket.cliente_ruc,
     clienteEmpresa: ticket.cliente_empresa,
     asignadoNombre: ticket.asignado_nombre,
+    puedeModificar: ticket.puede_modificar,
     adjuntos: (ticket.adjuntos ?? []).map(mapAttachment),
     eventos: (ticket.eventos ?? []).map(mapTicketEvent),
     actualizadoEn: ticket.actualizado_en,

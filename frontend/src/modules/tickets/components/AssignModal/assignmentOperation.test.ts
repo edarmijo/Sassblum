@@ -12,14 +12,12 @@ function makeService() {
 }
 
 describe('executeAssignment', () => {
-  it.each([
-    ['Nuevo', 'assign'],
-    ['EnProceso', 'reassign'],
-    ['EnEspera', 'reassign'],
-    ['Resuelto', 'reassign'],
-    ['Cerrado', 'reassign'],
-  ] as const)('selects %s tickets as %s operations', (estado, expectedMode) => {
-    expect(getAssignmentMode(estado)).toBe(expectedMode)
+  it('uses initial assignment whenever the ticket has no worker', () => {
+    expect(getAssignmentMode(null)).toBe('assign')
+  })
+
+  it('uses reassignment whenever the ticket already has a worker', () => {
+    expect(getAssignmentMode('Trabajadora Activa')).toBe('reassign')
   })
 
   it('uses the initial assignment operation for assign mode', async () => {

@@ -7,15 +7,20 @@ get_user_admin_service(); declare IsAdmin.
 Endpoints:
     GET   /api/usuarios            → list (filter ?role=, ?estado=)
     POST  /api/usuarios            → create worker/admin
+    PATCH /api/usuarios/<id>       → update first/last name only
     PATCH /api/usuarios/<id>/bloquear    → block
     PATCH /api/usuarios/<id>/desbloquear → unblock
 """
 
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.authentication.serializers.user_admin_serializers import UserCreateSerializer
+from apps.authentication.serializers.user_admin_serializers import (
+    UserCreateSerializer,
+    UserUpdateSerializer,
+)
 from apps.authentication.services.user_admin_service import (
     get_user_admin_service,
     UserNotFound,
@@ -44,6 +49,22 @@ class UserListCreateView(APIView):
         except DomainException as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
         return Response(created, status=status.HTTP_201_CREATED)
+
+
+class UserDetailView(APIView):
+    permission_classes = [IsAdmin]
+
+    def patch(self, request: Request, user_id: int) -> Response:
+        serializer = UserUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            updated = get_user_admin_service().update_user(
+                user_id,
+                serializer.validated_data,
+            )
+        except UserNotFound as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(updated, status=status.HTTP_200_OK)
 
 
 class UserBlockView(APIView):

@@ -28,6 +28,7 @@ function backendDetail(estado: string, asignadoNombre: string) {
     cliente_ruc: '0999999999001',
     cliente_empresa: 'Empresa de prueba',
     asignado_nombre: asignadoNombre,
+    puede_modificar: true,
     adjuntos: [],
     eventos: [],
     actualizado_en: '2026-08-10T15:05:00Z',
@@ -48,6 +49,7 @@ describe('TicketAdminService contract', () => {
     expect(ticket.estado).toBe('EnProceso')
     expect(ticket.asignadoNombre).toBe('Ana Técnica')
     expect(ticket.servicioNombre).toBe('Soporte de red')
+    expect(ticket.puedeModificar).toBe(true)
   })
 
   it.each(['EnProceso', 'EnEspera', 'Resuelto', 'Cerrado'] as const)(

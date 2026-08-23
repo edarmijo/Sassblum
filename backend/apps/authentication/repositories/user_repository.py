@@ -39,7 +39,7 @@ class UserRepository(BaseRepository[User]):
     # Prevents accidental modification of role, email, or password through bulk updates.
     ALLOWED_UPDATE_FIELDS = {
         'first_name', 'last_name', 'estado', 'intentos_fallidos',
-        'bloqueado_hasta', 'email_verificado', 'role',
+        'bloqueado_hasta', 'email_verificado',
     }
 
     def update(self, entity_id: int, data: dict) -> User:

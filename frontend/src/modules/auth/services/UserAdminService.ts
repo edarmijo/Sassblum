@@ -9,6 +9,7 @@ import type {
   IUserAdminActions,
   AdminUser,
   CreateUserData,
+  UpdateUserData,
 } from '../interfaces/IUserAdminActions'
 
 interface BeUser {
@@ -44,6 +45,10 @@ class UserAdminService implements IUserAdminActions {
 
   async createUser(data: CreateUserData): Promise<AdminUser> {
     return mapUser(await apiClient.post<BeUser>('/usuarios/', data))
+  }
+
+  async updateUser(id: string, data: UpdateUserData): Promise<AdminUser> {
+    return mapUser(await apiClient.patch<BeUser>(`/usuarios/${id}`, data))
   }
 
   async blockUser(id: string): Promise<AdminUser> {

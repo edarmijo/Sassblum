@@ -40,6 +40,7 @@ function serviceWithCreate(
   return {
     listUsers: vi.fn(async () => []),
     createUser,
+    updateUser: vi.fn(async () => { throw new Error('No usado') }),
     blockUser: vi.fn(async () => { throw new Error('No usado') }),
     unblockUser: vi.fn(async () => { throw new Error('No usado') }),
   }
@@ -91,5 +92,64 @@ describe('AdminUserPage B10', () => {
       role: 'worker',
     }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminUserPage B13b', () => {
+  const worker: AdminUser = {
+    id: '21',
+    email: 'tecnico1@sassblum.com',
+    nombre: 'Nombre',
+    apellido: 'Anterior',
+    rol: 'worker',
+    estado: 'activo',
+    emailVerificado: true,
+  }
+
+  function serviceWithUpdate(
+    updateUser: IUserAdminActions['updateUser'],
+  ): IUserAdminActions {
+    return {
+      listUsers: vi.fn(async () => [worker]),
+      createUser: vi.fn(async () => { throw new Error('No usado') }),
+      updateUser,
+      blockUser: vi.fn(async () => { throw new Error('No usado') }),
+      unblockUser: vi.fn(async () => { throw new Error('No usado') }),
+    }
+  }
+
+  it('edits only the worker name through the injected contract', async () => {
+    const updateUser = vi.fn(async () => ({ ...worker, nombre: 'María José' }))
+    render(<AdminUserPage service={serviceWithUpdate(updateUser)} />)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Editar' }))
+    const nameInput = screen.getByLabelText(`Nombre de ${worker.email}`)
+    await user.clear(nameInput)
+    await user.type(nameInput, 'María José')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(worker.id, {
+      nombre: 'María José',
+    }))
+    expect(await screen.findByText('María José Anterior')).toBeInTheDocument()
+    expect(screen.getByText(worker.email)).toBeInTheDocument()
+  })
+
+  it('preserves the entered name and explains an API failure', async () => {
+    const updateUser = vi.fn(async () => { throw new Error('Servicio temporalmente no disponible') })
+    render(<AdminUserPage service={serviceWithUpdate(updateUser)} />)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Editar' }))
+    const nameInput = screen.getByLabelText(`Nombre de ${worker.email}`)
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Nombre conservado')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Servicio temporalmente no disponible',
+    )
+    expect(nameInput).toHaveValue('Nombre conservado')
   })
 })

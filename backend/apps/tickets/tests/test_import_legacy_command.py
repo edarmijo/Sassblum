@@ -298,6 +298,47 @@ def test_import_preserves_snapshots_spam_latest_profile_and_is_idempotent(
 
 
 @pytest.mark.django_db
+def test_import_reuses_precreated_worker_as_legacy_contact(tmp_path: Path) -> None:
+    worker = User.objects.create_user(
+        email="pjblum@sassblum.com",
+        role=User.Role.WORKER,
+        estado=User.Estado.ACTIVE,
+        email_verificado=True,
+    )
+    dump_path = tmp_path / "legacy-worker.sql"
+    source_hash = write_dump(
+        dump_path,
+        [legacy_row(2400, email=worker.email, usuario="PJ Blum")],
+    )
+
+    with (
+        patch("apps.notifications.services.get_notification_service") as notify,
+        patch(
+            "apps.realtime.events.ticket_events.broadcast_ticket_updated"
+        ) as broadcast,
+    ):
+        call_command(
+            "import_legacy",
+            file=dump_path,
+            confirm_import=True,
+            confirm_backup=True,
+            confirm_omissions=True,
+            expected_sha256=source_hash,
+            manifest=tmp_path / "manifest.json",
+            stdout=StringIO(),
+        )
+
+    ticket = Ticket.objects.get(legacy_codigo=2400)
+    worker.refresh_from_db()
+    assert ticket.cliente_id == worker.id
+    assert ticket.asignado_id is None
+    assert worker.role == User.Role.WORKER
+    assert worker.estado == User.Estado.ACTIVE
+    notify.assert_not_called()
+    broadcast.assert_not_called()
+
+
+@pytest.mark.django_db
 def test_dry_run_database_comparison_is_read_only(tmp_path: Path) -> None:
     dump_path = tmp_path / "legacy.sql"
     write_dump(dump_path, [legacy_row(1000)])

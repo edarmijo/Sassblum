@@ -27,6 +27,11 @@ class IUserAdminActions(ABC):
         ...
 
     @abstractmethod
+    def update_user(self, user_id: int, data: dict) -> dict:
+        """Update only the managed user's first and/or last name."""
+        ...
+
+    @abstractmethod
     def block_user(self, user_id: int) -> dict:
         """Set estado = BLOQUEADO. Returns updated UserData."""
         ...

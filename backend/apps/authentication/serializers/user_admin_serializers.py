@@ -21,3 +21,25 @@ class UserCreateSerializer(serializers.Serializer):
         if not result.is_valid:
             raise serializers.ValidationError({result.field_name: result.errors})
         return attrs
+
+
+class UserUpdateSerializer(serializers.Serializer):
+    """Accept only administrative corrections to first and last name."""
+
+    nombre = serializers.CharField(max_length=150, required=False, allow_blank=False)
+    apellido = serializers.CharField(max_length=150, required=False, allow_blank=False)
+
+    def validate(self, attrs: dict) -> dict:
+        protected = {"email", "role", "rol", "password"}.intersection(
+            self.initial_data
+        )
+        if protected:
+            raise serializers.ValidationError({
+                field: "Este campo no puede modificarse desde esta operación."
+                for field in sorted(protected)
+            })
+        if not attrs:
+            raise serializers.ValidationError(
+                "Debes enviar al menos el nombre o el apellido."
+            )
+        return attrs

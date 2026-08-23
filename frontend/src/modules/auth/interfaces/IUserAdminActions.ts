@@ -21,9 +21,15 @@ export interface CreateUserData {
   role: 'worker' | 'client'
 }
 
+export interface UpdateUserData {
+  nombre?: string
+  apellido?: string
+}
+
 export interface IUserAdminActions {
   listUsers(filters?: { role?: string; estado?: string }): Promise<AdminUser[]>
   createUser(data: CreateUserData): Promise<AdminUser>
+  updateUser(id: string, data: UpdateUserData): Promise<AdminUser>
   blockUser(id: string): Promise<AdminUser>
   unblockUser(id: string): Promise<AdminUser>
 }

@@ -26,24 +26,34 @@ Sprint usage:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 
 class ITicketAdminActions(ABC):
     """Operations an ADMINISTRADOR user can perform on tickets."""
 
     @abstractmethod
-    def assign_ticket(self, ticket_id: int, worker_id: int, user) -> dict:
+    def assign_ticket(self, ticket_id: int, worker_id: int, user: User) -> dict:
         """
-        HU-05: Assign a Nuevo ticket to a worker, transitioning it to EnProceso.
+        HU-05: Assign a ticket with no worker. Nuevo transitions to EnProceso;
+        a legacy ticket preserves its imported operational state.
         Validates: worker must be active (estado=ACTIVO) and have role=WORKER.
         Creates a TicketEvent and triggers the Observer.
         Returns: updated TicketDetail dict.
-        Raises: TicketNotFound, InvalidTransitionError (ticket not in Nuevo state).
+        Raises: TicketNotFound, InvalidTransitionError (unsupported current ticket state).
         """
         ...
 
     @abstractmethod
-    def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
+    def reassign_ticket(
+        self,
+        ticket_id: int,
+        new_worker_id: int,
+        user: User,
+    ) -> dict:
         """
         HU-08: Reassign a ticket without changing its current operational state.
         Creates a TicketEvent with tipo='reasignacion'.
@@ -53,7 +63,7 @@ class ITicketAdminActions(ABC):
         ...
 
     @abstractmethod
-    def update_contact(self, ticket_id: int, data: dict, user) -> dict:
+    def update_contact(self, ticket_id: int, data: dict, user: User) -> dict:
         """Correct the per-ticket contact snapshot without changing the user account."""
         ...
 

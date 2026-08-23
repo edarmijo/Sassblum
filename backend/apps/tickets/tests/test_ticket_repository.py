@@ -38,10 +38,19 @@ def admin(db):
     return User.objects.create_user(email="a@x.com", password=TEST_PASSWORD, role=User.Role.ADMIN)
 
 
-def make_ticket(numero, servicio, cliente, asignado=None, estado="Nuevo", asunto="Asunto X"):
+def make_ticket(
+    numero,
+    servicio,
+    cliente,
+    asignado=None,
+    estado="Nuevo",
+    asunto="Asunto X",
+    legacy_codigo=None,
+):
     return Ticket.objects.create(
         numero=numero, asunto=asunto, descripcion="desc larga aquí",
         servicio=servicio, cliente=cliente, asignado=asignado, estado=estado,
+        legacy_codigo=legacy_codigo,
     )
 
 
@@ -107,6 +116,22 @@ class TestRoleScopedListing:
         numeros = {t.numero for t in result["items"]}
         assert numeros == {"T-2026-0003"}
 
+    def test_worker_also_sees_own_legacy_contact_without_gaining_current_tickets(
+        self, service, worker
+    ) -> None:
+        make_ticket(
+            "T-LEG-0100",
+            service,
+            worker,
+            estado="Resuelto",
+            legacy_codigo=100,
+        )
+        make_ticket("T-2026-0101", service, worker)
+
+        result = TicketRepository().get_all_for_user(worker)
+
+        assert [ticket.numero for ticket in result["items"]] == ["T-LEG-0100"]
+
     def test_admin_sees_all(self, service, cliente, worker, admin):
         make_ticket("T-2026-0005", service, cliente)
         make_ticket("T-2026-0006", service, cliente, asignado=worker, estado="EnProceso")
@@ -146,3 +171,14 @@ class TestHistoryAccessControl:
     def test_owner_can_see_history(self, service, cliente):
         ticket = make_ticket("T-2026-0012", service, cliente)
         assert TicketRepository().get_history(ticket.id, cliente) == []
+
+    def test_worker_can_read_history_as_legacy_contact(self, service, worker) -> None:
+        ticket = make_ticket(
+            "T-LEG-0102",
+            service,
+            worker,
+            estado="Resuelto",
+            legacy_codigo=102,
+        )
+
+        assert TicketRepository().get_history(ticket.id, worker) == []

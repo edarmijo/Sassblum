@@ -74,6 +74,7 @@ const mockTicket: TicketDetail = {
   servicioNombre: 'Soporte técnico',
   clienteNombre: 'Cliente Test',
   asignadoNombre: null,
+  puedeModificar: true,
   adjuntos: [],
   eventos: [],
   creadoEn: new Date().toISOString(),

@@ -62,6 +62,17 @@ class UserAdminService(IUserAdminActions):
         })
         return self._data(user)
 
+    def update_user(self, user_id: int, data: dict) -> dict:
+        if self._repo.get_by_id(user_id) is None:
+            raise UserNotFound("Usuario no encontrado.")
+        changes = {}
+        if "nombre" in data:
+            changes["first_name"] = data["nombre"]
+        if "apellido" in data:
+            changes["last_name"] = data["apellido"]
+        user = self._repo.update(user_id, changes)
+        return self._data(user)
+
     def block_user(self, user_id: int) -> dict:
         if self._repo.get_by_id(user_id) is None:
             raise UserNotFound("Usuario no encontrado.")

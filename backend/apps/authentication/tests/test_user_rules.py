@@ -14,9 +14,13 @@ import secrets
 
 import pytest
 from django.test import override_settings
+from rest_framework.test import APIClient
 
 from apps.authentication.models import User
-from apps.authentication.serializers.user_admin_serializers import UserCreateSerializer
+from apps.authentication.serializers.user_admin_serializers import (
+    UserCreateSerializer,
+    UserUpdateSerializer,
+)
 from apps.authentication.services.auth_service import AuthService
 from apps.authentication.services.user_admin_service import UserAdminService
 from core.exceptions.domain_exceptions import DomainException
@@ -152,3 +156,109 @@ class TestWorkerDomainServiceDefense:
             service.create_user(payload)
 
         assert not User.objects.filter(email=email).exists()
+
+
+@pytest.mark.django_db
+class TestAdminUserNameUpdate:
+    def test_admin_updates_only_name_and_last_name(self) -> None:
+        admin = User.objects.create_user(
+            email="admin-update@sassblum.com",
+            password=RUNTIME_SECRET,
+            role=User.Role.ADMIN,
+            estado=User.Estado.ACTIVE,
+        )
+        worker = User.objects.create_user(
+            email="worker-update@sassblum.com",
+            password=RUNTIME_SECRET,
+            first_name="Nombre",
+            last_name="Anterior",
+            role=User.Role.WORKER,
+            estado=User.Estado.ACTIVE,
+        )
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/usuarios/{worker.id}",
+            {"nombre": "María José", "apellido": "Pérez Ñáñez"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        worker.refresh_from_db()
+        assert worker.first_name == "María José"
+        assert worker.last_name == "Pérez Ñáñez"
+        assert worker.email == "worker-update@sassblum.com"
+        assert worker.role == User.Role.WORKER
+        assert worker.check_password(RUNTIME_SECRET)
+
+    def test_update_rejects_email_role_and_password(self) -> None:
+        serializer = UserUpdateSerializer(data={
+            "nombre": "Intento",
+            "email": "otro@sassblum.com",
+            "role": User.Role.ADMIN,
+            "password": RUNTIME_SECRET,
+        })
+
+        assert not serializer.is_valid()
+        assert set(serializer.errors) == {"email", "password", "role"}
+
+    def test_service_defense_ignores_fields_outside_name_contract(self) -> None:
+        worker = User.objects.create_user(
+            email="worker-defense@sassblum.com",
+            password=RUNTIME_SECRET,
+            role=User.Role.WORKER,
+            estado=User.Estado.ACTIVE,
+        )
+
+        UserAdminService().update_user(worker.id, {
+            "nombre": "Nombre Seguro",
+            "email": "changed@sassblum.com",
+            "role": User.Role.ADMIN,
+            "password": "changed",
+        })
+
+        worker.refresh_from_db()
+        assert worker.first_name == "Nombre Seguro"
+        assert worker.email == "worker-defense@sassblum.com"
+        assert worker.role == User.Role.WORKER
+        assert worker.check_password(RUNTIME_SECRET)
+
+    def test_non_admin_cannot_update_another_user(self) -> None:
+        worker = User.objects.create_user(
+            email="worker-actor@sassblum.com",
+            role=User.Role.WORKER,
+            estado=User.Estado.ACTIVE,
+        )
+        target = User.objects.create_user(
+            email="worker-target@sassblum.com",
+            role=User.Role.WORKER,
+            estado=User.Estado.ACTIVE,
+        )
+        client = APIClient()
+        client.force_authenticate(user=worker)
+
+        response = client.patch(
+            f"/api/usuarios/{target.id}",
+            {"nombre": "No autorizado"},
+            format="json",
+        )
+
+        assert response.status_code == 403
+
+    def test_update_returns_404_for_unknown_user(self) -> None:
+        admin = User.objects.create_user(
+            email="admin-missing@sassblum.com",
+            role=User.Role.ADMIN,
+            estado=User.Estado.ACTIVE,
+        )
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            "/api/usuarios/999999",
+            {"apellido": "No existe"},
+            format="json",
+        )
+
+        assert response.status_code == 404
