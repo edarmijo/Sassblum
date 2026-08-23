@@ -25,6 +25,7 @@ from apps.tickets.interfaces import (
 from apps.tickets.models import Ticket, TicketEvent
 from apps.tickets.repositories import TicketRepository
 from apps.tickets.state_machine import TicketStateMachine
+from apps.tickets.utils import event_author_name
 from apps.tickets.validators import TicketValidatorChain
 from apps.tickets.services.storage_service import StorageService
 from core.exceptions.domain_exceptions import (
@@ -67,12 +68,17 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             raise TicketValidationError(result.field_name, "; ".join(result.errors))
 
         numero = self.generate_ticket_number(datetime.now().year)
+        contacto_nombre = f"{user.first_name} {user.last_name}".strip() or user.email
         ticket = self._repo.create({
             "numero": numero,
             "asunto": data["asunto"],
             "descripcion": data["descripcion"],
             "servicio_id": data["servicio_id"],
             "cliente": user,
+            "contacto_nombre": contacto_nombre,
+            "contacto_email": user.email,
+            "contacto_ruc": user.ruc,
+            "contacto_empresa": user.empresa,
             "estado": Ticket.Estado.NUEVO,
             "prioridad": data.get("prioridad", Ticket.Prioridad.MEDIA),
         })
@@ -85,6 +91,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         TicketEvent.objects.create(
             ticket=ticket,
             autor=user,
+            autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.CREACION,
             comentario="Ticket creado.",
         )
@@ -133,7 +140,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         anterior = ticket.estado
         self._repo.update(ticket_id, {"estado": new_status})
         TicketEvent.objects.create(
-            ticket=ticket, autor=user,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.CAMBIO_ESTADO,
             estado_anterior=anterior, estado_nuevo=new_status, comentario=comment,
         )
@@ -145,7 +152,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             raise CommentRequiredError("El comentario no puede estar vacío.")
         ticket = self._require(ticket_id, user)
         event = TicketEvent.objects.create(
-            ticket=ticket, autor=user,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.COMENTARIO, comentario=comment,
         )
         return self._event_summary(event)
@@ -179,7 +186,8 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             {"asignado": worker, "estado": Ticket.Estado.EN_PROCESO},
         )
         TicketEvent.objects.create(
-            ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
+            tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
             estado_anterior=Ticket.Estado.NUEVO, estado_nuevo=Ticket.Estado.EN_PROCESO,
             comentario=f"Asignado a {worker.email}.",
         )
@@ -209,9 +217,52 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         # Use the refreshed ticket so the Observer resolves the new worker.
         ticket = self._repo.update(ticket_id, {"asignado": worker})
         TicketEvent.objects.create(
-            ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
+            tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
             asignado_anterior=previous_worker,
             comentario=f"Reasignado de {previous_worker.email} a {worker.email}.",
+        )
+        return self._detail(ticket)
+
+    @transaction.atomic
+    def update_contact(self, ticket_id: int, data: dict, user) -> dict:
+        """Correct the ticket snapshot while preserving account identity and history."""
+        ticket = self._repo.get_by_id_for_update(ticket_id)
+        if ticket is None:
+            raise TicketNotFound(TICKETNOTFOUND)
+
+        previous = {
+            "nombre": ticket.contacto_nombre_efectivo,
+            "email": ticket.contacto_email_efectivo,
+        }
+        updated = {
+            "nombre": data.get("nombre", previous["nombre"]),
+            "email": data.get("email", previous["email"]),
+        }
+        changes = [
+            f"{label}: {previous[field]!r} → {updated[field]!r}"
+            for field, label in (("nombre", "nombre"), ("email", "correo"))
+            if previous[field] != updated[field]
+        ]
+        if not changes:
+            raise TicketValidationError(
+                "contacto",
+                "No se detectaron cambios en el contacto del ticket.",
+            )
+
+        ticket = self._repo.update(
+            ticket_id,
+            {
+                "contacto_nombre": updated["nombre"],
+                "contacto_email": updated["email"],
+            },
+        )
+        TicketEvent.objects.create(
+            ticket=ticket,
+            autor=user,
+            autor_nombre=event_author_name(user),
+            tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
+            comentario="Contacto corregido por administración: " + "; ".join(changes) + ".",
         )
         return self._detail(ticket)
 
@@ -254,10 +305,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "estado_anterior": event.estado_anterior,
             "estado_nuevo": event.estado_nuevo,
             "comentario": event.comentario,
-            "autor_nombre": (
-                f"{event.autor.first_name} {event.autor.last_name}".strip()
-                or event.autor.email
-            ),
+            "autor_nombre": event.autor_nombre,
             "creado_en": event.created_at.isoformat(),
         }
 
@@ -266,8 +314,10 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         return {
             **cls._summary(t),
             "descripcion": t.descripcion,
-            "cliente_nombre": f"{t.cliente.first_name} {t.cliente.last_name}".strip()
-                              or t.cliente.email,
+            "cliente_nombre": t.contacto_nombre_efectivo,
+            "cliente_email": t.contacto_email_efectivo,
+            "cliente_ruc": t.contacto_ruc_efectivo,
+            "cliente_empresa": t.contacto_empresa_efectiva,
             "asignado_nombre": (
                 f"{t.asignado.first_name} {t.asignado.last_name}".strip() or t.asignado.email
             ) if t.asignado_id else None,

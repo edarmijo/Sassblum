@@ -60,7 +60,8 @@ class TestTicketLifecycle:
         detail = self._create(cliente, service)
         assert detail["numero"].startswith("T-")
         assert detail["estado"] == "Nuevo"
-        assert TicketEvent.objects.filter(tipo_evento="creacion").count() == 1
+        event = TicketEvent.objects.get(tipo_evento="creacion")
+        assert event.autor_nombre == cliente.email
 
     def test_full_flow_create_assign_resolve_close(self, cliente, service, worker, admin):
         detail = self._create(cliente, service)

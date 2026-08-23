@@ -60,10 +60,18 @@ export interface TicketEvent {
 export interface TicketDetail extends TicketSummary {
   descripcion: string
   clienteNombre: string
+  clienteEmail: string
+  clienteRuc: string
+  clienteEmpresa: string
   asignadoNombre: string | null
   adjuntos: AttachmentMeta[]
   eventos: TicketEvent[]
   actualizadoEn: string
+}
+
+export interface TicketContactUpdate {
+  nombre: string
+  email: string
 }
 
 export interface TicketCreatePayload {
@@ -118,6 +126,9 @@ export interface ITicketService {
 
   /** Reassign a ticket without changing its current operational state. */
   reassignTicket(id: string, newWorkerId: string): Promise<TicketDetail>
+
+  /** Correct the per-ticket contact snapshot without changing the login account. */
+  updateContact(id: string, contact: TicketContactUpdate): Promise<TicketDetail>
 
   /** Return all tickets in the system (admin view). */
   getAllTickets(filters?: TicketFilterOptions & { clienteId?: string; asignadoId?: string }): Promise<TicketSummary[]>

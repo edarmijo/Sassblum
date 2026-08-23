@@ -71,6 +71,9 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
       {/* Metadata grid */}
       <section className="grid grid-cols-2 gap-4 text-sm rounded-lg p-4" style={{ background: 'rgba(0,196,224,0.06)', border: '1px solid rgba(0,196,224,0.12)' }}>
         <MetaField label="Cliente">{ticket.clienteNombre}</MetaField>
+        <MetaField label="Correo">{ticket.clienteEmail}</MetaField>
+        <MetaField label="Empresa">{ticket.clienteEmpresa || 'Sin registrar'}</MetaField>
+        <MetaField label="RUC / identificación">{ticket.clienteRuc || 'Sin registrar'}</MetaField>
         <MetaField label="Asignado a">
           {ticket.asignadoNombre ?? <span className="italic text-[#5c7a94]">Sin asignar</span>}
         </MetaField>

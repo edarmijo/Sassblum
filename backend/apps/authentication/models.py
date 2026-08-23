@@ -49,10 +49,17 @@ class User(AbstractUser):
     username          = None
     email             = models.EmailField(unique=True, verbose_name='correo electrónico')
     ruc               = models.CharField(
-        max_length=13,
+        max_length=20,
         blank=True,
         default='',
         verbose_name='RUC',
+    )
+    ruc_original      = models.CharField(
+        max_length=32,
+        blank=True,
+        default='',
+        verbose_name='identificación original del legado',
+        help_text='Valor sin normalizar conservado durante la migración histórica.',
     )
     empresa           = models.CharField(
         max_length=150,

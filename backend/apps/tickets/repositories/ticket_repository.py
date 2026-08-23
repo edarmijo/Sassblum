@@ -152,7 +152,6 @@ class TicketRepository(BaseRepository[Ticket]):
             return None
         return list(
             TicketEvent.objects
-            .select_related("autor")
             .filter(ticket_id=ticket_id)
             .order_by("created_at")
         )

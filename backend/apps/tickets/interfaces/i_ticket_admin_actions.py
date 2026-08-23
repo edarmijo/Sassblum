@@ -2,7 +2,7 @@
 ISP interface — ticket operations available to an ADMIN user.
 
 Responsibility (SRP): expose only the actions an ADMINISTRADOR can perform on tickets.
-    An admin assigns, reassigns, and has a global view. Nothing from client or worker scope.
+    An admin assigns, reassigns, corrects contact snapshots, and has a global view.
 Depends on: abc.ABC — nothing from the domain.
 Pattern: ISP — assignment and admin-list views depend on this, never on ITicketService.
 SOLID: ISP · DIP · OCP · LSP
@@ -50,6 +50,11 @@ class ITicketAdminActions(ABC):
         Returns: updated TicketDetail dict.
         Raises: TicketNotFound or validation errors for an invalid worker.
         """
+        ...
+
+    @abstractmethod
+    def update_contact(self, ticket_id: int, data: dict, user) -> dict:
+        """Correct the per-ticket contact snapshot without changing the user account."""
         ...
 
     @abstractmethod

@@ -48,18 +48,18 @@ class TicketsConfig(AppConfig):
 
             # Serialize the TicketEvent to a transport dict (no model crosses the boundary)
             ticket = instance.ticket
-            cliente = ticket.cliente
             event_payload = {
                 "ticket_id":       ticket.id,
                 "ticket_numero":   ticket.numero,
                 "ticket_asunto":   ticket.asunto,
-                # LN-3 (paridad legado): el email de creación transcribe la consulta
-                # y los datos de contacto del cliente (RUC, empresa, correo).
+                # LN-3/B1/B9: use the per-ticket contact snapshot. Its effective
+                # properties retain the legacy/contact correction while falling
+                # back to the account only for tickets created before the snapshot.
                 "ticket_descripcion": ticket.descripcion,
-                "cliente_email":   getattr(cliente, "email", ""),
-                "cliente_nombre":  f"{getattr(cliente, 'first_name', '')} {getattr(cliente, 'last_name', '')}".strip(),
-                "cliente_ruc":     getattr(cliente, "ruc", ""),
-                "cliente_empresa": getattr(cliente, "empresa", ""),
+                "cliente_email":   ticket.contacto_email_efectivo,
+                "cliente_nombre":  ticket.contacto_nombre_efectivo,
+                "cliente_ruc":     ticket.contacto_ruc_efectivo,
+                "cliente_empresa": ticket.contacto_empresa_efectiva,
                 "tipo_evento":     instance.tipo_evento,
                 "estado_anterior": instance.estado_anterior,
                 "estado_nuevo":    instance.estado_nuevo,

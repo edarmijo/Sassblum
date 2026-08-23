@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - erick-plan_de_cambios
   workflow_dispatch:
 
 permissions:

@@ -17,7 +17,12 @@
  *   S15 → this file (contract — Sprint 4 exercises these methods)
  */
 
-import type { TicketSummary, TicketDetail, TicketFilterOptions } from './ITicketService'
+import type {
+  TicketSummary,
+  TicketContactUpdate,
+  TicketDetail,
+  TicketFilterOptions,
+} from './ITicketService'
 
 export interface ITicketAdminActions {
   /**
@@ -31,6 +36,9 @@ export interface ITicketAdminActions {
    * @param newWorkerId - ID of the new TRABAJADOR
    */
   reassignTicket(id: string, newWorkerId: string): Promise<TicketDetail>
+
+  /** Correct a ticket contact without changing the login account. */
+  updateContact(id: string, contact: TicketContactUpdate): Promise<TicketDetail>
 
   /**
    * HU-10 (admin): Global ticket list with extended filters.
