@@ -8,7 +8,9 @@ La entrega vigente usa:
 - **API/ASGI:** Render en `https://sassblum.onrender.com`.
 - **Datos:** Supabase PostgreSQL.
 - **Archivos:** Supabase Storage cuando las credenciales están configuradas.
-- **Correo:** Brevo por HTTPS en Render o SMTP en entornos que lo permitan.
+- **Correo vigente:** Brevo por HTTPS en Render o SMTP en entornos que lo permitan.
+- **Correo previsto en Lote E/B14:** relay HTTPS hacia SMTP cPanel, pendiente de integración con B4,
+  configuración real y aceptación; no debe presentarse como activo todavía.
 - **Tiempo real:** Django Channels; Redis es obligatorio para múltiples procesos.
 
 Docker Compose y Jenkins son una alternativa self-hosted. No forman una cadena automática con
@@ -34,6 +36,11 @@ Vercel/Render y no deben presentarse como el despliegue activo sin evidencia de 
 | `REDIS_URL` | Condicional | requerido si `USE_REDIS=True` |
 | `EMAIL_BACKEND` | Sí | backend Django/Anymail elegido |
 | `BREVO_API_KEY` | Condicional | requerido con backend Brevo |
+| `CPANEL_RELAY_URL` | Condicional | endpoint HTTPS exacto del relay B14 |
+| `CPANEL_RELAY_ALLOWED_HOST` | Condicional | host exacto autorizado para el relay |
+| `CPANEL_RELAY_SECRET` | Condicional | secreto compartido de 32+ caracteres, sólo en paneles |
+| `CPANEL_RELAY_TIMEOUT_SECONDS` | Condicional | timeout entre 0 y 60 segundos |
+| `CPANEL_RELAY_MAX_PAYLOAD_BYTES` | Condicional | límite idéntico al configurado en cPanel |
 | `DEFAULT_FROM_EMAIL` | Sí | remitente verificado |
 | `EMAIL_CC` | No | destinatarios internos separados por coma |
 | `SUPABASE_URL` | Condicional | proyecto de Storage |
@@ -42,6 +49,10 @@ Vercel/Render y no deben presentarse como el despliegue activo sin evidencia de 
 
 Los archivos `.env.example` son plantillas. Los secretos viven en los paneles de Vercel, Render y
 Supabase o en un gestor de secretos, nunca en Git.
+
+La instalación y operación del relay se detalla en `deploy/cpanel-relay/README.md`. Su activación
+requiere integrar primero B4/B14 y reconciliar `settings.py`/`.env.example`; desplegar el paquete PHP
+aislado no cambia por sí solo el transporte efectivo de Django.
 
 ## Variables del frontend
 

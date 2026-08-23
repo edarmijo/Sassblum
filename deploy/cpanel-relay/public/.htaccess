@@ -1,0 +1,11 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set Cache-Control "no-store"
+    Header always set Referrer-Policy "no-referrer"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
