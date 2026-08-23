@@ -48,7 +48,7 @@ export function NotificationItem({ notification, onMarkRead }: Readonly<Notifica
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground truncate">{notification.titulo}</p>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notification.cuerpo}</p>
-        <time className="text-[11px] text-muted-foreground mt-1 block">
+        <time className="text-xs text-muted-foreground mt-1 block">
           {relativeTime(notification.creadoEn)}
         </time>
       </div>
@@ -57,7 +57,7 @@ export function NotificationItem({ notification, onMarkRead }: Readonly<Notifica
         <button
           type="button"
           onClick={() => onMarkRead?.(notification.id)}
-          className="self-start text-[11px] text-brand-cyan-dark font-medium hover:underline whitespace-nowrap cursor-pointer"
+          className="self-start text-xs text-brand-cyan-dark font-medium hover:underline whitespace-nowrap cursor-pointer"
           aria-label={`Marcar "${notification.titulo}" como leída`}
         >
           Marcar leída

@@ -7,7 +7,7 @@
    Dark futuristic theme with purple/violet accents
    ════════════════════════════════════════════════════════════════════ */
 :root {
-  --font-size: 16px;
+  --font-size: 17px;
   --motion-fast: 120ms;
   --motion-state: 240ms;
   --motion-route-enter: 320ms;
@@ -32,7 +32,7 @@
   --secondary: #1a1a2e;
   --secondary-foreground: #eeeef5;
   --muted: #7aa3b8;
-  --muted-foreground: #7aa3b8;
+  --muted-foreground: #9bbdce;
   --accent: #818cf8;
   --accent-foreground: #ffffff;
 
@@ -46,7 +46,7 @@
   --input-background: #0c0c14;
   --switch-background: #1a1a2e;
   --font-weight-medium: 500;
-  --font-weight-normal: 400;
+  --font-weight-normal: 450;
   --font-weight-semibold: 600;
   --ring: #38d9f5;
 
@@ -102,7 +102,7 @@
   --secondary: #1a1a2e;
   --secondary-foreground: #eeeef5;
   --muted: #7aa3b8;
-  --muted-foreground: #7aa3b8;
+  --muted-foreground: #9bbdce;
   --accent: #818cf8;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
@@ -200,6 +200,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    font-weight: var(--font-weight-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -235,6 +236,38 @@ html {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: var(--brand-accent) var(--brand-bg);
+}
+
+/* El soporte translúcido mantiene legible el mensaje principal cuando las
+   luces del canvas pasan por detrás, sin ocupar espacio ni tapar la escena. */
+.home-hero-copy {
+  isolation: isolate;
+}
+
+.home-hero-copy::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -1.5rem -1rem;
+  pointer-events: none;
+  border: 1px solid rgba(0, 196, 224, 0.12);
+  border-radius: 1.75rem;
+  background: rgba(4, 13, 22, 0.86);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.32);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 1024px) {
+  .home-hero-copy::before {
+    inset: -2rem -2.5rem;
+    background: linear-gradient(
+      105deg,
+      rgba(4, 13, 22, 0.86) 0%,
+      rgba(4, 13, 22, 0.78) 68%,
+      rgba(8, 22, 36, 0.36) 100%
+    );
+  }
 }
 
 /* Scrollbar */

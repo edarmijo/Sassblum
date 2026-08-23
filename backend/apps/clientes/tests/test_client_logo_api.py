@@ -48,13 +48,32 @@ class TestClientLogoApi:
         assert created.status_code == 201
         logo_id = created.data["id"]
 
+        public = APIClient(REMOTE_ADDR="192.0.2.30")
+        visible = public.get("/api/clientes/")
+        assert visible["Cache-Control"] == "public, no-cache, must-revalidate"
+        assert [item["nombre"] for item in visible.data["items"]] == ["SOELEC"]
+
+        edited = client.patch(
+            f"/api/clientes/admin/{logo_id}/",
+            {"nombre": "SOELEC actualizado"},
+            format="json",
+        )
+        assert edited.status_code == 200
+        assert public.get("/api/clientes/").data["items"][0]["nombre"] == "SOELEC actualizado"
+
         toggled = client.patch(f"/api/clientes/admin/{logo_id}/?action=toggle", format="json")
         assert toggled.status_code == 200
         assert toggled.data["activo"] is False
+        assert public.get("/api/clientes/").data["items"] == []
+
+        shown = client.patch(f"/api/clientes/admin/{logo_id}/?action=toggle", format="json")
+        assert shown.status_code == 200
+        assert public.get("/api/clientes/").data["items"][0]["id"] == logo_id
 
         deleted = client.delete(f"/api/clientes/admin/{logo_id}/")
         assert deleted.status_code == 204
         assert not ClientLogo.objects.filter(pk=logo_id).exists()
+        assert public.get("/api/clientes/").data["items"] == []
 
     def test_create_rejects_logo_without_upload_or_url(self):
         response = self._admin_client().post(

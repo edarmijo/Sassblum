@@ -75,3 +75,45 @@ def test_admin_delete_project_returns_204_and_404() -> None:
 
     assert deleted.status_code == 204
     assert missing.status_code == 404
+
+
+def test_public_gallery_reflects_the_complete_admin_lifecycle() -> None:
+    admin = _admin_client()
+    public = APIClient(REMOTE_ADDR="192.0.2.20")
+
+    created = admin.post(
+        "/api/proyectos/admin/",
+        {
+            "titulo": "Proyecto visible",
+            "descripcion": "Descripción inicial",
+            "tag": "Redes",
+            "imagen_url": "https://cdn.example/project.png",
+        },
+        format="json",
+    )
+    assert created.status_code == 201
+    project_id = created.data["id"]
+
+    visible = public.get("/api/proyectos/")
+    assert visible["Cache-Control"] == "public, no-cache, must-revalidate"
+    assert [item["titulo"] for item in visible.data["items"]] == ["Proyecto visible"]
+
+    edited = admin.patch(
+        f"/api/proyectos/admin/{project_id}",
+        {"titulo": "Proyecto actualizado"},
+        format="json",
+    )
+    assert edited.status_code == 200
+    assert public.get("/api/proyectos/").data["items"][0]["titulo"] == "Proyecto actualizado"
+
+    hidden = admin.patch(f"/api/proyectos/admin/{project_id}?action=toggle", format="json")
+    assert hidden.status_code == 200
+    assert public.get("/api/proyectos/").data["items"] == []
+
+    shown = admin.patch(f"/api/proyectos/admin/{project_id}?action=toggle", format="json")
+    assert shown.status_code == 200
+    assert public.get("/api/proyectos/").data["items"][0]["id"] == project_id
+
+    deleted = admin.delete(f"/api/proyectos/admin/{project_id}")
+    assert deleted.status_code == 204
+    assert public.get("/api/proyectos/").data["items"] == []

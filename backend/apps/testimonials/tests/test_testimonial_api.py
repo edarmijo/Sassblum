@@ -126,3 +126,52 @@ class TestTestimonialApi:
 
         assert response.status_code == 204
         assert not _Testimonial.objects.filter(cliente=customer).exists()
+
+    def test_public_testimonials_reflect_the_complete_moderation_lifecycle(self) -> None:
+        customer = _user("lifecycle-testimonio@example.com", User.Role.CLIENT)
+        admin = _user("lifecycle-admin@example.com", User.Role.ADMIN)
+        customer_client = _authenticated(customer)
+        admin_client = _authenticated(admin)
+        public = APIClient(REMOTE_ADDR="192.0.2.40")
+
+        created = customer_client.post(
+            "/api/testimonios/mi-testimonio/",
+            {"calificacion": 5, "comentario": "Experiencia inicial para moderar."},
+            format="json",
+        )
+        assert created.status_code == 201
+        testimonial_id = created.data["id"]
+        assert public.get("/api/testimonios/").data["items"] == []
+
+        approved = admin_client.patch(
+            f"/api/testimonios/admin/{testimonial_id}/",
+            {"estado": _Testimonial.Status.APPROVED},
+            format="json",
+        )
+        assert approved.status_code == 200
+        visible = public.get("/api/testimonios/")
+        assert visible["Cache-Control"] == "public, no-cache, must-revalidate"
+        assert visible.data["items"][0]["id"] == testimonial_id
+
+        edited = customer_client.patch(
+            "/api/testimonios/mi-testimonio/",
+            {"calificacion": 4, "comentario": "Experiencia actualizada para revisar."},
+            format="json",
+        )
+        assert edited.status_code == 200
+        assert edited.data["estado"] == _Testimonial.Status.PENDING
+        assert public.get("/api/testimonios/").data["items"] == []
+
+        reapproved = admin_client.patch(
+            f"/api/testimonios/admin/{testimonial_id}/",
+            {"estado": _Testimonial.Status.APPROVED},
+            format="json",
+        )
+        assert reapproved.status_code == 200
+        assert public.get("/api/testimonios/").data["items"][0]["comentario"] == (
+            "Experiencia actualizada para revisar."
+        )
+
+        deleted = customer_client.delete("/api/testimonios/mi-testimonio/")
+        assert deleted.status_code == 204
+        assert public.get("/api/testimonios/").data["items"] == []

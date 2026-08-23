@@ -21,6 +21,8 @@ interface ServiceOption {
 
 interface CreateTicketFormProps {
   services: ServiceOption[]
+  /** Servicio válido elegido previamente desde el catálogo público. */
+  initialServiceId?: string
   /** Recibe el id (para navegar) y el número visible del ticket (paridad LN-1: "Se le asignó el ticket #N"). */
   onSuccess?: (ticketId: string, numero: string) => void
 }
@@ -41,14 +43,14 @@ const PRIORIDADES: TicketPrioridad[] = ['Baja', 'Media', 'Alta', 'Critica']
  * DIP: submits via useTicketsList (ITicketClientActions) — never calls TicketService directly.
  * OCP: new field → add to state + JSX; validation chain handles it automatically.
  */
-export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketFormProps>) {
+export function CreateTicketForm({ services, initialServiceId, onSuccess }: Readonly<CreateTicketFormProps>) {
   const createTicket = useCreateTicket()
   const { user } = useAuth()
   const validatorChain = useRef(new TicketValidatorChain())
 
   const [asunto, setAsunto] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [servicioId, setServicioId] = useState('')
+  const [servicioId, setServicioId] = useState(initialServiceId ?? '')
   const [prioridad, setPrioridad] = useState<TicketPrioridad>('Media')
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
