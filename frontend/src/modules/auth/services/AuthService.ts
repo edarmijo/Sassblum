@@ -16,6 +16,7 @@ import type {
   UserStatus,
   ProfileUpdateData,
   IdentificationType,
+  ChangePasswordData,
 } from '../interfaces/IAuthService'
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -96,6 +97,14 @@ class AuthService implements IAuthService {
       token,
       new_password: newPassword,
       confirm_password: confirmPassword,
+    })
+  }
+
+  async changePassword(data: ChangePasswordData) {
+    return apiClient.post<{ message: string }>('/auth/cambiar-password', {
+      current_password: data.currentPassword,
+      new_password: data.newPassword,
+      confirm_password: data.confirmPassword,
     })
   }
 

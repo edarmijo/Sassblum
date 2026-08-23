@@ -21,4 +21,12 @@ describe('AuthValidatorFactory', () => {
     })
     expect(result.isValid).toBe(true)
   })
+
+  it('shares a Unicode-aware password policy without miscounting emoji', () => {
+    const passwordPolicy = AuthValidatorFactory.buildPasswordChain()
+
+    expect(passwordPolicy.run({ password: 'Árbol123' }).isValid).toBe(true)
+    expect(passwordPolicy.run({ password: `Á1${'😀'.repeat(5)}` }).isValid).toBe(false)
+    expect(passwordPolicy.run({ password: `Clave${'١'.repeat(3)}` }).isValid).toBe(false)
+  })
 })

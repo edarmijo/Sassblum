@@ -21,4 +21,8 @@ export class AuthValidatorFactory {
     empresa.addValidator(new IdentificationValidator())
     return empresa
   }
+
+  static buildPasswordChain(): IFormValidator {
+    return new PasswordValidator()
+  }
 }

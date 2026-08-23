@@ -13,6 +13,7 @@ from apps.authentication.views import (
     ResetPasswordView,
     ProfileView,
     CookieTokenRefreshView,
+    ChangePasswordView,
 )
 
 urlpatterns = [
@@ -24,4 +25,5 @@ urlpatterns = [
     path("perfil", ProfileView.as_view(), name="perfil"),
     path("forgot-password", ForgotPasswordView.as_view(), name="forgot-password"),
     path("reset-password", ResetPasswordView.as_view(), name="reset-password"),
+    path("cambiar-password", ChangePasswordView.as_view(), name="cambiar-password"),
 ]

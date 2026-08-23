@@ -41,6 +41,12 @@ export interface ProfileUpdateData {
   empresa?: string
 }
 
+export interface ChangePasswordData {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
 // ─── Output / domain types ────────────────────────────────────────────────────
 
 export interface AuthTokens {
@@ -107,6 +113,9 @@ export interface IAuthService {
     newPassword: string,
     confirmPassword: string,
   ): Promise<{ message: string }>
+
+  /** Cambia la contraseña con reautenticación y termina todas las sesiones. */
+  changePassword(data: ChangePasswordData): Promise<{ message: string }>
 
   /**
    * Confirm email address using the token sent after registration.

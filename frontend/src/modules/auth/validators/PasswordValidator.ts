@@ -10,14 +10,14 @@ export class PasswordValidator extends BaseValidator {
 
   validate(data: unknown): ValidationResult {
     const password = String((data as { password?: string })?.password ?? '')
-    if (password.length < PasswordValidator.MIN) {
+    if (Array.from(password).length < PasswordValidator.MIN) {
       return {
         isValid: false,
         errors: [`La contraseña debe tener al menos ${PasswordValidator.MIN} caracteres.`],
         field: 'password',
       }
     }
-    if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+    if (!/\p{L}/u.test(password) || !/\d/.test(password)) {
       return {
         isValid: false,
         errors: ['La contraseña debe incluir al menos una letra y un número.'],

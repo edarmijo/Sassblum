@@ -1,17 +1,14 @@
-"""
-ResetPasswordSerializer — validates the reset payload (SRP).
-
-Checks the two passwords match. The shared domain policy and token itself are
-validated by TokenService (not here — SRP: this serializer only validates input shape).
-"""
+"""Payload del cambio de contraseña con una sesión autenticada."""
 
 from __future__ import annotations
 
 from rest_framework import serializers
 
 
-class ResetPasswordSerializer(serializers.Serializer):
-    token = serializers.CharField()
+class ChangePasswordSerializer(serializers.Serializer):
+    """Valida forma y confirmación; la política de dominio vive en el servicio."""
+
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
     new_password = serializers.CharField(write_only=True, trim_whitespace=False)
     confirm_password = serializers.CharField(write_only=True, trim_whitespace=False)
 

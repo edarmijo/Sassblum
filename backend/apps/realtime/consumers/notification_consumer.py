@@ -17,6 +17,7 @@ On failure the socket is closed with code 4401.
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from apps.realtime.auth import negotiated_subprotocol, resolve_user
+from apps.realtime.events.session_events import session_group
 
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
@@ -29,13 +30,18 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         self.user = user
         self.group_name = f"notif_user_{user.id}"
+        self.session_group_name = session_group(user.id)
         await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.channel_layer.group_add(self.session_group_name, self.channel_name)
         await self.accept(subprotocol=negotiated_subprotocol(self.scope))
 
     async def disconnect(self, code):
         group = getattr(self, "group_name", None)
         if group:
             await self.channel_layer.group_discard(group, self.channel_name)
+        session = getattr(self, "session_group_name", None)
+        if session:
+            await self.channel_layer.group_discard(session, self.channel_name)
 
     # ── Group message handler ──────────────────────────────────────────────────
     # Triggered by channel_layer.group_send({'type': 'notification.new', ...})
@@ -45,3 +51,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             "event": "notification_new",
             "payload": event.get("payload", {}),
         })
+
+    async def session_revoked(self, event: dict[str, object]) -> None:
+        """Cierra inmediatamente una conexión autenticada con credenciales antiguas."""
+        await self.close(code=4401)

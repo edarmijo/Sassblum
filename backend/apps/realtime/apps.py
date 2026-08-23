@@ -18,7 +18,32 @@ class RealtimeConfig(AppConfig):
         from django.db.models.signals import post_save
         from django.dispatch import receiver
 
+        from apps.authentication.signals import password_sessions_revoked
         from apps.tickets.models import TicketEvent
+
+        @receiver(
+            password_sessions_revoked,
+            dispatch_uid="password_sessions_realtime",
+        )
+        def on_password_sessions_revoked(
+            sender: object,
+            user_id: int,
+            **kwargs: object,
+        ) -> None:
+            """Observer: desconecta sockets sin acoplar authentication a realtime."""
+            try:
+                from apps.realtime.events.session_events import (  # noqa: PLC0415
+                    broadcast_session_revoked,
+                )
+
+                broadcast_session_revoked(user_id)
+            except Exception:  # noqa: BLE001
+                import logging  # noqa: PLC0415
+
+                logging.getLogger(__name__).exception(
+                    "Failed to revoke realtime sessions for user %s",
+                    user_id,
+                )
 
         @receiver(post_save, sender=TicketEvent, dispatch_uid="ticket_event_realtime")
         def on_ticket_event_realtime(sender, instance: TicketEvent, created: bool, **kwargs):

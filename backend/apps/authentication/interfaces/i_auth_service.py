@@ -18,7 +18,10 @@ Sprint coverage:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 
 # ─── Data transfer objects (input / output shapes) ───────────────────────────
@@ -143,6 +146,16 @@ class IAuthService(ABC):
             TokenExpired            — token older than 1 h
             PasswordPolicyViolation — new password does not meet the policy
         """
+        ...
+
+    @abstractmethod
+    def change_password(
+        self,
+        user: User,
+        current_password: str,
+        new_password: str,
+    ) -> dict:
+        """Change the authenticated user's password and revoke every session."""
         ...
 
     @abstractmethod

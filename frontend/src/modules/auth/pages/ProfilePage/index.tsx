@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
-import { User } from 'lucide-react'
+import { KeyRound, User } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import type { IdentificationType } from '../../interfaces/IAuthService'
 import type { IFormValidator } from '../../interfaces/IFormValidator'
 import { AuthValidatorFactory } from '../../validators/AuthValidatorFactory'
 import { IdentificationFields } from '../../components/IdentificationFields'
+import { ChangePasswordForm } from '../../components/ChangePasswordForm'
 import { apiError } from '../../../../infrastructure/http/apiError'
 import { Input } from '../../../../core/ui/input'
 import { Label } from '../../../../core/ui/label'
@@ -96,7 +97,7 @@ export function ProfilePage({ validator }: Readonly<ProfilePageProps>) {
         backLabel={back.backLabel}
       />
 
-      <div className="relative z-10 max-w-xl mx-auto px-4 sm:px-6 -mt-12 pb-16">
+      <div className="relative z-10 max-w-xl mx-auto px-4 sm:px-6 -mt-12 pb-16 space-y-6">
         <DashboardCard>
           <DashboardCardHeader>
             <DashboardCardTitle className="flex items-center gap-2">
@@ -158,6 +159,20 @@ export function ProfilePage({ validator }: Readonly<ProfilePageProps>) {
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </Button>
             </form>
+          </DashboardCardContent>
+        </DashboardCard>
+
+        <DashboardCard>
+          <DashboardCardHeader>
+            <DashboardCardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-brand-cyan" /> Seguridad
+            </DashboardCardTitle>
+            <DashboardCardDescription>
+              Cambia tu contraseña. Cerraremos todas tus sesiones por seguridad.
+            </DashboardCardDescription>
+          </DashboardCardHeader>
+          <DashboardCardContent>
+            <ChangePasswordForm />
           </DashboardCardContent>
         </DashboardCard>
       </div>

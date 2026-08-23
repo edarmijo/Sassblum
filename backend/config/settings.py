@@ -187,6 +187,8 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
+    # Revoca access y refresh JWT cuando cambia el hash de contraseña.
+    'CHECK_REVOKE_TOKEN': True,
 }
 
 
