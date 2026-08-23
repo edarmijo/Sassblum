@@ -247,6 +247,7 @@ def test_import_preserves_snapshots_spam_latest_profile_and_is_idempotent(
 
     legacy_event = TicketEvent.objects.get(ticket=older)
     assert legacy_event.autor is None
+    assert legacy_event.autor_nombre == "Sistema (migración histórica)"
     assert legacy_event.tipo_evento == TicketEvent.TipoEvento.COMENTARIO
     assert "fecha de solución no disponible" in legacy_event.comentario
     assert "Solución histórica completa" in legacy_event.comentario

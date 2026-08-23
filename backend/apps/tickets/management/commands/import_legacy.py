@@ -24,6 +24,8 @@ from django.db import transaction
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from apps.tickets.utils import SYSTEM_EVENT_AUTHOR_NAME
+
 ESTADO_MAP = {
     "abierto": "Nuevo",
     "en proceso": "EnProceso",
@@ -788,6 +790,7 @@ class Command(BaseCommand):
                 legacy_events.append(TicketEvent(
                     ticket=ticket,
                     autor=None,
+                    autor_nombre=SYSTEM_EVENT_AUTHOR_NAME,
                     tipo_evento=TicketEvent.TipoEvento.COMENTARIO,
                     comentario=(
                         "[Resolución del sistema anterior; fecha de solución no disponible] "

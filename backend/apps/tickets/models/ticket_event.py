@@ -49,6 +49,14 @@ class TicketEvent(models.Model):
         verbose_name="autor",
         help_text="Null = evento del sistema (p. ej. migración de datos legados).",
     )
+    autor_nombre = models.CharField(
+        max_length=301,
+        blank=True,
+        default="",
+        editable=False,
+        verbose_name="nombre histórico del autor",
+        help_text="Copia inmutable del nombre visible cuando se registró el evento.",
+    )
     asignado_anterior = models.ForeignKey(
         "authentication.User",
         on_delete=models.PROTECT,

@@ -9,7 +9,7 @@ SOLID: SRP
 
 Fields exposed:
     id, tipo_evento, estado_anterior, estado_nuevo, comentario,
-    autor_nombre (derived), created_at
+    autor_nombre (historical snapshot), created_at
 
 Not exposed: ticket_id (inferred from context), autor FK raw ID.
 """
@@ -20,8 +20,6 @@ from apps.tickets.models import TicketEvent
 
 
 class TicketEventSerializer(serializers.ModelSerializer):
-
-    autor_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = TicketEvent
@@ -35,9 +33,3 @@ class TicketEventSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
-
-    def get_autor_nombre(self, obj: TicketEvent) -> str:
-        """Return 'nombre apellido' of the event author."""
-        if obj.autor is None:
-            return "Sistema (migración histórica)"
-        return f"{obj.autor.first_name} {obj.autor.last_name}".strip() or obj.autor.email

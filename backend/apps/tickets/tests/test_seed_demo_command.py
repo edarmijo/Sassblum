@@ -10,6 +10,7 @@ from django.core.management.base import CommandError
 from django.test import override_settings
 
 from apps.tickets.management.commands.seed_demo import Command
+from apps.tickets.models import TicketEvent
 
 
 def test_seed_demo_requires_explicit_confirmation() -> None:
@@ -29,3 +30,12 @@ def test_seed_demo_runs_only_after_confirmation() -> None:
     with patch.object(Command, "_seed") as seed:
         call_command("seed_demo", confirm_demo=True)
     seed.assert_called_once_with()
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_seed_demo_snapshots_every_event_author() -> None:
+    call_command("seed_demo", confirm_demo=True)
+
+    assert TicketEvent.objects.exists()
+    assert not TicketEvent.objects.filter(autor_nombre="").exists()

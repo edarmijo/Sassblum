@@ -25,6 +25,7 @@ from apps.tickets.interfaces import (
 from apps.tickets.models import Ticket, TicketEvent
 from apps.tickets.repositories import TicketRepository
 from apps.tickets.state_machine import TicketStateMachine
+from apps.tickets.utils import event_author_name
 from apps.tickets.validators import TicketValidatorChain
 from apps.tickets.services.storage_service import StorageService
 from core.exceptions.domain_exceptions import (
@@ -90,6 +91,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         TicketEvent.objects.create(
             ticket=ticket,
             autor=user,
+            autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.CREACION,
             comentario="Ticket creado.",
         )
@@ -138,7 +140,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         anterior = ticket.estado
         self._repo.update(ticket_id, {"estado": new_status})
         TicketEvent.objects.create(
-            ticket=ticket, autor=user,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.CAMBIO_ESTADO,
             estado_anterior=anterior, estado_nuevo=new_status, comentario=comment,
         )
@@ -150,7 +152,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             raise CommentRequiredError("El comentario no puede estar vacío.")
         ticket = self._require(ticket_id, user)
         event = TicketEvent.objects.create(
-            ticket=ticket, autor=user,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.COMENTARIO, comentario=comment,
         )
         return self._event_summary(event)
@@ -184,7 +186,8 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             {"asignado": worker, "estado": Ticket.Estado.EN_PROCESO},
         )
         TicketEvent.objects.create(
-            ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
+            tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
             estado_anterior=Ticket.Estado.NUEVO, estado_nuevo=Ticket.Estado.EN_PROCESO,
             comentario=f"Asignado a {worker.email}.",
         )
@@ -214,7 +217,8 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         # Use the refreshed ticket so the Observer resolves the new worker.
         ticket = self._repo.update(ticket_id, {"asignado": worker})
         TicketEvent.objects.create(
-            ticket=ticket, autor=user, tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
+            ticket=ticket, autor=user, autor_nombre=event_author_name(user),
+            tipo_evento=TicketEvent.TipoEvento.REASIGNACION,
             asignado_anterior=previous_worker,
             comentario=f"Reasignado de {previous_worker.email} a {worker.email}.",
         )
@@ -256,6 +260,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         TicketEvent.objects.create(
             ticket=ticket,
             autor=user,
+            autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
             comentario="Contacto corregido por administración: " + "; ".join(changes) + ".",
         )
@@ -294,20 +299,13 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     @staticmethod
     def _event_summary(event: TicketEvent) -> dict:
         """Return an event in the API shape shared by detail and comment actions."""
-        if event.autor is None:
-            author_name = "Sistema (migración histórica)"
-        else:
-            author_name = (
-                f"{event.autor.first_name} {event.autor.last_name}".strip()
-                or event.autor.email
-            )
         return {
             "id": event.id,
             "tipo_evento": event.tipo_evento,
             "estado_anterior": event.estado_anterior,
             "estado_nuevo": event.estado_nuevo,
             "comentario": event.comentario,
-            "autor_nombre": author_name,
+            "autor_nombre": event.autor_nombre,
             "creado_en": event.created_at.isoformat(),
         }
 

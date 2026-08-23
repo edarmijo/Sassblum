@@ -83,13 +83,14 @@ class TestTicketActionsAPI:
         ticket.refresh_from_db()
         assert ticket.asignado_id == replacement_worker.id
         assert ticket.estado == Ticket.Estado.EN_PROCESO
-        assert TicketEvent.objects.filter(
+        event = TicketEvent.objects.get(
             ticket=ticket,
             tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
             estado_anterior=Ticket.Estado.NUEVO,
             estado_nuevo=Ticket.Estado.EN_PROCESO,
             autor=admin,
-        ).exists()
+        )
+        assert event.autor_nombre == admin.email
 
     @pytest.mark.parametrize(
         "current_status",
@@ -127,6 +128,7 @@ class TestTicketActionsAPI:
         assert event.estado_anterior == ""
         assert event.estado_nuevo == ""
         assert event.asignado_anterior_id == previous_worker_id
+        assert event.autor_nombre == admin.email
 
     def test_initial_assignment_rejects_a_ticket_that_already_has_a_worker(
         self, admin, ticket, replacement_worker
@@ -217,11 +219,12 @@ class TestTicketActionsAPI:
         assert response.status_code == 200
         ticket.refresh_from_db()
         assert ticket.estado == Ticket.Estado.RESUELTO
-        assert TicketEvent.objects.filter(
+        event = TicketEvent.objects.get(
             ticket=ticket,
             tipo_evento=TicketEvent.TipoEvento.CAMBIO_ESTADO,
             autor=admin,
-        ).exists()
+        )
+        assert event.autor_nombre == admin.email
 
     def test_admin_can_reopen_a_closed_ticket(self, admin, ticket) -> None:
         ticket.estado = Ticket.Estado.CERRADO
@@ -268,11 +271,47 @@ class TestTicketActionsAPI:
         assert response.status_code == 200
         assert response.data["tipo_evento"] == TicketEvent.TipoEvento.COMENTARIO
         assert response.data["autor_nombre"] == admin.email
-        assert TicketEvent.objects.filter(
+        event = TicketEvent.objects.get(
             ticket=ticket,
             tipo_evento=TicketEvent.TipoEvento.COMENTARIO,
             autor=admin,
-        ).exists()
+        )
+        assert event.autor_nombre == admin.email
+
+    def test_event_author_name_does_not_change_with_the_user_profile(
+        self, admin, ticket
+    ) -> None:
+        admin.first_name = "Autora"
+        admin.last_name = "Original"
+        admin.save(update_fields=["first_name", "last_name"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        created = client.post(
+            f"/api/tickets/{ticket.id}/comentario",
+            {"comentario": "Evento que debe conservar su autoría."},
+            format="json",
+        )
+
+        assert created.status_code == 200
+        assert created.data["autor_nombre"] == "Autora Original"
+        event = TicketEvent.objects.get(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.COMENTARIO,
+        )
+        assert event.autor_nombre == "Autora Original"
+
+        admin.first_name = "Ocupante"
+        admin.last_name = "Nuevo"
+        admin.save(update_fields=["first_name", "last_name"])
+
+        detail = client.get(f"/api/tickets/{ticket.id}")
+        history = client.get(f"/api/tickets/{ticket.id}/historial")
+
+        assert detail.status_code == 200
+        assert history.status_code == 200
+        assert detail.data["eventos"][0]["autor_nombre"] == "Autora Original"
+        assert history.data[0]["autor_nombre"] == "Autora Original"
 
     def test_admin_corrects_ticket_contact_without_changing_login_email(
         self, admin, ticket
@@ -300,6 +339,7 @@ class TestTicketActionsAPI:
             tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
         )
         assert event.autor == admin
+        assert event.autor_nombre == admin.email
         assert original_account_email in event.comentario
         assert "correcto@example.com" in event.comentario
 
