@@ -26,4 +26,4 @@ of truth.
 7. A release is complete only after review, CI, deployment smoke checks and an immutable tag.
 
 For architecture, conventions, state-machine rules and commands, use `AGENTS.md` rather than
-duplicating them here.
+duplicating them here. ooeeee
