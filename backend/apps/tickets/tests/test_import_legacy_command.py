@@ -343,6 +343,7 @@ def test_manifest_failure_rolls_back_the_real_import(tmp_path: Path) -> None:
     source_hash = write_dump(dump_path, [legacy_row(1000)])
     manifest_path = tmp_path / "manifest.json"
     manifest_path.write_text("do not replace", encoding="utf-8")
+    stdout = StringIO()
 
     with pytest.raises(CommandError, match="ya existe"):
         call_command(
@@ -353,7 +354,7 @@ def test_manifest_failure_rolls_back_the_real_import(tmp_path: Path) -> None:
             confirm_omissions=True,
             expected_sha256=source_hash,
             manifest=manifest_path,
-            stdout=StringIO(),
+            stdout=stdout,
         )
 
     assert Ticket.objects.count() == 0

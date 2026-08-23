@@ -238,18 +238,13 @@ def _valid_email(email: str) -> bool:
     return True
 
 
-def _clean_row(row: list[str | None]) -> tuple[ParsedRow, list[ImportIssue]]:
-    codigo_raw, fecha, usuario, email, ruc, empresa, asunto, mensaje, solucion, estado = row
-    codigo = int(codigo_raw or "")
-    usuario_limpio = (usuario or "").strip()
-    email_limpio = (email or "").strip().lower()
-    ruc_original = ruc or ""
+def _clean_ruc(
+    codigo: int,
+    ruc_original: str,
+    es_spam: bool,
+) -> tuple[str, list[str], list[ImportIssue]]:
+    """Normalize one legacy RUC and keep every exceptional decision traceable."""
     ruc_normalizado, ruc_reglas = normalize_ruc(ruc_original)
-    empresa_limpia = (empresa or "").strip()
-    asunto_limpio = (asunto or "").strip() or "(sin asunto)"
-    mensaje_limpio = (mensaje or "").strip() or "(sin mensaje)"
-    estado_original = (estado or "").strip()
-    es_spam = is_legacy_spam(ruc_original, asunto_limpio, mensaje_limpio)
     issues: list[ImportIssue] = []
 
     if es_spam:
@@ -271,6 +266,26 @@ def _clean_row(row: list[str | None]) -> tuple[ParsedRow, list[ImportIssue]]:
             "ruc_anomalo",
             "identificación conservada sin completar ni truncar",
         ))
+
+    return ruc_normalizado, ruc_reglas, issues
+
+
+def _clean_row(row: list[str | None]) -> tuple[ParsedRow, list[ImportIssue]]:
+    codigo_raw, fecha, usuario, email, ruc, empresa, asunto, mensaje, solucion, estado = row
+    codigo = int(codigo_raw or "")
+    usuario_limpio = (usuario or "").strip()
+    email_limpio = (email or "").strip().lower()
+    ruc_original = ruc or ""
+    empresa_limpia = (empresa or "").strip()
+    asunto_limpio = (asunto or "").strip() or "(sin asunto)"
+    mensaje_limpio = (mensaje or "").strip() or "(sin mensaje)"
+    estado_original = (estado or "").strip()
+    es_spam = is_legacy_spam(ruc_original, asunto_limpio, mensaje_limpio)
+    ruc_normalizado, ruc_reglas, issues = _clean_ruc(
+        codigo,
+        ruc_original,
+        es_spam,
+    )
 
     estado_normalizado = ESTADO_MAP.get(estado_original.casefold(), "Nuevo")
     if estado_original.casefold() not in ESTADO_MAP:
