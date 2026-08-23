@@ -80,11 +80,17 @@ class TestRegister:
     def test_creates_pending_client(self, db):
         result = AuthService().register({
             "nombre": "Ana", "apellido": "Pérez",
+            "empresa": "Mi Empresa S.A.",
+            "ruc": "0991234567001",
             "email": "new@example.com", "password": TEST_PASSWORD,
         })
         assert "message" in result
         user = User.objects.get(email="new@example.com")
         assert user.role == User.Role.CLIENT
+        assert user.first_name == "Ana"
+        assert user.last_name == "Pérez"
+        assert user.empresa == "Mi Empresa S.A."
+        assert user.ruc == "0991234567001"
         assert user.estado == User.Estado.PENDING
         assert user.email_verificado is False
 
@@ -93,7 +99,49 @@ class TestRegister:
         with pytest.raises(EmailAlreadyExists):
             svc.register({
                 "nombre": "X", "apellido": "Y",
+                "empresa": "Mi Empresa S.A.",
+                "ruc": "0991234567001",
                 "email": "user@example.com", "password": TEST_PASSWORD,
+            })
+
+    def test_missing_nombre_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "", "apellido": "Y",
+                "empresa": "Mi Empresa S.A.",
+                "ruc": "0991234567001",
+                "email": "noname@example.com", "password": TEST_PASSWORD,
+            })
+
+    def test_missing_empresa_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "Ana", "apellido": "Pérez",
+                "empresa": "",
+                "ruc": "0991234567001",
+                "email": "noempresa@example.com", "password": TEST_PASSWORD,
+            })
+
+    def test_missing_ruc_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "Ana", "apellido": "Pérez",
+                "empresa": "Mi Empresa S.A.",
+                "ruc": "",
+                "email": "noruc@example.com", "password": TEST_PASSWORD,
+            })
+
+    def test_invalid_ruc_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "Ana", "apellido": "Pérez",
+                "empresa": "Mi Empresa S.A.",
+                "ruc": "12345",
+                "email": "badruc@example.com", "password": TEST_PASSWORD,
             })
 
     def test_weak_password_rejected(self, db):
@@ -101,6 +149,8 @@ class TestRegister:
         with pytest.raises(PasswordPolicyViolation):
             svc.register({
                 "nombre": "X", "apellido": "Y",
+                "empresa": "Mi Empresa S.A.",
+                "ruc": "0991234567001",
                 "email": "weak@example.com", "password": TEST_PASSWORD[:5],
             })
 
