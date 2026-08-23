@@ -52,6 +52,14 @@ export function useReports(filters?: ReportFilters) {
     (formato: ReportFormat) => service.exportReport(formato, filters),
     [service, filters],
   )
+  const copyReport = useCallback(
+    () => service.copyReport(filters),
+    [service, filters],
+  )
+  const printReport = useCallback(
+    () => service.printReport(filters),
+    [service, filters],
+  )
 
-  return { summary, isLoading, error, exportReport, refresh: load }
+  return { summary, isLoading, error, exportReport, copyReport, printReport, refresh: load }
 }

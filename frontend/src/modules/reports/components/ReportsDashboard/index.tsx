@@ -34,7 +34,7 @@ export function ReportsDashboard() {
   const servicesLoadedRef = useRef(false)
   const [workers, setWorkers] = useState<AdminUser[]>([])
   const [services, setServices] = useState<ServiceSummary[]>([])
-  const { summary, isLoading, error, exportReport } = useReports(appliedFilters)
+  const { summary, isLoading, error, exportReport, copyReport, printReport } = useReports(appliedFilters)
   const hasAppliedFilters = Object.values(appliedFilters).some(Boolean)
 
   // Lista de técnicos activos para el filtro "Técnico asignado"
@@ -83,7 +83,11 @@ export function ReportsDashboard() {
             <Filter className="h-4 w-4 mr-1" />Filtros
             {hasAppliedFilters && <span className="ml-1 h-2 w-2 rounded-full bg-brand-cyan" />}
           </Button>
-          <ExportButton onExport={(fmt: ReportFormat) => exportReport(fmt)} />
+          <ExportButton
+            onExport={(fmt: ReportFormat) => exportReport(fmt)}
+            onCopy={copyReport}
+            onPrint={printReport}
+          />
         </div>
       </header>
 

@@ -14,8 +14,8 @@ from apps.reports.repositories import ReportRepository
 from core.factories.exporter_factory import ExporterFactory
 
 _COLUMNS = [
-    "numero", "asunto", "estado", "prioridad",
-    "servicio", "cliente", "asignado", "creado_en",
+    "numero", "creado_en", "usuario", "empresa", "ruc",
+    "asunto", "estado", "prioridad", "servicio", "asignado",
 ]
 
 
