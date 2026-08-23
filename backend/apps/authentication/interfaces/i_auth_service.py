@@ -38,6 +38,9 @@ class UserData(TypedDict):
     email: str
     nombre: str
     apellido: str
+    tipo_identificacion: str
+    ruc: str
+    empresa: str
     rol: str     # 'CLIENTE' | 'TRABAJADOR' | 'ADMINISTRADOR'
     estado: str  # 'ACTIVO' | 'BLOQUEADO' | 'PENDIENTE'
     email_verificado: bool
@@ -56,7 +59,8 @@ class IAuthService(ABC):
     @abstractmethod
     def update_profile(self, user, data: dict) -> dict:
         """
-        Update the user's OWN editable fields (nombre/apellido/ruc/empresa).
+        Update the user's OWN editable fields
+        (nombre/apellido/tipo_identificacion/ruc/empresa).
         Email and rol are excluded by design (identity / admin-only).
         """
 
@@ -88,13 +92,14 @@ class IAuthService(ABC):
 
         Args:
             data: validated dict from RegisterSerializer
-                  (nombre, apellido, email, password)
+                  (nombre, apellido, email, tipo_identificacion, ruc, empresa, password)
 
         Returns:
             {'message': str}
 
         Raises:
             EmailAlreadyExists      — duplicate email
+            RegistrationValidationError — missing or invalid required account data
             PasswordPolicyViolation — weak password caught post-serializer
         """
         ...

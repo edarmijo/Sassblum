@@ -54,6 +54,10 @@ class PasswordPolicyViolation(Exception):
     """Password failed the validator chain."""
 
 
+class RegistrationValidationError(Exception):
+    """Required registration data failed the validator chain."""
+
+
 class InvalidVerificationToken(Exception):
     """Email-verification token invalid or expired."""
 
@@ -102,7 +106,12 @@ class AuthService(IAuthService):
     def register(self, data: dict) -> dict:
         result = self._reg_chain.run(data)
         if not result.is_valid:
-            raise PasswordPolicyViolation("; ".join(result.errors))
+            error_type = (
+                PasswordPolicyViolation
+                if result.field_name == "password"
+                else RegistrationValidationError
+            )
+            raise error_type("; ".join(result.errors))
 
         if self._repo.email_exists(data["email"]):
             raise EmailAlreadyExists("Ya existe una cuenta con ese correo.")
@@ -111,8 +120,11 @@ class AuthService(IAuthService):
             "email": data["email"],
             "first_name": data.get("nombre", ""),
             "last_name": data.get("apellido", ""),
+            "tipo_identificacion": data.get(
+                "tipo_identificacion", User.TipoIdentificacion.RUC
+            ),
             "ruc": data.get("ruc", ""),
-            "empresa": data.get("empresa", ""),
+            "empresa": data.get("empresa", "").strip(),
             "password": data["password"],
             "role": User.Role.CLIENT,
             "estado": User.Estado.PENDING,
@@ -183,8 +195,13 @@ class AuthService(IAuthService):
         Actualiza SOLO los campos editables del propio usuario.
         Email y rol quedan fuera por diseño (identidad / decisión de admin).
         """
-        editable = {"nombre": "first_name", "apellido": "last_name",
-                    "ruc": "ruc", "empresa": "empresa"}
+        editable = {
+            "nombre": "first_name",
+            "apellido": "last_name",
+            "tipo_identificacion": "tipo_identificacion",
+            "ruc": "ruc",
+            "empresa": "empresa",
+        }
         changed: list[str] = []
         for field, model_field in editable.items():
             if field in data:
@@ -244,6 +261,7 @@ class AuthService(IAuthService):
             "email": user.email,
             "nombre": user.first_name,
             "apellido": user.last_name,
+            "tipo_identificacion": user.tipo_identificacion,
             "ruc": user.ruc,
             "empresa": user.empresa,
             "rol": user.role,

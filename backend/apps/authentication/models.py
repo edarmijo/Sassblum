@@ -34,6 +34,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
 
+    class TipoIdentificacion(models.TextChoices):
+        RUC = 'RUC', 'RUC'
+        CEDULA = 'Cedula', 'Cédula'
+
     class Role(models.TextChoices):
         CLIENT = 'client', 'Cliente'
         WORKER = 'worker', 'Trabajador'
@@ -53,6 +57,12 @@ class User(AbstractUser):
         blank=True,
         default='',
         verbose_name='RUC',
+    )
+    tipo_identificacion = models.CharField(
+        max_length=6,
+        choices=TipoIdentificacion.choices,
+        default=TipoIdentificacion.RUC,
+        verbose_name='tipo de identificación',
     )
     ruc_original      = models.CharField(
         max_length=32,

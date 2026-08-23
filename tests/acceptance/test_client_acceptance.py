@@ -30,6 +30,9 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Nuevo',
             'apellido': 'Cliente',
+            'tipo_identificacion': 'RUC',
+            'ruc': '0991234567001',
+            'empresa': 'Empresa Nueva',
         })
         assert response.status_code == 201
         user = User.objects.get(email='nuevo@sassblum.com')
@@ -43,8 +46,44 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Dup',
             'apellido': 'User',
+            'tipo_identificacion': 'RUC',
+            'ruc': '0991234567001',
+            'empresa': 'Empresa Duplicada',
         })
         assert response.status_code == 409
+
+    def test_register_with_cedula_persists_selected_type(self, api_client):
+        response = api_client.post('/api/auth/register', {
+            'email': 'cedula@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Cédula',
+            'tipo_identificacion': 'Cedula',
+            'ruc': '0912345678',
+            'empresa': 'Empresa Cédula',
+        })
+        assert response.status_code == 201
+        user = User.objects.get(email='cedula@sassblum.com')
+        assert user.tipo_identificacion == User.TipoIdentificacion.CEDULA
+        assert user.ruc == '0912345678'
+
+    @pytest.mark.parametrize('invalid_identification', [
+        '099123456700', '09912345670012', '099123-567001',
+        '099123 567001', '099123456700A', ' 0991234567001',
+    ])
+    def test_register_rejects_invalid_ruc(self, api_client, invalid_identification):
+        response = api_client.post('/api/auth/register', {
+            'email': f'invalid-{abs(hash(invalid_identification))}@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Inválido',
+            'tipo_identificacion': 'RUC',
+            'ruc': invalid_identification,
+            'empresa': 'Empresa',
+        })
+        assert response.status_code == 400
 
 
 # ── TC-C2: Email Verification & Recovery ──────────────────────────────────────
@@ -131,6 +170,22 @@ class TestTCC4TicketCreation:
         })
         assert response.status_code == 201
         assert response.data['estado'] == 'Nuevo'
+
+    def test_existing_incomplete_account_is_directed_to_profile(
+        self, api_client, client_user, catalog_service
+    ):
+        client_user.ruc = ''
+        client_user.empresa = ''
+        client_user.save(update_fields=['ruc', 'empresa'])
+        api_client.force_authenticate(user=client_user)
+        response = api_client.post('/api/tickets/', {
+            'asunto': 'Problema con servidor',
+            'descripcion': 'El servidor no responde desde ayer por la tarde',
+            'servicio_id': catalog_service.id,
+            'prioridad': 'Alta',
+        })
+        assert response.status_code == 400
+        assert 'perfil' in response.data['detail'].lower()
 
     def test_create_ticket_with_empty_subject_rejected(self, authenticated_client):
         """Given empty subject, when creating ticket, validation fails."""

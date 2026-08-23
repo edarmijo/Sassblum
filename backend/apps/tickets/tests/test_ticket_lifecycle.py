@@ -10,7 +10,7 @@ from apps.authentication.models import User
 from apps.catalog.models import Service
 from apps.notifications.models import Notification
 from apps.tickets.models import Ticket, TicketEvent
-from apps.tickets.services.ticket_service import TicketService
+from apps.tickets.services.ticket_service import TicketService, TicketValidationError
 from core.exceptions.domain_exceptions import InvalidTransitionError
 from core.testing import random_credential
 
@@ -25,8 +25,15 @@ def service(db):
 
 @pytest.fixture
 def cliente(db):
-    return User.objects.create_user(email="c@x.com", password=TEST_PASSWORD, role=User.Role.CLIENT,
-                                    estado=User.Estado.ACTIVE, email_verificado=True)
+    return User.objects.create_user(
+        email="c@x.com",
+        password=TEST_PASSWORD,
+        role=User.Role.CLIENT,
+        estado=User.Estado.ACTIVE,
+        email_verificado=True,
+        ruc="0991234567001",
+        empresa="Empresa Cliente",
+    )
 
 
 @pytest.fixture
@@ -62,6 +69,15 @@ class TestTicketLifecycle:
         assert detail["estado"] == "Nuevo"
         event = TicketEvent.objects.get(tipo_evento="creacion")
         assert event.autor_nombre == cliente.email
+
+    def test_incomplete_existing_profile_cannot_create_ticket(self, cliente, service):
+        cliente.ruc = ""
+        cliente.empresa = ""
+        cliente.save(update_fields=["ruc", "empresa"])
+        with pytest.raises(TicketValidationError, match="Completa tu tipo") as error:
+            self._create(cliente, service)
+        assert error.value.field == "perfil"
+        assert not Ticket.objects.exists()
 
     def test_full_flow_create_assign_resolve_close(self, cliente, service, worker, admin):
         detail = self._create(cliente, service)

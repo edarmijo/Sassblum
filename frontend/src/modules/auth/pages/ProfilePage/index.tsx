@@ -3,6 +3,10 @@ import type { FormEvent } from 'react'
 import { toast } from 'sonner'
 import { User } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import type { IdentificationType } from '../../interfaces/IAuthService'
+import type { IFormValidator } from '../../interfaces/IFormValidator'
+import { AuthValidatorFactory } from '../../validators/AuthValidatorFactory'
+import { IdentificationFields } from '../../components/IdentificationFields'
 import { apiError } from '../../../../infrastructure/http/apiError'
 import { Input } from '../../../../core/ui/input'
 import { Label } from '../../../../core/ui/label'
@@ -16,23 +20,35 @@ import {
 } from '../../../../core/ui/DashboardCard'
 
 /**
- * ProfilePage — edición del perfil propio (nombre, apellido, RUC, empresa).
+ * ProfilePage — edición del perfil propio (nombre, apellido, tipo, identificación y empresa).
  * SRP: solo captura y envía; la mutación vive en useAuth.updateProfile (DIP).
  * El email se muestra pero no se edita (identidad de la cuenta).
  */
-export function ProfilePage() {
+interface ProfilePageProps {
+  validator?: IFormValidator
+}
+
+export function ProfilePage({ validator }: Readonly<ProfilePageProps>) {
   const { user, updateProfile } = useAuth()
   const back = dashboardRoute(user?.rol)
   const [form, setForm] = useState({
     nombre: user?.nombre ?? '',
     apellido: user?.apellido ?? '',
+    tipoIdentificacion: user?.tipoIdentificacion ?? 'RUC' as IdentificationType,
     ruc: user?.ruc ?? '',
     empresa: user?.empresa ?? '',
   })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const validatorChain = useState(
+    () => validator ?? AuthValidatorFactory.buildClientProfileChain(),
+  )[0]
+  const identificationError = error && (
+    error.includes('identificación') || error.includes('RUC') || error.includes('cédula')
+  ) ? error : null
 
   if (!user) return null
+  const requiresClientProfile = user.rol === 'CLIENTE'
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -43,13 +59,21 @@ export function ProfilePage() {
       setError('Nombre y apellido no pueden quedar vacíos.')
       return
     }
+    if (requiresClientProfile) {
+      const validationResult = validatorChain.run(form)
+      if (!validationResult.isValid) {
+        setError(validationResult.errors[0])
+        return
+      }
+    }
     setError(null)
     setSaving(true)
     try {
       await updateProfile({
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
-        ruc: form.ruc.trim(),
+        tipo_identificacion: form.tipoIdentificacion,
+        ruc: form.ruc,
         empresa: form.empresa.trim(),
       })
       toast.success('Perfil actualizado correctamente')
@@ -105,15 +129,26 @@ export function ProfilePage() {
 
               <div className="space-y-2">
                 <Label htmlFor="perfil-empresa">Empresa</Label>
-                <Input id="perfil-empresa" value={form.empresa} onChange={set('empresa')} placeholder="Nombre de tu empresa" />
+                <Input id="perfil-empresa" required={requiresClientProfile} value={form.empresa} onChange={set('empresa')} placeholder="Nombre de tu empresa" />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="perfil-ruc">RUC</Label>
-                <Input id="perfil-ruc" inputMode="numeric" maxLength={13} value={form.ruc} onChange={set('ruc')} placeholder="Ej: 0991234567001" />
-              </div>
+              <IdentificationFields
+                idPrefix="perfil"
+                type={form.tipoIdentificacion}
+                value={form.ruc}
+                error={identificationError}
+                required={requiresClientProfile}
+                onTypeChange={(tipoIdentificacion) => {
+                  setForm((current) => ({ ...current, tipoIdentificacion }))
+                  setError(null)
+                }}
+                onValueChange={(ruc) => {
+                  setForm((current) => ({ ...current, ruc }))
+                  setError(null)
+                }}
+              />
 
-              {error && (
+              {error && !identificationError && (
                 <Alert variant="destructive" role="alert">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>

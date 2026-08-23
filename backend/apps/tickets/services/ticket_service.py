@@ -61,6 +61,9 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "descripcion": data.get("descripcion", ""),
             "adjuntos": data.get("adjuntos", []),
             "cliente_id": user.id,
+            "tipo_identificacion": user.tipo_identificacion,
+            "ruc": user.ruc,
+            "empresa": user.empresa,
             "servicio_id": data.get("servicio_id"),
         }
         result = self._chain.run(validation_payload)

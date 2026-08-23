@@ -34,6 +34,7 @@ const user: AuthUser = {
   email: 'cliente@sassblum.test',
   nombre: 'Vicky',
   apellido: 'Pinto',
+  tipoIdentificacion: 'RUC',
   ruc: '',
   empresa: 'SassBlum',
   rol: 'CLIENTE',

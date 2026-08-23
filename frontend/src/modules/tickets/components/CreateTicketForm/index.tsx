@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { User } from 'lucide-react'
 import { useCreateTicket } from '../../hooks/useTickets'
 import { useAuth } from '../../../auth/hooks/useAuth'
+import { hasCompleteIdentification } from '../../../auth/validators/IdentificationValidator'
 import { TicketValidatorChain } from '../../validators/TicketValidatorChain'
 import type { TicketPrioridad } from '../../interfaces/ITicketService'
 import { Button } from '../../../../core/ui/button'
@@ -13,6 +14,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../../../../core/ui/select'
 import { Alert, AlertDescription } from '../../../../core/ui/alert'
+import { SmoothLink } from '../../../../core/ui/SmoothLink'
+import { apiError } from '../../../../infrastructure/http/apiError'
 
 interface ServiceOption {
   id: string
@@ -61,8 +64,17 @@ export function CreateTicketForm({ services, initialServiceId, onSuccess }: Read
     email: user.email,
     ruc: user.ruc ?? '',
   } : null
+  const hasCompleteProfile = Boolean(
+    user
+      && user.empresa.trim()
+      && hasCompleteIdentification({
+        tipoIdentificacion: user.tipoIdentificacion,
+        ruc: user.ruc,
+      }),
+  )
 
   const validate = (): boolean => {
+    if (!hasCompleteProfile) return false
     const result = validatorChain.current.run({
       asunto,
       descripcion,
@@ -97,9 +109,9 @@ export function CreateTicketForm({ services, initialServiceId, onSuccess }: Read
       setServicioId('')
       setPrioridad('Media')
       setErrors({})
-    } catch (err) {
+    } catch (err: unknown) {
       setErrors({
-        general: err instanceof Error ? err.message : 'Error al crear el ticket.',
+        general: apiError(err, 'Error al crear el ticket.'),
       })
     } finally {
       setIsSubmitting(false)
@@ -120,6 +132,18 @@ export function CreateTicketForm({ services, initialServiceId, onSuccess }: Read
           </div>
           <span className="ml-auto text-[10px] uppercase tracking-wide text-brand-cyan bg-brand-cyan/10 rounded-full px-2 py-0.5">Autocompletado</span>
         </div>
+      )}
+
+      {!hasCompleteProfile && (
+        <Alert variant="destructive" role="alert">
+          <AlertDescription>
+            Completa tu tipo y número de identificación y tu empresa antes de crear un ticket.{' '}
+            <SmoothLink to="/perfil" className="font-semibold underline">
+              Ir a mi perfil
+            </SmoothLink>
+            .
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Asunto */}
@@ -233,7 +257,7 @@ export function CreateTicketForm({ services, initialServiceId, onSuccess }: Read
       )}
 
       {/* Submit */}
-      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting} className="w-full">
+      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting || !hasCompleteProfile} className="w-full">
         {isSubmitting ? 'Creando ticket…' : 'Crear ticket'}
       </Button>
     </form>
