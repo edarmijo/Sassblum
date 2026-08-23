@@ -25,8 +25,8 @@ export interface RegisterData {
   nombre: string
   apellido: string
   email: string
-  empresa?: string
-  ruc?: string
+  empresa: string
+  ruc: string
   password: string
   confirmPassword: string
 }

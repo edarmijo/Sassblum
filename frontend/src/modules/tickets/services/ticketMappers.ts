@@ -15,6 +15,12 @@ export interface BackendTicketSummary {
   prioridad: string
   servicio_nombre: string
   creado_en: string
+  // H#6 (admin): presentes solo en contexto admin
+  cliente_email?: string
+  cliente_empresa?: string
+  cliente_ruc?: string
+  asignado_nombre?: string | null
+  asignado_email?: string | null
 }
 
 export interface BackendTicketEvent {
@@ -53,6 +59,12 @@ export function mapTicketSummary(ticket: BackendTicketSummary): TicketSummary {
     prioridad: ticket.prioridad as TicketPrioridad,
     servicioNombre: ticket.servicio_nombre,
     creadoEn: ticket.creado_en,
+    // H#6 (admin): campos opcionales
+    clienteEmail: ticket.cliente_email,
+    clienteEmpresa: ticket.cliente_empresa,
+    clienteRuc: ticket.cliente_ruc,
+    asignadoNombre: ticket.asignado_nombre,
+    asignadoEmail: ticket.asignado_email,
   }
 }
 

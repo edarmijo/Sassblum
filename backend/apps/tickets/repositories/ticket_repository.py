@@ -109,6 +109,13 @@ class TicketRepository(BaseRepository[Ticket]):
             qs = qs.filter(cliente_id=cliente_id)
         if asignado_id := filters.get("asignado_id"):
             qs = qs.filter(asignado_id=asignado_id)
+        # H#6 (admin): filtros avanzados por datos del cliente
+        if cliente_ruc := filters.get("cliente_ruc"):
+            qs = qs.filter(cliente__ruc__icontains=cliente_ruc)
+        if cliente_email := filters.get("cliente_email"):
+            qs = qs.filter(cliente__email__icontains=cliente_email)
+        if cliente_empresa := filters.get("cliente_empresa"):
+            qs = qs.filter(cliente__empresa__icontains=cliente_empresa)
         return qs
 
     # ── History (timeline of events) ───────────────────────────────────────────

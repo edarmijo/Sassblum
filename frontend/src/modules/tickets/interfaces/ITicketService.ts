@@ -45,6 +45,12 @@ export interface TicketSummary {
   prioridad: TicketPrioridad
   servicioNombre: string
   creadoEn: string          // ISO 8601
+  // H#6 (admin): campos de empresa y asignado — presentes solo cuando el backend los devuelve
+  clienteEmail?: string
+  clienteEmpresa?: string
+  clienteRuc?: string
+  asignadoNombre?: string | null
+  asignadoEmail?: string | null
 }
 
 export interface TicketEvent {
@@ -82,6 +88,10 @@ export interface TicketFilterOptions {
   servicioId?: string
   clienteId?: string
   asignadoId?: string
+  // H#6 (admin): filtros avanzados por datos del cliente
+  clienteRuc?: string
+  clienteEmail?: string
+  clienteEmpresa?: string
 }
 
 // ─── Service contract ─────────────────────────────────────────────────────────

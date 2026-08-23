@@ -2,6 +2,9 @@ import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AxiosError } from 'axios'
 import { useAuth } from '../../hooks/useAuth'
+import { NameValidator } from '../../validators/NameValidator'
+import { EmpresaValidator } from '../../validators/EmpresaValidator'
+import { RucValidator } from '../../validators/RucValidator'
 import { EmailValidator } from '../../validators/EmailValidator'
 import { PasswordValidator } from '../../validators/PasswordValidator'
 import { apiError } from '../../../../infrastructure/http/apiError'
@@ -18,7 +21,7 @@ interface RegisterFormProps {
 
 /**
  * SRP: captures registration input, runs the FE validator chain, submits via useAuth.
- * Chain of Responsibility: EmailValidator → PasswordValidator before the API call.
+ * Chain of Responsibility: NameValidator → EmpresaValidator → RucValidator → EmailValidator → PasswordValidator before the API call.
  */
 export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
   const { register } = useAuth()
@@ -34,9 +37,15 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const validate = (): string | null => {
+    const name = new NameValidator()
+    const empresa = new EmpresaValidator()
+    const ruc = new RucValidator()
     const email = new EmailValidator()
-    email.addValidator(new PasswordValidator())
-    const result = email.run(form)
+    const password = new PasswordValidator()
+
+    name.addValidator(empresa).addValidator(ruc).addValidator(email).addValidator(password)
+
+    const result = name.run(form)
     if (!result.isValid) return result.errors[0]
     if (form.password !== form.confirmPassword) return 'Las contraseñas no coinciden.'
     return null
@@ -74,28 +83,44 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="nombre">Nombre</Label>
-          <Input id="nombre" required value={form.nombre} onChange={set('nombre')} />
+          <Label htmlFor="nombre">
+            Nombre <span aria-hidden className="text-destructive">*</span>
+          </Label>
+          <Input id="nombre" required value={form.nombre} onChange={set('nombre')} placeholder="Tu nombre" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="apellido">Apellido</Label>
-          <Input id="apellido" required value={form.apellido} onChange={set('apellido')} />
+          <Input id="apellido" value={form.apellido} onChange={set('apellido')} placeholder="Tu apellido" />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reg-email">Correo electrónico</Label>
-        <Input id="reg-email" type="email" required value={form.email} onChange={set('email')} />
+        <Label htmlFor="reg-email">
+          Correo electrónico <span aria-hidden className="text-destructive">*</span>
+        </Label>
+        <Input id="reg-email" type="email" required value={form.email} onChange={set('email')} placeholder="ejemplo@correo.com" />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reg-empresa">Empresa <span className="text-muted-foreground text-xs font-normal">(opcional — se autocompleta al crear tickets)</span></Label>
-        <Input id="reg-empresa" value={form.empresa} onChange={set('empresa')} placeholder="Nombre de tu empresa" />
+        <Label htmlFor="reg-empresa">
+          Empresa <span aria-hidden className="text-destructive">*</span>
+        </Label>
+        <Input id="reg-empresa" required value={form.empresa} onChange={set('empresa')} placeholder="Nombre de tu empresa" />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reg-ruc">RUC <span className="text-muted-foreground text-xs font-normal">(opcional — se autocompleta al crear tickets)</span></Label>
-        <Input id="reg-ruc" inputMode="numeric" maxLength={13} value={form.ruc} onChange={set('ruc')} placeholder="Ej: 0991234567001" />
+        <Label htmlFor="reg-ruc">
+          RUC <span aria-hidden className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="reg-ruc"
+          inputMode="numeric"
+          maxLength={13}
+          required
+          value={form.ruc}
+          onChange={set('ruc')}
+          placeholder="13 dígitos (ej: 0991234567001)"
+        />
       </div>
 
       <div className="space-y-2">

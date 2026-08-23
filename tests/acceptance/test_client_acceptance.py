@@ -30,10 +30,15 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Nuevo',
             'apellido': 'Cliente',
+            'empresa': 'SassBlum Tech',
+            'ruc': '0991234567001',
         })
         assert response.status_code == 201
         user = User.objects.get(email='nuevo@sassblum.com')
         assert user.email_verificado is False
+        assert user.ruc == '0991234567001'
+        assert user.empresa == 'SassBlum Tech'
+        assert user.first_name == 'Nuevo'
 
     def test_register_with_duplicate_email_rejected(self, api_client, client_user):
         """Given an existing email, when registering, request is rejected."""
@@ -43,8 +48,62 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Dup',
             'apellido': 'User',
+            'empresa': 'SassBlum Tech',
+            'ruc': '0991234567001',
         })
         assert response.status_code == 409
+
+    def test_register_without_nombre_rejected(self, api_client):
+        """Given a registration payload without nombre, request is rejected with 400."""
+        response = api_client.post('/api/auth/register', {
+            'email': 'sin_nombre@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': '',
+            'apellido': 'Cliente',
+            'empresa': 'SassBlum Tech',
+            'ruc': '0991234567001',
+        })
+        assert response.status_code == 400
+
+    def test_register_without_empresa_rejected(self, api_client):
+        """Given a registration payload without empresa, request is rejected with 400."""
+        response = api_client.post('/api/auth/register', {
+            'email': 'sin_empresa@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Prueba',
+            'empresa': '',
+            'ruc': '0991234567001',
+        })
+        assert response.status_code == 400
+
+    def test_register_without_ruc_rejected(self, api_client):
+        """Given a registration payload without ruc, request is rejected with 400."""
+        response = api_client.post('/api/auth/register', {
+            'email': 'sin_ruc@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Prueba',
+            'empresa': 'SassBlum Tech',
+            'ruc': '',
+        })
+        assert response.status_code == 400
+
+    def test_register_with_invalid_ruc_rejected(self, api_client):
+        """Given a registration payload with non-13-digit ruc, request is rejected with 400."""
+        response = api_client.post('/api/auth/register', {
+            'email': 'bad_ruc@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Prueba',
+            'empresa': 'SassBlum Tech',
+            'ruc': '123456',
+        })
+        assert response.status_code == 400
 
 
 # ── TC-C2: Email Verification & Recovery ──────────────────────────────────────

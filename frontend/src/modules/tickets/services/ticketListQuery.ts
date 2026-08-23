@@ -9,6 +9,10 @@ const FILTER_PARAMETER_NAMES = {
   fechaHasta: 'fecha_hasta',
   clienteId: 'cliente_id',
   asignadoId: 'asignado_id',
+  // H#6 (admin): filtros avanzados por datos del cliente
+  clienteRuc: 'cliente_ruc',
+  clienteEmail: 'cliente_email',
+  clienteEmpresa: 'cliente_empresa',
 } as const satisfies Record<keyof TicketFilterOptions, string>
 
 /** Builds the canonical query string shared by client and admin ticket lists. */

@@ -126,26 +126,57 @@ export function TicketFilters({ filters, onChange }: Readonly<TicketFiltersProps
             <Label htmlFor="tf-hasta">Fecha hasta</Label>
             <Input id="tf-hasta" type="date" value={filters.fechaHasta ?? ''} onChange={(e) => update('fechaHasta', e.target.value)} />
           </div>
-          {isAdmin && <div className="space-y-1.5">
-            <Label htmlFor="tf-cliente">Cliente (ID)</Label>
-            <Input id="tf-cliente" value={filters.clienteId ?? ''} onChange={(e) => update('clienteId', e.target.value)} placeholder="ID del cliente" />
-          </div>}
-          {isAdmin && <div className="space-y-1.5">
-            <Label>Técnico asignado</Label>
-            <Select value={filters.asignadoId?.toString() ?? ''} onValueChange={(v) => update('asignadoId', v)}>
-              <SelectTrigger><SelectValue placeholder="Todos los técnicos" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Todos</SelectItem>
-                {workers.map((w) => (
-                  <SelectItem key={w.id} value={w.id.toString()}>
-                    {w.nombre ? `${w.nombre} ${w.apellido}`.trim() : w.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>}
+
+          {/* H#6 (admin): filtros avanzados por datos del cliente */}
+          {isAdmin && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="tf-ruc">RUC de la empresa</Label>
+                <Input
+                  id="tf-ruc"
+                  value={filters.clienteRuc ?? ''}
+                  onChange={(e) => update('clienteRuc', e.target.value)}
+                  placeholder="Ej: 0991234567001"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tf-empresa">Nombre de la empresa</Label>
+                <Input
+                  id="tf-empresa"
+                  value={filters.clienteEmpresa ?? ''}
+                  onChange={(e) => update('clienteEmpresa', e.target.value)}
+                  placeholder="Ej: TechCorp S.A."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tf-email">Email del cliente</Label>
+                <Input
+                  id="tf-email"
+                  type="email"
+                  value={filters.clienteEmail ?? ''}
+                  onChange={(e) => update('clienteEmail', e.target.value)}
+                  placeholder="Ej: cliente@empresa.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Técnico asignado</Label>
+                <Select value={filters.asignadoId?.toString() ?? ''} onValueChange={(v) => update('asignadoId', v)}>
+                  <SelectTrigger><SelectValue placeholder="Todos los técnicos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Todos</SelectItem>
+                    {workers.map((w) => (
+                      <SelectItem key={w.id} value={w.id.toString()}>
+                        {w.nombre ? `${w.nombre} ${w.apellido}`.trim() : w.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
   )
 }
+
