@@ -38,6 +38,9 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
     email.addValidator(new PasswordValidator())
     const result = email.run(form)
     if (!result.isValid) return result.errors[0]
+    // RUC es obligatorio: el sistema es para empresas, no se permite registrar sin RUC.
+    if (!form.ruc.trim()) return 'El RUC es obligatorio.'
+    if (!/^\d{13}$/.test(form.ruc.trim())) return 'El RUC debe tener 13 dígitos numéricos.'
     if (form.password !== form.confirmPassword) return 'Las contraseñas no coinciden.'
     return null
   }
@@ -94,8 +97,8 @@ export function RegisterForm({ onSuccess }: Readonly<RegisterFormProps>) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reg-ruc">RUC <span className="text-muted-foreground text-xs font-normal">(opcional — se autocompleta al crear tickets)</span></Label>
-        <Input id="reg-ruc" inputMode="numeric" maxLength={13} value={form.ruc} onChange={set('ruc')} placeholder="Ej: 0991234567001" />
+        <Label htmlFor="reg-ruc">RUC</Label>
+        <Input id="reg-ruc" required inputMode="numeric" maxLength={13} value={form.ruc} onChange={set('ruc')} placeholder="Ej: 0991234567001" />
       </div>
 
       <div className="space-y-2">
