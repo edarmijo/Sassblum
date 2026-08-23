@@ -65,8 +65,7 @@ export function CreateTicketForm({ services, initialServiceId, onSuccess }: Read
     ruc: user.ruc ?? '',
   } : null
   const hasCompleteProfile = Boolean(
-    user
-      && user.empresa.trim()
+    user?.empresa.trim()
       && hasCompleteIdentification({
         tipoIdentificacion: user.tipoIdentificacion,
         ruc: user.ruc,

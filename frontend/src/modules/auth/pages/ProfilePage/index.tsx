@@ -40,9 +40,9 @@ export function ProfilePage({ validator }: Readonly<ProfilePageProps>) {
   })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const validatorChain = useState(
+  const [validatorChain] = useState(
     () => validator ?? AuthValidatorFactory.buildClientProfileChain(),
-  )[0]
+  )
   const identificationError = error && (
     error.includes('identificación') || error.includes('RUC') || error.includes('cédula')
   ) ? error : null

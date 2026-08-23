@@ -33,6 +33,7 @@ export function IdentificationFields({
   const label = type === 'RUC' ? 'RUC' : 'Cédula'
   const helpId = `${idPrefix}-identification-help`
   const errorId = `${idPrefix}-identification-error`
+  const describedBy = error ? `${helpId} ${errorId}` : helpId
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_1fr]">
@@ -62,7 +63,7 @@ export function IdentificationFields({
           maxLength={length}
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          aria-describedby={`${helpId}${error ? ` ${errorId}` : ''}`}
+          aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
           placeholder={type === 'RUC' ? 'Ej: 0991234567001' : 'Ej: 0912345678'}
         />

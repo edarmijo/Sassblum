@@ -28,7 +28,7 @@ export class IdentificationValidator extends BaseValidator {
     if (!ruc) {
       return { isValid: false, errors: ['La identificación es obligatoria.'], field: 'ruc' }
     }
-    if (!/^[0-9]+$/.test(ruc)) {
+    if (!/^\d+$/.test(ruc)) {
       return {
         isValid: false,
         errors: ['La identificación debe contener solo dígitos, sin espacios ni guiones.'],
