@@ -64,7 +64,9 @@ class TicketRepository(BaseRepository[Ticket]):
         return self.get_by_id(entity_id)
 
     def delete(self, entity_id: int) -> None:
-        Ticket.objects.filter(pk=entity_id).delete()
+        raise NotImplementedError(
+            "Los tickets son registros de auditoría y no se pueden eliminar."
+        )
 
     # ── Role-scoped listing with filters + pagination ──────────────────────────
 

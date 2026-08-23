@@ -255,6 +255,16 @@ ANYMAIL = {
 
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@sassblum.com')
 
+# Contacto que aparece en las instrucciones al cliente. Se configura en el
+# entorno de despliegue junto con la cuenta oficial de envío.
+SASSBLUM_CONTACT_PHONE = config('SASSBLUM_CONTACT_PHONE', default='')
+SASSBLUM_CONTACT_EMAIL = config(
+    'SASSBLUM_CONTACT_EMAIL', default=DEFAULT_FROM_EMAIL
+)
+SASSBLUM_CONTACT_HOURS = config(
+    'SASSBLUM_CONTACT_HOURS', default='Horario de atención indicado por administración'
+)
+
 # LN-3/LN-4 (paridad sistema legado): copia de cada email de notificación al equipo.
 # Vacío = sin CC. Ej: EMAIL_CC=notificaciones@sassblum.com
 EMAIL_CC = [e.strip() for e in config('EMAIL_CC', default='').split(',') if e.strip()]

@@ -213,6 +213,9 @@ class NotificationService(INotificationService):
             "cliente_nombre":  event.get("cliente_nombre", ""),
             "cliente_ruc":     event.get("cliente_ruc", ""),
             "cliente_empresa": event.get("cliente_empresa", ""),
+            "contact_phone":   self._contact_setting("SASSBLUM_CONTACT_PHONE"),
+            "contact_email":   self._contact_setting("SASSBLUM_CONTACT_EMAIL"),
+            "contact_hours":   self._contact_setting("SASSBLUM_CONTACT_HOURS"),
             "estado_anterior": event.get("estado_anterior", ""),
             "estado_nuevo":    event.get("estado_nuevo", ""),
             "comentario":      event.get("comentario", ""),
@@ -225,6 +228,11 @@ class NotificationService(INotificationService):
             "recipient_nombre": getattr(recipient, "first_name", ""),
             "recipient_role":   getattr(recipient, "role", ""),
         }
+
+    @staticmethod
+    def _contact_setting(name: str) -> str:
+        from django.conf import settings  # noqa: PLC0415
+        return str(getattr(settings, name, ""))
 
     @staticmethod
     def _make_title(tipo: str, event: dict) -> str:

@@ -24,8 +24,14 @@
   </div>
 
   {% if recipient.email == cliente_email %}
-    <p style="font-size:13px;">Se le ha asignado el ticket de servicio <b>{{ ticket_numero }}</b>. Nuestro equipo lo atenderá a la brevedad y recibirá actualizaciones a medida que avance.</p>
-    <p style="font-size:13px;margin-bottom:4px;">Los datos de contacto que nos proporcionó son:</p>
+    <p style="font-size:13px;">Su ticket <b>{{ ticket_numero }}</b> fue recibido correctamente. Nuestro equipo lo atenderá y recibirá actualizaciones a medida que avance.</p>
+    <p style="font-size:13px;margin-bottom:4px;">Para continuar con la atención:</p>
+    <ol style="font-size:13px;line-height:1.6;padding-left:22px;">
+      <li>Conserve el número <b>{{ ticket_numero }}</b> para cualquier seguimiento.</li>
+      <li>Comuníquese con administración al <b>{{ contact_phone|default:"número indicado por administración" }}</b> o escriba a <b>{{ contact_email }}</b>.</li>
+      <li>Indique el número de ticket y explique qué estaba haciendo cuando ocurrió el problema.</li>
+      <li>Cuando corresponda, adjunte capturas de pantalla u otras evidencias por el canal de atención.</li>
+    </ol>
   {% else %}
     <p style="font-size:13px;">Se generó el ticket <b>{{ ticket_numero }}</b> y está pendiente de asignación.</p>
     <p style="font-size:13px;margin-bottom:4px;">Datos de contacto del cliente:</p>
@@ -47,6 +53,8 @@
 
   <p style="font-size:13px;color:#6f6e68;margin-top:16px;">
     Soporte al usuario<br />
-    <b>SASSBLUM</b>
+    <b>SASSBLUM</b><br />
+    {{ contact_email }}{% if contact_phone %} · {{ contact_phone }}{% endif %}<br />
+    {{ contact_hours }}
   </p>
 {% endblock %}

@@ -53,7 +53,6 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     # ── ITicketClientActions ───────────────────────────────────────────────────
 
     @transaction.atomic
-    @transaction.atomic
     def create_ticket(self, data: dict, user) -> dict:
         validation_payload = {
             "asunto": data.get("asunto", ""),
@@ -262,8 +261,10 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "estado_nuevo": event.estado_nuevo,
             "comentario": event.comentario,
             "autor_nombre": (
-                f"{event.autor.first_name} {event.autor.last_name}".strip()
-                or event.autor.email
+                (
+                    f"{event.autor.first_name} {event.autor.last_name}".strip()
+                    or event.autor.email
+                ) if event.autor_id else "Sistema"
             ),
             "creado_en": event.created_at.isoformat(),
         }
