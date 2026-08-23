@@ -19,7 +19,12 @@ from rest_framework.views import APIView
 from apps.tickets.repositories import TicketRepository
 from apps.tickets.serializers import TicketListSerializer, TicketEventSerializer
 
-_FILTER_KEYS = ("estado", "prioridad", "servicio_id", "fecha_desde", "fecha_hasta")
+_FILTER_KEYS = (
+    "estado", "prioridad", "servicio_id", "fecha_desde", "fecha_hasta",
+    # H#6 (admin): filtros avanzados de cliente y técnico
+    "cliente_id", "asignado_id",
+    "cliente_ruc", "cliente_email", "cliente_empresa",
+)
 
 
 class TicketListView(APIView):

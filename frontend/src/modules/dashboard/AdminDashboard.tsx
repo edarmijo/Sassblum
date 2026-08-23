@@ -71,7 +71,7 @@ export function AdminDashboard() {
                   {isLoading ? (
                     <Skeleton className="h-48 w-full rounded-lg" style={{ background: 'rgba(8,22,36,0.5)' }} />
                   ) : (
-                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`, { state: origin })} />
+                    <TicketsTable tickets={tickets} onView={(id) => navigate(`/tickets/${id}`, { state: origin })} isAdmin />
                   )}
                 </DashboardCardContent>
               </DashboardCard>

@@ -61,14 +61,18 @@ class PDFExporter(IReportExporter):
             ],
         ]
         width_weights = {
-            "numero": 0.11,
-            "asunto": 0.20,
-            "estado": 0.10,
-            "prioridad": 0.09,
-            "servicio": 0.14,
-            "cliente": 0.13,
-            "asignado": 0.13,
-            "creado_en": 0.10,
+            "numero": 0.07,
+            "asunto": 0.14,
+            "estado": 0.07,
+            "prioridad": 0.06,
+            "servicio": 0.10,
+            "empresa_cliente": 0.10,
+            "ruc_cliente": 0.08,
+            "cliente_email": 0.11,
+            "asignado_nombre": 0.09,
+            "asignado_email": 0.10,
+            "descripcion": 0.14,
+            "creado_en": 0.08,
         }
         weights = [width_weights.get(column, 1 / len(columns)) for column in columns]
         total_weight = sum(weights)

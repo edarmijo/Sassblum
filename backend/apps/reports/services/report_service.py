@@ -15,7 +15,8 @@ from core.factories.exporter_factory import ExporterFactory
 
 _COLUMNS = [
     "numero", "asunto", "estado", "prioridad",
-    "servicio", "cliente", "asignado", "creado_en",
+    "servicio", "empresa_cliente", "ruc_cliente", "cliente_email",
+    "asignado_nombre", "asignado_email", "descripcion", "creado_en",
 ]
 
 

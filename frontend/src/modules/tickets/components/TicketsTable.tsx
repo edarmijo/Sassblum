@@ -1,48 +1,19 @@
-import { useState } from 'react'
 import { Eye } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../core/ui/table'
 import { Button } from '../../../core/ui/button'
-import { Input } from '../../../core/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../core/ui/select'
 import { StatusBadge, PriorityBadge } from './ticketBadges'
 import type { TicketSummary } from '../interfaces/ITicketService'
 
 interface TicketsTableProps {
   tickets: TicketSummary[]
   onView: (id: string) => void
+  /** Muestra columnas extra: Empresa, RUC, Asignado. Solo para el panel de admin. */
+  isAdmin?: boolean
 }
 
-export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
-  const [search, setSearch] = useState('')
-  const [estado, setEstado] = useState('all')
-
-  const filtered = tickets.filter((t) => {
-    const q = search.toLowerCase()
-    const matchesSearch =
-      t.numero.toLowerCase().includes(q) ||
-      t.asunto.toLowerCase().includes(q) ||
-      t.servicioNombre.toLowerCase().includes(q)
-    const matchesEstado = estado === 'all' || t.estado === estado
-    return matchesSearch && matchesEstado
-  })
-
+export function TicketsTable({ tickets, onView, isAdmin = false }: Readonly<TicketsTableProps>) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input className="flex-1" placeholder="Buscar por número, asunto o servicio…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <Select value={estado} onValueChange={setEstado}>
-          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Estado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="Nuevo">Nuevo</SelectItem>
-            <SelectItem value="EnProceso">En Proceso</SelectItem>
-            <SelectItem value="EnEspera">En Espera</SelectItem>
-            <SelectItem value="Resuelto">Resuelto</SelectItem>
-            <SelectItem value="Cerrado">Cerrado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(0,196,224,0.12)' }}>
         <div className="overflow-x-auto">
           <Table>
@@ -51,6 +22,9 @@ export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
                 <TableHead>Número</TableHead>
                 <TableHead>Servicio</TableHead>
                 <TableHead>Asunto</TableHead>
+                {isAdmin && <TableHead>Empresa</TableHead>}
+                {isAdmin && <TableHead>RUC</TableHead>}
+                {isAdmin && <TableHead>Asignado</TableHead>}
                 <TableHead>Estado</TableHead>
                 <TableHead>Prioridad</TableHead>
                 <TableHead>Fecha</TableHead>
@@ -58,16 +32,33 @@ export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {tickets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-[#7aa3b8]">No se encontraron tickets</TableCell>
+                  <TableCell colSpan={isAdmin ? 10 : 7} className="text-center py-10 text-[#7aa3b8]">No se encontraron tickets</TableCell>
                 </TableRow>
               ) : (
-                filtered.map((t) => (
+                tickets.map((t) => (
                   <TableRow key={t.id} className="cursor-pointer" onClick={() => onView(t.id)}>
                     <TableCell className="font-mono font-medium text-[#eef4f8]">{t.numero}</TableCell>
                     <TableCell>{t.servicioNombre}</TableCell>
                     <TableCell className="max-w-xs truncate">{t.asunto}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="max-w-[140px] truncate text-sm text-[#b8d0e0]">
+                        {t.clienteEmpresa || <span className="text-[#4a6a7a] italic">—</span>}
+                      </TableCell>
+                    )}
+                    {isAdmin && (
+                      <TableCell className="font-mono text-xs text-[#b8d0e0]">
+                        {t.clienteRuc || <span className="text-[#4a6a7a] italic">—</span>}
+                      </TableCell>
+                    )}
+                    {isAdmin && (
+                      <TableCell className="text-sm text-[#b8d0e0] max-w-[140px]">
+                        {t.asignadoNombre
+                          ? <span title={t.asignadoEmail ?? undefined}>{t.asignadoNombre}</span>
+                          : <span className="text-[#4a6a7a] italic">Sin asignar</span>}
+                      </TableCell>
+                    )}
                     <TableCell><StatusBadge estado={t.estado} /></TableCell>
                     <TableCell><PriorityBadge prioridad={t.prioridad} /></TableCell>
                     <TableCell>{new Date(t.creadoEn).toLocaleDateString()}</TableCell>
@@ -89,7 +80,8 @@ export function TicketsTable({ tickets, onView }: Readonly<TicketsTableProps>) {
         </div>
       </div>
 
-      <p className="text-sm text-[#7aa3b8]">Mostrando {filtered.length} de {tickets.length} tickets</p>
+      <p className="text-sm text-[#7aa3b8]">Mostrando {tickets.length} tickets</p>
     </div>
   )
 }
+

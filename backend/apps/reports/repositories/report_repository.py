@@ -9,6 +9,8 @@ from django.db.models import Count, Q
 
 from apps.tickets.models import Ticket
 
+_DESC_MAX_LEN = 200
+
 
 class ReportRepository:
 
@@ -31,7 +33,10 @@ class ReportRepository:
                 Q(cliente__first_name__icontains=cliente_nombre)
                 | Q(cliente__last_name__icontains=cliente_nombre)
                 | Q(cliente__email__icontains=cliente_nombre)
+                | Q(cliente__empresa__icontains=cliente_nombre)
             )
+        if cliente_email := filters.get("cliente_email"):
+            qs = qs.filter(cliente__email__icontains=cliente_email)
         if asignado_id := filters.get("asignado_id"):
             qs = qs.filter(asignado_id=asignado_id)
         return qs
@@ -56,16 +61,38 @@ class ReportRepository:
 
     def rows(self, filters: dict | None = None) -> list[dict]:
         qs = self._filtered(filters).order_by("-created_at")
-        return [
-            {
+        rows = []
+        for t in qs:
+            # Datos del cliente
+            cliente_empresa = t.cliente.empresa if t.cliente_id else ""
+            cliente_ruc = t.cliente.ruc if t.cliente_id else ""
+            cliente_email = t.cliente.email if t.cliente_id else ""
+            # Datos del asignado
+            if t.asignado_id:
+                asig_first = t.asignado.first_name or ""
+                asig_last = t.asignado.last_name or ""
+                asignado_nombre = f"{asig_first} {asig_last}".strip() or t.asignado.email
+                asignado_email = t.asignado.email
+            else:
+                asignado_nombre = ""
+                asignado_email = ""
+            # Descripción truncada para evitar celdas PDF demasiado grandes
+            descripcion = (t.descripcion or "")
+            if len(descripcion) > _DESC_MAX_LEN:
+                descripcion = descripcion[:_DESC_MAX_LEN] + "…"
+            rows.append({
                 "numero": t.numero,
                 "asunto": t.asunto,
                 "estado": t.estado,
                 "prioridad": t.prioridad,
                 "servicio": t.servicio.nombre if t.servicio_id else "",
-                "cliente": t.cliente.email if t.cliente_id else "",
-                "asignado": t.asignado.email if t.asignado_id else "",
+                "empresa_cliente": cliente_empresa,
+                "ruc_cliente": cliente_ruc,
+                "cliente_email": cliente_email,
+                "asignado_nombre": asignado_nombre,
+                "asignado_email": asignado_email,
+                "descripcion": descripcion,
                 "creado_en": t.created_at.strftime("%Y-%m-%d %H:%M"),
-            }
-            for t in qs
-        ]
+            })
+        return rows
+
