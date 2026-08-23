@@ -8,6 +8,9 @@ use SassBlum\Relay\Exception\RelayException;
 
 final class RelayConfig
 {
+    /** @var array<string, array<string, mixed>> */
+    private static $fileValues = [];
+
     /** @var array<string, mixed> */
     private $values;
 
@@ -23,11 +26,21 @@ final class RelayConfig
         if (!is_file($path) || !is_readable($path)) {
             throw new RelayException('Relay configuration file is unavailable.');
         }
-        $values = require $path;
-        if (!is_array($values)) {
-            throw new RelayException('Relay configuration is invalid.');
+
+        $resolvedPath = realpath($path);
+        if ($resolvedPath === false) {
+            throw new RelayException('Relay configuration file is unavailable.');
         }
-        return new self($values);
+
+        if (!array_key_exists($resolvedPath, self::$fileValues)) {
+            $values = require_once $resolvedPath;
+            if (!is_array($values)) {
+                throw new RelayException('Relay configuration is invalid.');
+            }
+            self::$fileValues[$resolvedPath] = $values;
+        }
+
+        return new self(self::$fileValues[$resolvedPath]);
     }
 
     public function relaySecret(): string { return $this->string('relay_secret'); }

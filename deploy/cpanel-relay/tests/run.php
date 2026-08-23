@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
 use SassBlum\Relay\Config\RelayConfig;
 use SassBlum\Relay\Controller\RelayController;
@@ -173,6 +173,8 @@ $tests['valid private configuration loads'] = function () use (&$runtimeDir): vo
     file_put_contents($path, '<?php return ' . var_export($values, true) . ';');
     $config = RelayConfig::fromFile($path);
     assertSameValue('mail.sassblum.com', $config->smtpHost(), 'SMTP host must load.');
+    $sameConfig = RelayConfig::fromFile($path);
+    assertSameValue('mail.sassblum.com', $sameConfig->smtpHost(), 'Repeated config loads must stay valid.');
 };
 $tests['validator accepts unordered exact contract'] = function (): void {
     $message = (new PayloadValidator(262144))->validate(encodePayload(validPayload()));

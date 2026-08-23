@@ -14,7 +14,7 @@ use SassBlum\Relay\Storage\LockedJsonFile;
 use SassBlum\Relay\Validation\PayloadValidator;
 
 $root = dirname(__DIR__);
-require $root . '/vendor/autoload.php';
+require_once $root . '/vendor/autoload.php';
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
