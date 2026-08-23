@@ -1,0 +1,37 @@
+{
+  "name": "sassblum/cpanel-email-relay",
+  "description": "Secure HTTPS-to-SMTP relay for SassBlum transactional email.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=7.4",
+    "ext-filter": "*",
+    "ext-hash": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-openssl": "*",
+    "phpmailer/phpmailer": "^6.12"
+  },
+  "autoload": {
+    "psr-4": {
+      "SassBlum\\Relay\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": false,
+    "optimize-autoloader": true,
+    "platform": {
+      "php": "7.4.33"
+    },
+    "preferred-install": "dist",
+    "sort-packages": true
+  },
+  "scripts": {
+    "lint": "php tests/lint.php",
+    "test": "php tests/run.php",
+    "check": [
+      "@lint",
+      "@test"
+    ]
+  }
+}

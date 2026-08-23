@@ -97,7 +97,7 @@ class TestTicketLifecycle:
         assignment_recipients = {
             address
             for message in mail.outbox
-            if message.subject == "[SassBlum] Ticket asignado"
+            if message.subject == f"[SassBlum] Ticket asignado · {detail['numero']}"
             for address in message.to
         }
         assert assignment_recipients == {cliente.email, worker.email, admin.email}
@@ -114,7 +114,7 @@ class TestTicketLifecycle:
         status_recipients = {
             address
             for message in mail.outbox
-            if message.subject == "[SassBlum] Ticket actualizado"
+            if message.subject == f"[SassBlum] Ticket actualizado · {detail['numero']}"
             for address in message.to
         }
         assert status_recipients == {cliente.email, worker.email, admin.email}
@@ -129,13 +129,45 @@ class TestTicketLifecycle:
         comment_recipients = {
             address
             for message in mail.outbox
-            if message.subject == "[SassBlum] Nuevo comentario en tu ticket"
+            if message.subject == (
+                f"[SassBlum] Nuevo comentario en tu ticket · {detail['numero']}"
+            )
             for address in message.to
         }
         assert comment_recipients == {cliente.email, worker.email, admin.email}
 
         closed = svc.close_ticket(ticket_id, "Confirmado por el cliente.", worker)
         assert closed["estado"] == "Cerrado"
+
+    def test_ticket_email_uses_corrected_contact_without_changing_account(
+        self, cliente, service, worker, admin
+    ):
+        detail = self._create(cliente, service)
+        ticket_id = int(detail["id"])
+        original_account_email = cliente.email
+        svc = TicketService()
+        svc.update_contact(
+            ticket_id,
+            {"nombre": "Contacto Corregido", "email": "correcto@example.com"},
+            admin,
+        )
+        svc.assign_ticket(ticket_id, worker.id, admin)
+        mail.outbox.clear()
+
+        svc.add_comment(ticket_id, "Información adicional.", worker)
+
+        ticket = Ticket.objects.get(id=ticket_id)
+        cliente.refresh_from_db()
+        client_messages = [
+            message for message in mail.outbox
+            if message.to == ["correcto@example.com"]
+        ]
+        assert len(client_messages) == 1
+        assert original_account_email not in {
+            address for message in mail.outbox for address in message.to
+        }
+        assert ticket.contacto_email_efectivo == "correcto@example.com"
+        assert cliente.email == original_account_email
 
     def test_invalid_transition_raises(self, cliente, service, worker, admin):
         detail = self._create(cliente, service)
