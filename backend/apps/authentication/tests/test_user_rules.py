@@ -34,6 +34,7 @@ class TestPublicRegistrationRole:
             'email': 'intruso@test.com',
             'nombre': 'X', 'apellido': 'Y',
             'password': RUNTIME_SECRET,
+            'ruc': '0912345678001',
             'role': 'admin',  # intento de inyección — debe ignorarse
         })
         assert User.objects.get(email='intruso@test.com').role == User.Role.CLIENT

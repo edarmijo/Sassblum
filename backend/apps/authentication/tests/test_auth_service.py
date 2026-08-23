@@ -77,16 +77,20 @@ class TestAuthenticate:
 
 @pytest.mark.django_db
 class TestRegister:
+    VALID_RUC = "0912345678001"
+
     def test_creates_pending_client(self, db):
         result = AuthService().register({
             "nombre": "Ana", "apellido": "Pérez",
             "email": "new@example.com", "password": TEST_PASSWORD,
+            "ruc": self.VALID_RUC,
         })
         assert "message" in result
         user = User.objects.get(email="new@example.com")
         assert user.role == User.Role.CLIENT
         assert user.estado == User.Estado.PENDING
         assert user.email_verificado is False
+        assert user.ruc == self.VALID_RUC
 
     def test_duplicate_email_rejected(self, active_user):
         svc = AuthService()
@@ -94,6 +98,7 @@ class TestRegister:
             svc.register({
                 "nombre": "X", "apellido": "Y",
                 "email": "user@example.com", "password": TEST_PASSWORD,
+                "ruc": self.VALID_RUC,
             })
 
     def test_weak_password_rejected(self, db):
@@ -102,6 +107,26 @@ class TestRegister:
             svc.register({
                 "nombre": "X", "apellido": "Y",
                 "email": "weak@example.com", "password": TEST_PASSWORD[:5],
+                "ruc": self.VALID_RUC,
+            })
+
+    def test_missing_ruc_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "X", "apellido": "Y",
+                "email": "noruc@example.com", "password": TEST_PASSWORD,
+                "ruc": "",
+            })
+        assert not User.objects.filter(email="noruc@example.com").exists()
+
+    def test_invalid_ruc_format_rejected(self, db):
+        svc = AuthService()
+        with pytest.raises(PasswordPolicyViolation):
+            svc.register({
+                "nombre": "X", "apellido": "Y",
+                "email": "badruc@example.com", "password": TEST_PASSWORD,
+                "ruc": "123",
             })
 
 

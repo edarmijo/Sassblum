@@ -1,5 +1,5 @@
 """
-RegistrationValidatorChain — assembles Email → Password (Chain of Responsibility).
+RegistrationValidatorChain — assembles Email → RUC → Password (Chain of Responsibility).
 
 Responsibility (SRP): wire the registration validator chain and expose run().
 Pattern: Chain of Responsibility (assembler).
@@ -11,12 +11,13 @@ from __future__ import annotations
 from core.base.base_validator import ValidationResult
 from .email_validator import EmailValidator
 from .password_validator import PasswordValidator
+from .ruc_validator import RucValidator
 
 
 class RegistrationValidatorChain:
     def __init__(self) -> None:
         email_v = EmailValidator()
-        email_v.add_validator(PasswordValidator())
+        email_v.add_validator(RucValidator()).add_validator(PasswordValidator())
         self._root = email_v
 
     def run(self, data: dict) -> ValidationResult:
