@@ -1,0 +1,23 @@
+{% extends "email/text/base_email.txt" %}
+
+{% block titulo %}{% if tipo == "comentario" %}{% if recipient_role == "worker" %}Nuevo comentario en un ticket asignado{% elif recipient_role == "admin" %}Nuevo comentario registrado{% else %}Nuevo comentario en tu ticket{% endif %}{% elif recipient_role == "worker" %}Cambió el estado de un ticket asignado{% elif recipient_role == "admin" %}Cambio de estado registrado{% else %}El estado de tu ticket cambió{% endif %}{% endblock %}
+
+{% block contenido %}
+Estimado(a) {{ recipient_nombre }}:
+
+{% if tipo == "comentario" %}Se agregó un comentario al ticket {{ ticket_numero }}:
+{% else %}El ticket {{ ticket_numero }} ha cambiado de estado:
+{% endif %}
+Asunto: {{ ticket_asunto }}
+{% if estado_anterior and estado_nuevo %}Cambio: {{ estado_anterior }} → {{ estado_nuevo }}
+{% endif %}
+{% if comentario %}Observaciones/Solución
+{{ comentario }}
+{% endif %}
+{% if tipo == "cambio_estado" and estado_nuevo %}El estado actual de su ticket es {{ estado_nuevo }}.
+{% if estado_nuevo == "Resuelto" %}La solicitud fue atendida. Si necesita aportar información adicional, responda a este correo.
+{% else %}La solicitud continúa en seguimiento y recibirá nuevas actualizaciones.
+{% endif %}{% endif %}
+Soporte al usuario
+SASSBLUM
+{% endblock %}

@@ -1,8 +1,8 @@
 """
 Email notification strategy — delivers notifications via Django email backend.
 
-Responsibility (SRP): render an HTML email template and send it. Nothing else.
-Depends on: INotificationStrategy (interface), django.core.mail, django.template.loader.
+Responsibility (SRP): resolve an email definition and deliver rendered content.
+Depends on: notification interfaces and Django's email abstraction.
 Pattern: Strategy — implements INotificationStrategy for the email channel.
 SOLID: SRP · DIP · OCP · LSP
 
@@ -16,10 +16,13 @@ import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-
-from apps.notifications.interfaces import IEmailDeliveryPolicy, INotificationStrategy
+from apps.notifications.interfaces import (
+    IEmailContentRenderer,
+    IEmailDeliveryPolicy,
+    INotificationStrategy,
+)
 from apps.notifications.policies import EmailDeliveryPolicy, TICKET_NOTIFICATION_TYPES
+from apps.notifications.services.email_content_renderer import TemplateEmailContentRenderer
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +41,13 @@ TEMPLATE_MAP: dict[str, tuple[str, str]] = {
 class EmailNotificationStrategy(INotificationStrategy):
     """Sends HTML emails using Django's email backend."""
 
-    def __init__(self, delivery_policy: IEmailDeliveryPolicy | None = None) -> None:
+    def __init__(
+        self,
+        delivery_policy: IEmailDeliveryPolicy | None = None,
+        content_renderer: IEmailContentRenderer | None = None,
+    ) -> None:
         self._delivery_policy = delivery_policy or EmailDeliveryPolicy()
+        self._content_renderer = content_renderer or TemplateEmailContentRenderer()
 
     def validate(self, recipient) -> bool:
         return bool(
@@ -79,17 +87,17 @@ class EmailNotificationStrategy(INotificationStrategy):
             "request_anydesk": getattr(settings, "EMAIL_REQUEST_ANYDESK", False),
             "support_email": addressing.reply_to[0] if addressing.reply_to else "",
         }
-        html_body = render_to_string(template_name, enriched_context)
+        rendered_content = self._content_renderer.render(template_name, enriched_context)
 
         email = EmailMultiAlternatives(
             subject=subject,
-            body=message,  # plain-text fallback
+            body=rendered_content.text,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=list(addressing.to),
             cc=list(addressing.cc) or None,
             reply_to=list(addressing.reply_to) or None,
         )
-        email.attach_alternative(html_body, "text/html")
+        email.attach_alternative(rendered_content.html, "text/html")
         email.send(fail_silently=False)
         self.log(
             "sent",

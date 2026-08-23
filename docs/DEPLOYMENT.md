@@ -8,7 +8,9 @@ La entrega vigente usa:
 - **API/ASGI:** Render en `https://sassblum.onrender.com`.
 - **Datos:** Supabase PostgreSQL.
 - **Archivos:** Supabase Storage cuando las credenciales están configuradas.
-- **Correo:** Brevo por HTTPS en Render o SMTP en entornos que lo permitan.
+- **Correo vigente:** Brevo por HTTPS en Render o SMTP en entornos que lo permitan.
+- **Correo previsto en Lote E/B14:** relay HTTPS hacia SMTP cPanel, pendiente de integración con B4,
+  configuración real y aceptación; no debe presentarse como activo todavía.
 - **Tiempo real:** Django Channels; Redis es obligatorio para múltiples procesos.
 
 Docker Compose y Jenkins son una alternativa self-hosted. No forman una cadena automática con
@@ -32,16 +34,29 @@ Vercel/Render y no deben presentarse como el despliegue activo sin evidencia de 
 | `FRONTEND_URL` | Sí | base de enlaces de verificación/reset |
 | `USE_REDIS` | Sí | `True` para más de un proceso |
 | `REDIS_URL` | Condicional | requerido si `USE_REDIS=True` |
-| `EMAIL_BACKEND` | Sí | backend Django/Anymail elegido |
+| `EMAIL_BACKEND` | Sí | un único backend: SMTP, Brevo o relay cPanel |
 | `BREVO_API_KEY` | Condicional | requerido con backend Brevo |
+| `CPANEL_RELAY_URL` | Condicional | endpoint HTTPS exacto del relay B14 |
+| `CPANEL_RELAY_ALLOWED_HOST` | Condicional | host exacto autorizado para el relay |
+| `CPANEL_RELAY_SECRET` | Condicional | secreto compartido de 32+ caracteres, sólo en paneles |
+| `CPANEL_RELAY_TIMEOUT_SECONDS` | Condicional | timeout entre 0 y 60 segundos |
+| `CPANEL_RELAY_MAX_PAYLOAD_BYTES` | Condicional | límite idéntico al configurado en cPanel |
 | `DEFAULT_FROM_EMAIL` | Sí | remitente verificado |
-| `EMAIL_CC` | No | destinatarios internos separados por coma |
+| `EMAIL_REPLY_TO` | Sí | dirección de respuesta para eventos de tickets |
+| `EMAIL_CC` | Sí | copia interna de los correos dirigidos al contacto del ticket |
+| `EMAIL_SUPPORT_PHONE` | No | teléfono mostrado sólo si tiene valor confirmado |
+| `EMAIL_SUPPORT_WHATSAPP` | No | WhatsApp mostrado sólo si tiene valor confirmado |
+| `EMAIL_REQUEST_ANYDESK` | No | activa la instrucción condicional de AnyDesk |
 | `SUPABASE_URL` | Condicional | proyecto de Storage |
 | `SUPABASE_SERVICE_KEY` | Condicional | solo backend; nunca frontend |
 | `SUPABASE_STORAGE_BUCKET` | Condicional | bucket público/privado según política |
 
 Los archivos `.env.example` son plantillas. Los secretos viven en los paneles de Vercel, Render y
 Supabase o en un gestor de secretos, nunca en Git.
+
+La instalación y operación del relay se detalla en `deploy/cpanel-relay/README.md`. Su activación
+requiere seleccionar explícitamente su `EMAIL_BACKEND`, completar las variables condicionales y
+aprobar la prueba real; desplegar el paquete PHP aislado no cambia el transporte efectivo de Django.
 
 ## Variables del frontend
 
@@ -152,6 +167,15 @@ Orden de diagnóstico: health → DNS/TLS → API → base de datos → autentic
 3. Si hubo migración incompatible, aplica el plan específico; no reviertas datos a ciegas.
 4. Verifica health y el flujo mínimo por rol.
 5. Revoca secretos o sesiones si el incidente fue de seguridad.
+
+Para revertir específicamente el relay de correo:
+
+1. restaura en Render el `EMAIL_BACKEND` de Brevo previamente comprobado y su configuración;
+2. ejecuta un único correo controlado y confirma recepción antes de declarar recuperado el servicio;
+3. deja el relay sin tráfico y conserva temporalmente logs/estado sanitizados para diagnóstico;
+4. sólo después de cerrar el incidente y con autorización, elimina paquete, subdominio y secreto.
+
+El rollback del relay no requiere migraciones ni cambios de datos.
 
 ## Alternativa Docker Compose
 

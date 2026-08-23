@@ -6,6 +6,8 @@ from types import SimpleNamespace
 import pytest
 from django.template.loader import render_to_string
 
+from apps.notifications.services.email_content_renderer import TemplateEmailContentRenderer
+
 
 def _ticket_context(**overrides):
     context = {
@@ -100,3 +102,75 @@ def test_rendered_email_has_no_duplicate_style_attributes(template_name):
     ]
 
     assert duplicate_style_tags == []
+
+
+@pytest.mark.parametrize(
+    ("template_name", "overrides", "required_content"),
+    [
+        (
+            "email/ticket_created.html",
+            {},
+            (
+                "Ticket de servicio creado",
+                "Estimado(a)",
+                "T-2026-0001",
+                "Siguientes pasos",
+                "capturas de pantalla",
+                "Observación técnica",
+                "Soporte al usuario",
+            ),
+        ),
+        (
+            "email/status_changed.html",
+            {"tipo": "cambio_estado"},
+            (
+                "El estado de tu ticket cambió",
+                "Observaciones/Solución",
+                "Equipo revisado y operativo.",
+                "Resuelto",
+                "La solicitud fue atendida",
+                "Soporte al usuario",
+            ),
+        ),
+        (
+            "email/ticket_assigned.html",
+            {},
+            ("Tu ticket ha sido asignado", "T-2026-0001", "No imprime"),
+        ),
+        (
+            "email/password_reset.html",
+            {"reset_url": "https://app.example/reset/tökén", "expira_en": "1 hora"},
+            (
+                "Restablece tu contraseña",
+                "https://app.example/reset/tökén",
+                "1 hora",
+                "solo puede usarse una vez",
+            ),
+        ),
+        (
+            "email/email_verification.html",
+            {"verify_url": "https://app.example/verificar/tökén", "expira_en": "24 horas"},
+            (
+                "Confirma tu cuenta",
+                "https://app.example/verificar/tökén",
+                "24 horas",
+                "solo puede usarse una vez",
+            ),
+        ),
+    ],
+)
+def test_text_and_html_keep_the_same_operational_content(
+    template_name, overrides, required_content
+):
+    context = _ticket_context(
+        ticket_descripcion="Observación técnica: impresión detenida.",
+        **overrides,
+    )
+
+    rendered = TemplateEmailContentRenderer().render(template_name, context)
+
+    for expected in required_content:
+        assert expected in rendered.text
+        assert expected in rendered.html
+    assert "Este es un mensaje automático de SassBlum." in rendered.text
+    assert "Este es un mensaje automático de SassBlum." in rendered.html

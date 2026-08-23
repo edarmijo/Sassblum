@@ -1,0 +1,39 @@
+{% extends "email/text/base_email.txt" %}
+
+{% block titulo %}Ticket de servicio creado{% endblock %}
+
+{% block contenido %}
+{% if is_ticket_client %}Estimado(a) {{ recipient_nombre }}:
+
+Hemos recibido su consulta y ya está registrada en nuestro sistema:
+{% else %}Estimado(a) {{ recipient_nombre }}:
+
+El Sr./Sra. {{ cliente_nombre|default:cliente_email }}{% if cliente_empresa %} de la empresa {{ cliente_empresa }}{% endif %} ha realizado la siguiente consulta:
+{% endif %}
+{{ ticket_asunto }}
+{{ ticket_descripcion }}
+
+{% if is_ticket_client %}Se le ha asignado el ticket de servicio {{ ticket_numero }}. Nuestro equipo lo atenderá a la brevedad y recibirá actualizaciones a medida que avance.
+
+Los datos de contacto que nos proporcionó son:
+{% else %}Se generó el ticket {{ ticket_numero }} y está pendiente de asignación.
+
+Datos de contacto del cliente:
+{% endif %}RUC: {{ cliente_ruc|default:"—" }}
+Correo: {{ cliente_email }}
+Empresa: {{ cliente_empresa|default:"—" }}
+
+{% if is_ticket_client %}Siguientes pasos
+1. Conserve el número {{ ticket_numero }} para dar seguimiento a su solicitud.
+2. Responda a este correo si necesita agregar contexto o detalles.
+3. Adjunte capturas de pantalla que ayuden a identificar el inconveniente.
+{% if request_anydesk %}4. Si solicita soporte remoto, incluya su código de AnyDesk.
+{% endif %}
+{% if support_phone or support_whatsapp or support_email %}Canales de soporte:
+{% if support_email %}Correo: {{ support_email }}
+{% endif %}{% if support_phone %}Teléfono: {{ support_phone }}
+{% endif %}{% if support_whatsapp %}WhatsApp: {{ support_whatsapp }}
+{% endif %}{% endif %}
+{% endif %}Soporte al usuario
+SASSBLUM
+{% endblock %}

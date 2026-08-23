@@ -1,0 +1,12 @@
+{% extends "email/text/base_email.txt" %}
+
+{% block titulo %}{% if recipient_role == "worker" %}Tienes un nuevo ticket asignado{% elif recipient_role == "admin" %}Asignación confirmada{% else %}Tu ticket ha sido asignado{% endif %}{% endblock %}
+
+{% block contenido %}
+{% if recipient_role == "worker" %}El ticket {{ ticket_numero }} fue asignado a ti y ya está disponible para su atención.
+{% elif recipient_role == "admin" %}La asignación del ticket {{ ticket_numero }} se registró correctamente.
+{% else %}El ticket {{ ticket_numero }} ha sido asignado a un trabajador y comenzará a ser atendido.
+{% endif %}
+Número: {{ ticket_numero }}
+Asunto: {{ ticket_asunto }}
+{% endblock %}

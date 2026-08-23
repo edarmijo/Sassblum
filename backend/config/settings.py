@@ -13,7 +13,12 @@ from decouple import config
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
-from apps.notifications.validators import EmailConfiguration, EmailConfigurationValidator
+from apps.notifications.validators import (
+    CpanelRelayConfiguration,
+    CpanelRelayConfigurationValidator,
+    EmailConfiguration,
+    EmailConfigurationValidator,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -335,6 +340,20 @@ EMAIL_SUPPORT_PHONE = config('EMAIL_SUPPORT_PHONE', default='').strip()
 EMAIL_SUPPORT_WHATSAPP = config('EMAIL_SUPPORT_WHATSAPP', default='').strip()
 EMAIL_REQUEST_ANYDESK = config('EMAIL_REQUEST_ANYDESK', default=False, cast=bool)
 
+# B14 — transporte HTTPS hacia el relay cPanel. Estas variables no activan el
+# relay por sí solas: sólo se usan cuando EMAIL_BACKEND selecciona su clase.
+CPANEL_RELAY_URL = config('CPANEL_RELAY_URL', default='').strip()
+CPANEL_RELAY_ALLOWED_HOST = config(
+    'CPANEL_RELAY_ALLOWED_HOST', default=''
+).strip().lower()
+CPANEL_RELAY_SECRET = config('CPANEL_RELAY_SECRET', default='')
+CPANEL_RELAY_TIMEOUT_SECONDS = config(
+    'CPANEL_RELAY_TIMEOUT_SECONDS', default=10, cast=float
+)
+CPANEL_RELAY_MAX_PAYLOAD_BYTES = config(
+    'CPANEL_RELAY_MAX_PAYLOAD_BYTES', default=262_144, cast=int
+)
+
 EmailConfigurationValidator().validate(EmailConfiguration(
     debug=DEBUG,
     backend=EMAIL_BACKEND.strip(),
@@ -347,6 +366,15 @@ EmailConfigurationValidator().validate(EmailConfiguration(
     use_tls=EMAIL_USE_TLS,
     use_ssl=EMAIL_USE_SSL,
     brevo_api_key=str(ANYMAIL.get('BREVO_API_KEY', '')).strip(),
+))
+CpanelRelayConfigurationValidator().validate(CpanelRelayConfiguration(
+    backend=EMAIL_BACKEND.strip(),
+    from_email=DEFAULT_FROM_EMAIL,
+    relay_url=CPANEL_RELAY_URL,
+    allowed_host=CPANEL_RELAY_ALLOWED_HOST,
+    secret=CPANEL_RELAY_SECRET,
+    timeout_seconds=CPANEL_RELAY_TIMEOUT_SECONDS,
+    max_payload_bytes=CPANEL_RELAY_MAX_PAYLOAD_BYTES,
 ))
 
 # URL del frontend (para construir los enlaces de verificación / reseteo en los emails).
