@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { FormEvent } from 'react'
-import { userAdminService } from '../../services/UserAdminService'
-import type { AdminUser } from '../../interfaces/IUserAdminActions'
+import type { AdminUser, IUserAdminActions } from '../../interfaces/IUserAdminActions'
+import { useUserAdminActions } from '../../hooks/useUserAdminActions'
+import { apiError } from '../../../../infrastructure/http/apiError'
 import { Button } from '../../../../core/ui/button'
 import { Input } from '../../../../core/ui/input'
 import { Label } from '../../../../core/ui/label'
@@ -9,8 +10,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../../../../core/ui/select'
 
-/** SRP: admin page to list/create/block users. DIP: uses IUserAdminActions (userAdminService). Admin-only. */
-export function AdminUserPage() {
+interface AdminUserPageProps {
+  service?: IUserAdminActions
+}
+
+/** SRP: admin page to list/create/block users. DIP: depends on IUserAdminActions. Admin-only. */
+export function AdminUserPage({ service }: AdminUserPageProps) {
+  const defaultService = useUserAdminActions()
+  const userActions = service ?? defaultService
   const [users, setUsers] = useState<AdminUser[]>([])
   const [form, setForm] = useState({ nombre: '', apellido: '', email: '', password: '', role: 'worker' as 'worker' | 'client' })
   const [error, setError] = useState<string | null>(null)
@@ -21,8 +28,8 @@ export function AdminUserPage() {
     const filters: { role?: string; estado?: string } = {}
     if (roleFilter && roleFilter !== 'none') filters.role = roleFilter
     if (estadoFilter && estadoFilter !== 'none') filters.estado = estadoFilter
-    setUsers(await userAdminService.listUsers(filters))
-  }, [roleFilter, estadoFilter])
+    setUsers(await userActions.listUsers(filters))
+  }, [roleFilter, estadoFilter, userActions])
 
   useEffect(() => { load().catch(console.error) }, [load])
 
@@ -30,18 +37,17 @@ export function AdminUserPage() {
     e.preventDefault()
     setError(null)
     try {
-      await userAdminService.createUser(form)
+      await userActions.createUser(form)
       setForm({ nombre: '', apellido: '', email: '', password: '', role: 'worker' })
       await load()
     } catch (err: unknown) {
-      const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setError(d ?? 'No se pudo crear el usuario.')
+      setError(apiError(err, 'No se pudo crear el usuario.'))
     }
   }
 
   const toggleBlock = async (u: AdminUser) => {
-    if (u.estado === 'bloqueado') await userAdminService.unblockUser(u.id)
-    else await userAdminService.blockUser(u.id)
+    if (u.estado === 'bloqueado') await userActions.unblockUser(u.id)
+    else await userActions.blockUser(u.id)
     await load()
   }
 
@@ -55,11 +61,25 @@ export function AdminUserPage() {
       <form onSubmit={create} className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
         <Input placeholder="Nombre" required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
         <Input placeholder="Apellido" required value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
-        <Input type="email" placeholder="Correo" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <Input
+          type="email"
+          aria-label="Correo"
+          placeholder="Correo"
+          required
+          value={form.email}
+          onChange={(e) => {
+            setForm({ ...form, email: e.target.value })
+            setError(null)
+          }}
+        />
         <Input type="password" placeholder="Contraseña" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <select
+          aria-label="Rol del usuario"
           value={form.role}
-          onChange={(e) => setForm({ ...form, role: e.target.value as 'worker' | 'client' })}
+          onChange={(e) => {
+            setForm({ ...form, role: e.target.value as 'worker' | 'client' })
+            setError(null)
+          }}
           className="h-9 rounded-md px-3 text-sm outline-none cursor-pointer"
           style={{ background: 'rgba(0,196,224,0.06)', border: '1px solid rgba(0,196,224,0.12)', color: '#eef4f8' }}
         >
@@ -67,7 +87,7 @@ export function AdminUserPage() {
           <option value="client" className="bg-[#081624]">Cliente</option>
         </select>
         <Button type="submit" variant="brand">Crear usuario</Button>
-        {error && <p role="alert" className="sm:col-span-2 text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" aria-live="assertive" className="sm:col-span-2 text-sm text-destructive">{error}</p>}
       </form>
 
       {/* Filters */}

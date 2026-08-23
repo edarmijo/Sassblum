@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import threading
 
+from django.conf import settings
+
 from apps.authentication.interfaces.i_user_admin_actions import IUserAdminActions
 from apps.authentication.models import User
 from apps.authentication.repositories import UserRepository
+from apps.authentication.validators import WorkerEmailDomainValidator
+from core.base.base_validator import BaseValidator
 from core.exceptions.domain_exceptions import DomainException
 
 
@@ -21,8 +25,16 @@ class UserNotFound(DomainException):
 
 class UserAdminService(IUserAdminActions):
 
-    def __init__(self, user_repository: UserRepository | None = None) -> None:
+    def __init__(
+        self,
+        user_repository: UserRepository | None = None,
+        worker_email_validator: BaseValidator | None = None,
+    ) -> None:
         self._repo = user_repository or UserRepository()
+        self._worker_email_validator = (
+            worker_email_validator
+            or WorkerEmailDomainValidator(settings.WORKER_EMAIL_DOMAIN)
+        )
 
     def list_users(self, filters: dict | None = None) -> list:
         users = self._repo.get_all(filters or {})
@@ -34,6 +46,9 @@ class UserAdminService(IUserAdminActions):
         # (regla de negocio: administrador único, solo vía createsuperuser).
         if data.get("role") == User.Role.ADMIN:
             raise DomainException("No se pueden crear administradores desde el panel.")
+        validation = self._worker_email_validator.validate(data)
+        if not validation.is_valid:
+            raise DomainException(validation.errors[0])
         if self._repo.email_exists(data["email"]):
             raise DomainException("Ya existe una cuenta con ese correo.")
         user = self._repo.create({
