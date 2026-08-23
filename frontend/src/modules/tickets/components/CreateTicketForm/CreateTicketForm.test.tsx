@@ -86,10 +86,10 @@ function makeService(overrides: Partial<ITicketClientActions> = {}): ITicketClie
 
 const SERVICES = [{ id: '1', nombre: 'Soporte técnico' }]
 
-function renderForm(service: ITicketClientActions, onSuccess = vi.fn()) {
+function renderForm(service: ITicketClientActions, onSuccess = vi.fn(), initialServiceId?: string) {
   return render(
     <TicketClientContext.Provider value={service}>
-      <CreateTicketForm services={SERVICES} onSuccess={onSuccess} />
+      <CreateTicketForm services={SERVICES} initialServiceId={initialServiceId} onSuccess={onSuccess} />
     </TicketClientContext.Provider>
   )
 }
@@ -111,6 +111,11 @@ describe('CreateTicketForm', () => {
     it('renders service options', () => {
       renderForm(makeService())
       expect(screen.getByRole('option', { name: /soporte técnico/i })).toBeInTheDocument()
+    })
+
+    it('preselects a valid service received from the public catalog', () => {
+      renderForm(makeService(), vi.fn(), '1')
+      expect(screen.getByLabelText(/servicio/i)).toHaveValue('1')
     })
 
     it('renders all priority options', () => {
