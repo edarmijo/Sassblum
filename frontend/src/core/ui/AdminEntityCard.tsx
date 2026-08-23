@@ -39,7 +39,7 @@ export function AdminEntityCard({
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-widest text-brand-cyan">{etiqueta}</span>
+          <span className="text-xs uppercase tracking-widest text-brand-cyan">{etiqueta}</span>
           <div className="flex flex-wrap justify-end gap-1.5">
             <Button
               type="button"

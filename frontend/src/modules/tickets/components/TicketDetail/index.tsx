@@ -12,7 +12,7 @@ interface TicketDetailProps {
 function MetaField({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
   return (
     <div>
-      <span className="text-xs font-medium text-[#5c7a94] uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
       <p className="mt-0.5 text-[#eef4f8]">{children}</p>
     </div>
   )
@@ -49,18 +49,18 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-mono text-[#5c7a94] tracking-wide">{ticket.numero}</p>
+          <p className="text-xs font-mono text-muted-foreground tracking-wide">{ticket.numero}</p>
           <h2 className="text-xl font-bold text-[#eef4f8] mt-1 leading-snug">
             {ticket.asunto}
           </h2>
-          <p className="text-sm text-[#5c7a94] mt-1">{ticket.servicioNombre}</p>
+          <p className="text-sm text-muted-foreground mt-1">{ticket.servicioNombre}</p>
         </div>
         <TicketStatusBadge estado={ticket.estado} />
       </div>
 
       {/* Description */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5c7a94] mb-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
           Descripción
         </h3>
         <p className="text-sm text-[#eef4f8]/90 whitespace-pre-wrap leading-relaxed">
@@ -75,7 +75,7 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
         <MetaField label="Empresa">{ticket.clienteEmpresa || 'Sin registrar'}</MetaField>
         <MetaField label="RUC / identificación">{ticket.clienteRuc || 'Sin registrar'}</MetaField>
         <MetaField label="Asignado a">
-          {ticket.asignadoNombre ?? <span className="italic text-[#5c7a94]">Sin asignar</span>}
+          {ticket.asignadoNombre ?? <span className="italic text-muted-foreground">Sin asignar</span>}
         </MetaField>
         <MetaField label="Prioridad">{ticket.prioridad}</MetaField>
         <MetaField label="Creado">
@@ -88,7 +88,7 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
       {/* Attachments */}
       {ticket.adjuntos.length > 0 && (
         <section>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5c7a94] mb-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Adjuntos ({ticket.adjuntos.length})
           </h3>
           <ul className="space-y-2">
@@ -102,7 +102,7 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
                 >
                   <Paperclip className="h-4 w-4 shrink-0" />
                   <span>{att.nombreArchivo}</span>
-                  <span className="text-[#5c7a94] text-xs font-normal">
+                  <span className="text-muted-foreground text-xs font-normal">
                     ({(att.tamañoBytes / 1024).toFixed(0)} KB)
                   </span>
                 </a>
@@ -114,7 +114,7 @@ export function TicketDetail({ ticket, isLoading, error }: Readonly<TicketDetail
 
       {/* History */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5c7a94] mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Historial de eventos
         </h3>
         <TicketHistory events={ticket.eventos} />

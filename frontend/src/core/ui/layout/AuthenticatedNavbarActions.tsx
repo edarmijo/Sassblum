@@ -38,8 +38,8 @@ export function AuthenticatedNavbarActions() {
         <Bell className="h-[18px] w-[18px]" />
         {unreadCount > 0 && (
           <Badge
-            className="absolute -top-1.5 -right-2 h-4 min-w-4 flex items-center justify-center p-0 text-[10px] font-semibold rounded-full"
-            style={{ backgroundColor: '#00c4e0', color: '#fff' }}
+            className="absolute -top-1.5 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-xs font-semibold rounded-full"
+            style={{ backgroundColor: '#00c4e0', color: 'var(--primary-foreground)' }}
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </Badge>

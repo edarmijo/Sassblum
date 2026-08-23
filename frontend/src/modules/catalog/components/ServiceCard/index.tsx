@@ -52,20 +52,20 @@ export function ServiceCard({ service, onSelect, onViewDetails }: Readonly<Servi
             <h3 className="text-xs font-semibold text-foreground group-hover:text-brand-cyan-dark transition-colors duration-300 line-clamp-1">
               {service.nombre}
             </h3>
-            <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 shrink-0">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground bg-white/5 rounded-full px-1.5 py-0.5 shrink-0">
               {service.categoria}
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{service.descripcion}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.descripcion}</p>
 
           {/* CTA label changes depending on whether a modal handler is wired */}
           {onViewDetails ? (
-            <span className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-medium text-brand-cyan-dark">
+            <span className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-brand-cyan-dark">
               Ver detalles
               <Eye className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-medium text-brand-cyan-dark">
+            <span className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-brand-cyan-dark">
               Crear ticket
               <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
             </span>
@@ -77,7 +77,7 @@ export function ServiceCard({ service, onSelect, onViewDetails }: Readonly<Servi
           <button
             type="button"
             onClick={() => onSelect(service.id)}
-            className="inline-flex items-center gap-1 mt-1 text-[10px] text-muted-foreground hover:text-brand-cyan-dark transition-colors duration-200 cursor-pointer"
+            className="inline-flex items-center gap-1 mt-1 text-xs text-muted-foreground hover:text-brand-cyan-dark transition-colors duration-200 cursor-pointer"
           >
             Crear ticket
             <ArrowRight className="h-2.5 w-2.5" />

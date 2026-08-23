@@ -30,7 +30,7 @@ export function TicketCard({ ticket, onSelect }: Readonly<TicketCardProps>) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-mono text-muted-foreground tracking-wide">
+          <p className="text-xs font-mono text-muted-foreground tracking-wide">
             {ticket.numero}
           </p>
           <span className="block text-sm font-semibold text-foreground truncate mt-0.5 leading-snug group-hover:text-brand-cyan-dark transition-colors">

@@ -21,14 +21,14 @@ export function ClientLogoCard({ logo, isSelected, onEdit, onToggle, onDelete }:
     >
       <div className="relative flex h-32 items-center justify-center bg-white p-5">
         <ImageWithFallback src={logo.logoUrl} sizes="(max-width: 639px) calc(100vw - 3rem), (max-width: 1279px) 50vw, 303px" alt={`Logotipo de ${logo.nombre}`} className="h-full w-full object-contain" />
-        <span className="absolute right-2 top-2 rounded-full bg-brand-navy/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+        <span className="absolute right-2 top-2 rounded-full bg-brand-navy/90 px-2 py-0.5 text-xs font-semibold text-white">
           #{logo.orden}
         </span>
       </div>
       <div className="space-y-3 p-3">
         <div className="flex items-start justify-between gap-2">
           <h3 className="min-w-0 truncate text-sm font-semibold text-foreground">{logo.nombre}</h3>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${logo.activo ? 'bg-emerald-500/15 text-emerald-700' : 'bg-muted text-muted-foreground'}`}>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${logo.activo ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-muted-foreground'}`}>
             {logo.activo ? 'Visible' : 'Oculto'}
           </span>
         </div>
