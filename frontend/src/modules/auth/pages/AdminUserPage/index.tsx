@@ -317,6 +317,12 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
       || editForm.apellido.trim() !== editingUser.apellido
     ),
   )
+  let rotationSubmitLabel = 'Confirmar cambio de ocupante'
+  if (rotationBusy) {
+    rotationSubmitLabel = 'Cambiando…'
+  } else if (rotatingUser?.buzonGestion === 'manual') {
+    rotationSubmitLabel = 'Registrar cambio manual'
+  }
 
   return (
     <section className="space-y-6">
@@ -815,11 +821,7 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
               disabled={rotationBusy}
               onClick={() => void rotateOccupant()}
             >
-              {rotationBusy
-                ? 'Cambiando…'
-                : rotatingUser.buzonGestion === 'manual'
-                  ? 'Registrar cambio manual'
-                  : 'Confirmar cambio de ocupante'}
+              {rotationSubmitLabel}
             </Button>
             <Button
               type="button"

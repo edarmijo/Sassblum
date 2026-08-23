@@ -5,6 +5,8 @@ import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+CREATED_AT_VERBOSE_NAME = 'creado en'
+
 
 class UserManager(BaseUserManager):
     """Custom manager that uses email instead of username (SRP: only manages User persistence)."""
@@ -158,7 +160,10 @@ class UserOccupantChange(models.Model):
     apellido_anterior = models.CharField(max_length=150)
     nombre_nuevo = models.CharField(max_length=150)
     apellido_nuevo = models.CharField(max_length=150)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='creado en')
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=CREATED_AT_VERBOSE_NAME,
+    )
 
     class Meta:
         db_table = 'auth_user_occupant_change'
@@ -191,7 +196,10 @@ class UserMailboxEvent(models.Model):
     )
     correo_puesto = models.EmailField(verbose_name='correo estable del puesto')
     action = models.CharField(max_length=32, choices=Action.choices)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='creado en')
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=CREATED_AT_VERBOSE_NAME,
+    )
 
     class Meta:
         db_table = 'auth_user_mailbox_event'
@@ -221,7 +229,10 @@ class PasswordResetToken(models.Model):
     )
     expira_en = models.DateTimeField(verbose_name='expira en')
     usado = models.BooleanField(default=False, verbose_name='usado')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='creado en')
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=CREATED_AT_VERBOSE_NAME,
+    )
 
     class Meta:
         db_table = 'auth_password_reset_token'

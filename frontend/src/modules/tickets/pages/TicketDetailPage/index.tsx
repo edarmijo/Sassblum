@@ -96,13 +96,12 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
       )}
 
       {user?.rol === 'TRABAJADOR' && ticket && !ticket.puedeModificar && (
-        <p
-          role="status"
-          className="rounded-lg border border-brand-cyan/20 bg-brand-cyan/5 px-4 py-3 text-sm text-muted-foreground"
+        <output
+          className="block rounded-lg border border-brand-cyan/20 bg-brand-cyan/5 px-4 py-3 text-sm text-muted-foreground"
         >
           Este ticket está disponible como consulta histórica. Para operarlo, la administradora debe
           asignártelo mediante el flujo normal.
-        </p>
+        </output>
       )}
 
       {/* H#3 (cliente): Status change with observations for staff */}

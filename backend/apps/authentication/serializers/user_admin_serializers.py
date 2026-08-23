@@ -34,10 +34,12 @@ class UserUpdateSerializer(serializers.Serializer):
             self.initial_data
         )
         if protected:
-            raise serializers.ValidationError({
-                field: "Este campo no puede modificarse desde esta operación."
-                for field in sorted(protected)
-            })
+            raise serializers.ValidationError(
+                dict.fromkeys(
+                    sorted(protected),
+                    "Este campo no puede modificarse desde esta operación.",
+                )
+            )
         if not attrs:
             raise serializers.ValidationError(
                 "Debes enviar al menos el nombre o el apellido."
@@ -56,10 +58,12 @@ class UserOccupantRotateSerializer(serializers.Serializer):
             self.initial_data
         )
         if protected:
-            raise serializers.ValidationError({
-                field: "Este campo no puede modificarse durante la rotación."
-                for field in sorted(protected)
-            })
+            raise serializers.ValidationError(
+                dict.fromkeys(
+                    sorted(protected),
+                    "Este campo no puede modificarse durante la rotación.",
+                )
+            )
         return attrs
 
 

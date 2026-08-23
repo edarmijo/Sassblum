@@ -293,9 +293,10 @@ def test_failed_rotation_does_not_change_local_identity_or_credential() -> None:
     )
     provider = FakeMailboxProvider({worker.email})
     provider.fail_rotate = True
+    service = UserAdminService(mailbox_provider=provider)
 
     with pytest.raises(MailboxOperationFailed, match="no se cambió"):
-        UserAdminService(mailbox_provider=provider).rotate_occupant(
+        service.rotate_occupant(
             worker.pk,
             {"nombre": "Carlos", "apellido": "Nuevo"},
             admin,
@@ -314,9 +315,11 @@ def test_rotation_requires_an_existing_mailbox() -> None:
         password=random_credential(),
         role=User.Role.ADMIN,
     )
+    mailbox_provider = FakeMailboxProvider()
+    service = UserAdminService(mailbox_provider=mailbox_provider)
 
     with pytest.raises(MailboxOperationFailed, match="no existe"):
-        UserAdminService(mailbox_provider=FakeMailboxProvider()).rotate_occupant(
+        service.rotate_occupant(
             worker.pk,
             {"nombre": "Carlos", "apellido": "Nuevo"},
             admin,

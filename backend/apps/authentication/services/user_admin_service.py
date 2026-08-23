@@ -33,6 +33,7 @@ from core.base.base_validator import BaseValidator
 from core.exceptions.domain_exceptions import DomainException
 
 logger = logging.getLogger(__name__)
+USER_NOT_FOUND_MESSAGE = "Usuario no encontrado."
 
 
 class UserNotFound(DomainException):
@@ -80,6 +81,13 @@ class UserAdminService(IUserAdminActions):
         if self._repo.email_exists(data["email"]):
             raise DomainException("Ya existe una cuenta con ese correo.")
         role = data.get("role", User.Role.WORKER)
+        mailbox_management = User.BuzonGestion.NOT_APPLICABLE
+        if role == User.Role.WORKER:
+            mailbox_management = (
+                User.BuzonGestion.UAPI
+                if self._mailbox_provider is not None
+                else User.BuzonGestion.MANUAL
+            )
         user = self._repo.create({
             "email": data["email"],
             "first_name": data.get("nombre", ""),
@@ -93,15 +101,7 @@ class UserAdminService(IUserAdminActions):
                 if role == User.Role.WORKER
                 else User.BuzonEstado.NOT_APPLICABLE
             ),
-            "buzon_gestion": (
-                (
-                    User.BuzonGestion.UAPI
-                    if self._mailbox_provider is not None
-                    else User.BuzonGestion.MANUAL
-                )
-                if role == User.Role.WORKER
-                else User.BuzonGestion.NOT_APPLICABLE
-            ),
+            "buzon_gestion": mailbox_management,
         })
         if role != User.Role.WORKER:
             return self._data(user)
@@ -109,7 +109,7 @@ class UserAdminService(IUserAdminActions):
 
     def update_user(self, user_id: int, data: dict) -> dict:
         if self._repo.get_by_id(user_id) is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         changes = {}
         if "nombre" in data:
             changes["first_name"] = data["nombre"]
@@ -120,13 +120,13 @@ class UserAdminService(IUserAdminActions):
 
     def block_user(self, user_id: int) -> dict:
         if self._repo.get_by_id(user_id) is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         user = self._repo.update(user_id, {"estado": User.Estado.BLOCKED})
         return self._data(user)
 
     def unblock_user(self, user_id: int) -> dict:
         if self._repo.get_by_id(user_id) is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         user = self._repo.update(user_id, {
             "estado": User.Estado.ACTIVE,
             "intentos_fallidos": 0,
@@ -136,7 +136,7 @@ class UserAdminService(IUserAdminActions):
     def retry_mailbox(self, user_id: int) -> dict:
         user = self._repo.get_by_id(user_id)
         if user is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         if user.role != User.Role.WORKER:
             raise DomainException("Solo los trabajadores administran un buzón corporativo.")
         return self._ensure_mailbox(user)
@@ -144,13 +144,13 @@ class UserAdminService(IUserAdminActions):
     def confirm_manual_mailbox(self, user_id: int, email: str, actor: User) -> dict:
         user = self._repo.get_by_id(user_id)
         if user is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         self._validate_manual_mailbox_confirmation(user, email)
 
         with transaction.atomic():
             locked_user = self._repo.get_by_id_for_update(user_id)
             if locked_user is None:
-                raise UserNotFound("Usuario no encontrado.")
+                raise UserNotFound(USER_NOT_FOUND_MESSAGE)
             self._validate_manual_mailbox_confirmation(locked_user, email)
             if (
                 locked_user.buzon_estado == User.BuzonEstado.CREATED
@@ -176,7 +176,7 @@ class UserAdminService(IUserAdminActions):
     def rotate_occupant(self, user_id: int, data: dict, actor: User) -> dict:
         user = self._repo.get_by_id(user_id)
         if user is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         if user.role != User.Role.WORKER:
             raise DomainException("Solo se puede rotar el ocupante de un trabajador.")
         if self._mailbox_provider is None:
@@ -224,7 +224,7 @@ class UserAdminService(IUserAdminActions):
     ) -> dict:
         user = self._repo.get_by_id(user_id)
         if user is None:
-            raise UserNotFound("Usuario no encontrado.")
+            raise UserNotFound(USER_NOT_FOUND_MESSAGE)
         if user.role != User.Role.WORKER:
             raise DomainException("Solo se puede rotar el ocupante de un trabajador.")
         self._validate_manual_mailbox_confirmation(
@@ -304,7 +304,7 @@ class UserAdminService(IUserAdminActions):
         with transaction.atomic():
             locked_user = self._repo.get_by_id_for_update(user_id)
             if locked_user is None:
-                raise UserNotFound("Usuario no encontrado.")
+                raise UserNotFound(USER_NOT_FOUND_MESSAGE)
             if (
                 required_management is not None
                 and (

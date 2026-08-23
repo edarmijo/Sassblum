@@ -69,9 +69,10 @@ def test_create_sends_secret_in_body_not_url_and_refuses_redirects(post: Mock) -
 @patch("apps.authentication.services.cpanel_mailbox_provider.requests.post")
 def test_authentication_failure_is_sanitized(post: Mock) -> None:
     post.return_value = response_with(None, status_code=403)
+    mailbox_provider = provider()
 
     with pytest.raises(MailboxProviderRejected) as error:
-        provider().mailbox_exists("tecnico1@sassblum.com")
+        mailbox_provider.mailbox_exists("tecnico1@sassblum.com")
 
     assert "token" not in str(error.value).lower()
     assert "sassblum" not in str(error.value).lower()
@@ -82,17 +83,19 @@ def test_invalid_json_is_reported_without_raw_response(post: Mock) -> None:
     response = response_with(None)
     response.json.side_effect = ValueError("invalid json")
     post.return_value = response
+    mailbox_provider = provider()
 
     with pytest.raises(MailboxProviderUnavailable, match="respuesta no válida"):
-        provider().mailbox_exists("tecnico1@sassblum.com")
+        mailbox_provider.mailbox_exists("tecnico1@sassblum.com")
 
 
 @patch("apps.authentication.services.cpanel_mailbox_provider.requests.post")
 def test_timeout_is_translated_to_retryable_unavailability(post: Mock) -> None:
     post.side_effect = requests.Timeout("provider timeout")
+    mailbox_provider = provider()
 
     with pytest.raises(MailboxProviderUnavailable, match="confirmar"):
-        provider().mailbox_exists("tecnico1@sassblum.com")
+        mailbox_provider.mailbox_exists("tecnico1@sassblum.com")
 
 
 @patch("apps.authentication.services.cpanel_mailbox_provider.requests.post")
@@ -106,11 +109,13 @@ def test_provider_quota_rejection_does_not_expose_raw_message(post: Mock) -> Non
         },
     }
     post.return_value = response
+    mailbox_provider = provider()
+    mailbox_credential = random_credential()
 
     with pytest.raises(MailboxProviderRejected) as error:
-        provider().create_mailbox(
+        mailbox_provider.create_mailbox(
             "tecnico1@sassblum.com",
-            random_credential(),
+            mailbox_credential,
         )
 
     assert "sensitive" not in str(error.value)
