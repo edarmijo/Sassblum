@@ -240,6 +240,19 @@ aprobacion explicita de Erick.
   La aceptacion de un bloque no autoriza implicitamente el commit, push, merge, despliegue ni cambios
   de datos de los pasos posteriores.
 
+### Control de foco y checkpoint local
+
+- Despues de leer este archivo, leer `docs/ESTADO_ACTUAL.md` si existe. Ese archivo es un checkpoint
+  operativo local e ignorado por Git; no reemplaza el plan maestro ni constituye evidencia de cierre.
+- Antes de cada accion, comprobar que coincidan el lote, bloque, rama, puerta y siguiente accion
+  autorizada del checkpoint con Git y con el plan. Si no coinciden, detenerse y resolver la diferencia
+  con Erick antes de continuar.
+- Todo hallazgo perteneciente a otro lote se anota en la seccion de asuntos aparcados del checkpoint.
+  No se continua su analisis ni se implementa hasta que Erick abra formalmente ese lote o autorice una
+  ampliacion concreta del alcance actual.
+- Actualizar el checkpoint al cambiar de bloque, rama o puerta, y al cerrar una decision que afecte la
+  secuencia. Nunca marcar un paso como ejecutado solo porque este previsto o autorizado.
+
 ### Uso profesional de skills
 
 - Antes de cada tarea o paso, revisar las skills disponibles y seleccionar la skill minima y mas
