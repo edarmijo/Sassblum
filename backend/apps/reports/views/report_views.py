@@ -2,7 +2,7 @@
 Report DRF views — HTTP orchestration (SRP + DIP). Admin-only.
 
     GET  /api/reportes/tickets   → dashboard KPIs/aggregations
-    POST /api/reportes/exportar  → file download (pdf|excel)
+    POST /api/reportes/exportar  → file download (csv|pdf|excel)
 """
 
 from django.http import HttpResponse
