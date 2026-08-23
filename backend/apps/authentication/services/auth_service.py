@@ -159,11 +159,18 @@ class AuthService(IAuthService):
         from apps.authentication.services.token_service import TokenService  # noqa: PLC0415
         svc = TokenService()
         user = svc.validate_reset_token(token)
+
         user.set_password(new_password)
-        user.save(update_fields=["password"])
+        user.email_verificado = True
+        update_fields = ["password", "email_verificado"]
+        if user.estado == User.Estado.PENDING:
+            user.estado = User.Estado.ACTIVE
+            update_fields.append("estado")
+        user.save(update_fields=update_fields)
+
         svc.consume_token(token)
         svc.invalidate_sessions(user)
-        return {"message": "Contraseña actualizada."}
+        return {"message": "Contraseña actualizada. Inicia sesión nuevamente."}
 
     # ── verify email ───────────────────────────────────────────────────────────
 

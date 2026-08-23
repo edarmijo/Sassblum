@@ -8,8 +8,8 @@ Each test follows Given / When / Then format.
 """
 
 import pytest
-from rest_framework.test import APIClient
 from apps.authentication.models import User
+from apps.authentication.services.token_service import TokenService
 
 from helpers import NEW_USER_PASSWORD, TEST_PASSWORD, WRONG_PASSWORD
 
@@ -107,6 +107,40 @@ class TestTCC2EmailVerification:
             'email': 'unknown@example.com',
         })
         assert response.status_code == 200
+
+    def test_migrated_account_reset_allows_login(self, api_client, db):
+        """Given a migrated account, reset verifies and activates it for login."""
+        user = User.objects.create_user(
+            email='migrated@sassblum.com',
+            password=None,
+            first_name='Cliente',
+            last_name='Migrado',
+            tipo_identificacion=User.TipoIdentificacion.RUC,
+            ruc='0991234567001',
+            empresa='Empresa Migrada',
+            role=User.Role.CLIENT,
+            estado=User.Estado.PENDING,
+            email_verificado=False,
+        )
+        token = TokenService().generate_reset_token(user)
+
+        reset = api_client.post('/api/auth/reset-password', {
+            'token': token,
+            'new_password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+        })
+        assert reset.status_code == 200
+
+        user.refresh_from_db()
+        assert user.estado == User.Estado.ACTIVE
+        assert user.email_verificado is True
+
+        login = api_client.post('/api/auth/login', {
+            'email': user.email,
+            'password': NEW_USER_PASSWORD,
+        })
+        assert login.status_code == 200
+        assert 'access' in login.data['tokens']
 
 
 # ── TC-C3: Login ──────────────────────────────────────────────────────────────
