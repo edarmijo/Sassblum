@@ -14,7 +14,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict[str, str]) -> dict[str, str]:
         if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError(
-                {"confirm_password": "Las contraseñas no coinciden."}
-            )
+            # La inconsistencia pertenece a la relación entre ambos campos,
+            # por lo que DRF la representa correctamente como non_field_errors.
+            raise serializers.ValidationError("Las contraseñas no coinciden.")
         return attrs

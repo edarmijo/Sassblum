@@ -221,7 +221,7 @@ describe('AuthProvider session bootstrap', () => {
     expect(await screen.findByText(user.email)).toBeInTheDocument()
     await clicker.click(screen.getByRole('button', { name: 'change' }))
 
-    await waitFor(() => expect(screen.getByText('guest')).toBeInTheDocument())
+    expect(await screen.findByText('guest')).toBeInTheDocument()
     expect(changePassword).toHaveBeenCalledOnce()
     expect(apiClientMocks.setAccessToken).toHaveBeenLastCalledWith(null)
     expect(socketClientMocks.disconnect).toHaveBeenCalled()

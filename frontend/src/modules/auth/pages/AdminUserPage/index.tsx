@@ -15,7 +15,7 @@ interface AdminUserPageProps {
 }
 
 /** SRP: admin page to list/create/block users. DIP: depends on IUserAdminActions. Admin-only. */
-export function AdminUserPage({ service }: AdminUserPageProps) {
+export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
   const defaultService = useUserAdminActions()
   const userActions = service ?? defaultService
   const [users, setUsers] = useState<AdminUser[]>([])

@@ -90,6 +90,24 @@ class TestTokenService:
 
 @pytest.mark.django_db
 class TestResetPasswordEndpoint:
+    def test_confirmation_mismatch_is_a_cross_field_error(self, user: User) -> None:
+        token = TokenService().generate_reset_token(user)
+
+        response = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": random_credential(),
+                "confirm_password": random_credential(),
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.data["non_field_errors"] == ["Las contraseñas no coinciden."]
+        user.refresh_from_db()
+        assert user.check_password(TEST_PASSWORD)
+        assert PasswordResetToken.objects.get(token=token).usado is False
+
     @pytest.mark.parametrize("weak_password", ["1" * 8, "a" * 8, "A1" * 3])
     def test_reset_uses_the_same_password_policy_as_registration(
         self,

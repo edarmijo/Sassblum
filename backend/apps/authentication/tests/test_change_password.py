@@ -158,19 +158,22 @@ def test_confirmation_must_match() -> None:
     response = client.post(CHANGE_URL, payload, format="json")
 
     assert response.status_code == 400
-    assert "confirm_password" in response.data
+    assert response.data["non_field_errors"] == ["Las contraseñas no coinciden."]
 
 
 def test_password_change_rolls_back_if_server_side_revocation_fails() -> None:
     user = make_user()
     new_password = random_credential()
 
-    with patch.object(
+    service = AuthService()
+    revocation_failure = patch.object(
         TokenService,
         "invalidate_sessions",
         side_effect=RuntimeError("revocation unavailable"),
-    ), pytest.raises(RuntimeError):
-        AuthService().change_password(user, CURRENT_PASSWORD, new_password)
+    )
+    with revocation_failure:
+        with pytest.raises(RuntimeError):
+            service.change_password(user, CURRENT_PASSWORD, new_password)
 
     user.refresh_from_db()
     assert user.check_password(CURRENT_PASSWORD)
