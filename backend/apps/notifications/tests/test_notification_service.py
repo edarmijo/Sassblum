@@ -60,6 +60,19 @@ class TestDispatchPreferenceGating:
         assert built == []
 
 
+def test_build_context_preserves_client_id_for_email_addressing():
+    event = {
+        "tipo_evento": "creacion",
+        "cliente_id": 42,
+        "cliente_email": "contacto@example.com",
+    }
+
+    context = NotificationService(MagicMock())._build_context(event, make_user(42))
+
+    assert context["cliente_id"] == 42
+    assert context["cliente_email"] == "contacto@example.com"
+
+
 class TestResolveRecipients:
     """_resolve_recipients selects and deduplicates users by event type."""
 

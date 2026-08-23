@@ -17,13 +17,14 @@
 {% endblock %}
 
 {% block contenido %}
+  <p>Estimado(a) <b>{{ recipient_nombre }}</b>:</p>
   {% if tipo == "comentario" %}
     <p>Se agregó un comentario al ticket <strong>{{ ticket_numero }}</strong>:</p>
   {% else %}
     <p>El ticket <strong>{{ ticket_numero }}</strong> ha cambiado de estado:</p>
   {% endif %}
 
-  <table role="presentation" style="border-collapse: collapse; width: 100%; margin: 0 auto; text-align: center;" style="margin:16px 0;width:100%;border-collapse:collapse;">
+  <table role="presentation" style="margin:16px 0;width:100%;border-collapse:collapse;text-align:center;">
     <tbody>
       <tr>
         <td
@@ -52,8 +53,23 @@
   </table>
 
   {% if comentario %}
+  <p style="font-size:13px;font-weight:600;margin-bottom:4px;">Observaciones/Solución</p>
   <div style="margin-top:12px;padding:12px 14px;background:#faf9f7;border-left:2px solid #d6d4cc;border-radius:0 8px 8px 0;">
     <p style="margin:0;font-size:13px;color:#3a3935;">{{ comentario }}</p>
   </div>
   {% endif %}
+
+  {% if tipo == "cambio_estado" and estado_nuevo %}
+    <p style="font-size:13px;">El estado actual de su ticket es <b>{{ estado_nuevo }}</b>.</p>
+    {% if estado_nuevo == "Resuelto" %}
+      <p style="font-size:13px;">La solicitud fue atendida. Si necesita aportar información adicional, responda a este correo.</p>
+    {% else %}
+      <p style="font-size:13px;">La solicitud continúa en seguimiento y recibirá nuevas actualizaciones.</p>
+    {% endif %}
+  {% endif %}
+
+  <p style="font-size:13px;color:#6f6e68;margin-top:16px;">
+    Soporte al usuario<br />
+    <b>SASSBLUM</b>
+  </p>
 {% endblock %}

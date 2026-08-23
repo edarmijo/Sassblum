@@ -1,4 +1,10 @@
+from .i_email_delivery_policy import EmailAddressing, IEmailDeliveryPolicy
 from .i_notification_strategy import INotificationStrategy
 from .i_notification_service import INotificationService
 
-__all__ = ["INotificationStrategy", "INotificationService"]
+__all__ = [
+    "EmailAddressing",
+    "IEmailDeliveryPolicy",
+    "INotificationStrategy",
+    "INotificationService",
+]
