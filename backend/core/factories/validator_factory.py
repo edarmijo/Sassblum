@@ -18,7 +18,7 @@ class ValidatorFactory:
     @staticmethod
     def build_ticket_chain(ticket_repository) -> BaseValidator:
         """
-        Assemble the ticket-creation chain: BasicField → File → BusinessRule.
+        Assemble the ticket-creation chain: BasicField → File → Profile → BusinessRule.
 
         OCP: add CriticalPriorityValidator (Sprint 4) by appending one line:
             business_v.add_validator(CriticalPriorityValidator())
@@ -26,11 +26,19 @@ class ValidatorFactory:
         """
         from apps.tickets.validators.basic_field_validator import BasicFieldValidator
         from apps.tickets.validators.file_validator import FileValidator
+        from apps.tickets.validators.profile_completeness_validator import (
+            ProfileCompletenessValidator,
+        )
         from apps.tickets.validators.business_rule_validator import BusinessRuleValidator
+        from apps.authentication.validators import EmpresaValidator, IdentificationValidator
 
         basic_field_v = BasicFieldValidator()
         file_v        = FileValidator()
+        profile_v     = ProfileCompletenessValidator((
+            IdentificationValidator(),
+            EmpresaValidator(),
+        ))
         business_v    = BusinessRuleValidator(ticket_repository)
 
-        basic_field_v.add_validator(file_v).add_validator(business_v)
+        basic_field_v.add_validator(file_v).add_validator(profile_v).add_validator(business_v)
         return basic_field_v

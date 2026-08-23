@@ -57,6 +57,7 @@ const ticket: TicketDetail = {
   clienteRuc: '0999999999001',
   clienteEmpresa: 'Empresa',
   asignadoNombre: null,
+  puedeModificar: true,
   adjuntos: [],
   eventos: [],
   actualizadoEn: '2026-08-10T15:00:00Z',
@@ -64,6 +65,8 @@ const ticket: TicketDetail = {
 
 describe('TicketDetailPage contact permissions', () => {
   beforeEach(() => {
+    ticket.estado = 'Nuevo'
+    ticket.puedeModificar = true
     useTicketDetailMock.mockReturnValue({
       ticket,
       isLoading: false,
@@ -89,5 +92,27 @@ describe('TicketDetailPage contact permissions', () => {
     render(<TicketDetailPage ticketId="10" />)
 
     expect(screen.queryByText('Formulario de contacto administrativo')).not.toBeInTheDocument()
+  })
+
+  it('shows historical read-only context without worker actions', () => {
+    session.role = 'TRABAJADOR'
+    ticket.estado = 'Resuelto'
+    ticket.puedeModificar = false
+
+    render(<TicketDetailPage ticketId="10" />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('consulta histórica')
+    expect(screen.queryByText('Cambio de estado')).not.toBeInTheDocument()
+  })
+
+  it('shows operational actions after the worker is assigned', () => {
+    session.role = 'TRABAJADOR'
+    ticket.estado = 'Resuelto'
+    ticket.puedeModificar = true
+
+    render(<TicketDetailPage ticketId="10" />)
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText('Cambio de estado')).toBeInTheDocument()
   })
 })

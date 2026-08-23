@@ -25,8 +25,9 @@ export interface RegisterData {
   nombre: string
   apellido: string
   email: string
-  empresa?: string
-  ruc?: string
+  tipoIdentificacion: IdentificationType
+  empresa: string
+  ruc: string
   password: string
   confirmPassword: string
 }
@@ -35,8 +36,15 @@ export interface RegisterData {
 export interface ProfileUpdateData {
   nombre?: string
   apellido?: string
+  tipo_identificacion?: IdentificationType
   ruc?: string
   empresa?: string
+}
+
+export interface ChangePasswordData {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }
 
 // ─── Output / domain types ────────────────────────────────────────────────────
@@ -51,12 +59,14 @@ export interface AuthTokens {
 
 export type UserRole = 'CLIENTE' | 'TRABAJADOR' | 'ADMINISTRADOR'
 export type UserStatus = 'ACTIVO' | 'BLOQUEADO' | 'PENDIENTE'
+export type IdentificationType = 'RUC' | 'Cedula'
 
 export interface AuthUser {
   id: string
   email: string
   nombre: string
   apellido: string
+  tipoIdentificacion: IdentificationType
   ruc: string
   empresa: string
   rol: UserRole
@@ -104,6 +114,9 @@ export interface IAuthService {
     confirmPassword: string,
   ): Promise<{ message: string }>
 
+  /** Cambia la contraseña con reautenticación y termina todas las sesiones. */
+  changePassword(data: ChangePasswordData): Promise<{ message: string }>
+
   /**
    * Confirm email address using the token sent after registration.
    * Transitions user status from PENDIENTE → ACTIVO.
@@ -112,7 +125,7 @@ export interface IAuthService {
   verifyEmail(token: string): Promise<{ message: string }>
 
   /**
-   * Update the authenticated user's own profile (nombre/apellido/ruc/empresa).
+   * Update the authenticated user's own profile (nombre/apellido/tipo/ruc/empresa).
    * Returns the fresh AuthUser so the session state can be refreshed.
    */
   updateProfile(data: ProfileUpdateData): Promise<AuthUser>

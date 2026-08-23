@@ -64,6 +64,106 @@ def ticket(db, worker) -> Ticket:
 
 @pytest.mark.django_db
 class TestTicketActionsAPI:
+    def test_legacy_contact_is_read_only_until_admin_assigns_the_ticket(
+        self, admin, worker, ticket
+    ) -> None:
+        ticket.numero = "T-LEG-2400"
+        ticket.legacy_codigo = 2400
+        ticket.cliente = worker
+        ticket.asignado = None
+        ticket.estado = Ticket.Estado.RESUELTO
+        ticket.save(update_fields=[
+            "numero",
+            "legacy_codigo",
+            "cliente",
+            "asignado",
+            "estado",
+        ])
+        client = APIClient()
+        client.force_authenticate(user=worker)
+
+        listing = client.get("/api/tickets/")
+        detail = client.get(f"/api/tickets/{ticket.id}")
+        history = client.get(f"/api/tickets/{ticket.id}/historial")
+        denied_status = client.patch(
+            f"/api/tickets/{ticket.id}/estado",
+            {
+                "estado": Ticket.Estado.EN_PROCESO,
+                "comentario": "No debe operar por contacto histórico.",
+            },
+            format="json",
+        )
+        denied_comment = client.post(
+            f"/api/tickets/{ticket.id}/comentario",
+            {"comentario": "Tampoco debe comentar sin asignación."},
+            format="json",
+        )
+
+        assert listing.status_code == 200
+        assert [item["id"] for item in listing.data["items"]] == [ticket.id]
+        assert detail.status_code == 200
+        assert detail.data["puede_modificar"] is False
+        assert history.status_code == 200
+        assert denied_status.status_code == 404
+        assert denied_comment.status_code == 404
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
+        client.force_authenticate(user=admin)
+        assignment = client.patch(
+            f"/api/tickets/{ticket.id}/asignar",
+            {"worker_id": worker.id},
+            format="json",
+        )
+
+        assert assignment.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.asignado_id == worker.id
+        assert ticket.estado == Ticket.Estado.RESUELTO
+        assignment_event = TicketEvent.objects.get(
+            ticket=ticket,
+            tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
+        )
+        assert assignment_event.estado_anterior == ""
+        assert assignment_event.estado_nuevo == ""
+
+        client.force_authenticate(user=worker)
+        assigned_detail = client.get(f"/api/tickets/{ticket.id}")
+        reopened = client.patch(
+            f"/api/tickets/{ticket.id}/estado",
+            {
+                "estado": Ticket.Estado.EN_PROCESO,
+                "comentario": "Trabajo retomado después de la asignación actual.",
+            },
+            format="json",
+        )
+
+        assert assigned_detail.status_code == 200
+        assert assigned_detail.data["puede_modificar"] is True
+        assert reopened.status_code == 200
+        ticket.refresh_from_db()
+        assert ticket.estado == Ticket.Estado.EN_PROCESO
+
+    def test_current_unassigned_operational_ticket_cannot_use_legacy_exception(
+        self, admin, ticket, replacement_worker
+    ) -> None:
+        ticket.asignado = None
+        ticket.estado = Ticket.Estado.RESUELTO
+        ticket.save(update_fields=["asignado", "estado"])
+        client = APIClient()
+        client.force_authenticate(user=admin)
+
+        response = client.patch(
+            f"/api/tickets/{ticket.id}/asignar",
+            {"worker_id": replacement_worker.id},
+            format="json",
+        )
+
+        assert response.status_code == 422
+        ticket.refresh_from_db()
+        assert ticket.asignado_id is None
+        assert ticket.estado == Ticket.Estado.RESUELTO
+        assert not TicketEvent.objects.filter(ticket=ticket).exists()
+
     def test_admin_initial_assignment_moves_new_ticket_to_in_progress(
         self, admin, ticket, replacement_worker
     ) -> None:
@@ -301,13 +401,16 @@ class TestTicketActionsAPI:
         )
         assert event.autor_nombre == "Autora Original"
 
-        admin.first_name = "Ocupante"
-        admin.last_name = "Nuevo"
-        admin.save(update_fields=["first_name", "last_name"])
+        renamed = client.patch(
+            f"/api/usuarios/{admin.id}",
+            {"nombre": "Nombre", "apellido": "Actualizado"},
+            format="json",
+        )
 
         detail = client.get(f"/api/tickets/{ticket.id}")
         history = client.get(f"/api/tickets/{ticket.id}/historial")
 
+        assert renamed.status_code == 200
         assert detail.status_code == 200
         assert history.status_code == 200
         assert detail.data["eventos"][0]["autor_nombre"] == "Autora Original"

@@ -27,6 +27,7 @@ const DETAIL_RESPONSE = {
   cliente_ruc: '0999999999001',
   cliente_empresa: 'Empresa',
   asignado_nombre: null,
+  puede_modificar: true,
   adjuntos: [],
   eventos: [],
   actualizado_en: '2026-08-09T00:00:00Z',

@@ -10,13 +10,13 @@ SOLID: DIP · SRP · LSP
 
 Role-based ACL (ISP/RBAC, inherited from S9/S15):
     CLIENTE     → only own tickets (cliente=user)
-    TRABAJADOR  → only assigned tickets (asignado=user)
+    TRABAJADOR  → assigned tickets and verified legacy-contact tickets (read-only)
     ADMIN       → all tickets
 """
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from django.db import connection
 from django.db.models import IntegerField, Max, Q
@@ -24,6 +24,11 @@ from django.db.models.functions import Cast, Substr
 
 from core.base.base_repository import BaseRepository
 from apps.tickets.models import Ticket, TicketEvent
+from apps.tickets.interfaces import ITicketAccessPolicy
+from apps.tickets.policies import TicketAccessPolicy
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 PAGE_SIZE = 20
 _ACTIVE_STATES = ["Nuevo", "EnProceso", "EnEspera", "Resuelto"]
@@ -31,6 +36,9 @@ _ACTIVE_STATES = ["Nuevo", "EnProceso", "EnEspera", "Resuelto"]
 
 class TicketRepository(BaseRepository[Ticket]):
     """ORM gateway for the tickets module."""
+
+    def __init__(self, access_policy: ITicketAccessPolicy | None = None) -> None:
+        self._access_policy = access_policy or TicketAccessPolicy()
 
     # ── Generic CRUD (BaseRepository contract) ─────────────────────────────────
 
@@ -97,7 +105,12 @@ class TicketRepository(BaseRepository[Ticket]):
 
     # ── Role-scoped listing with filters + pagination ──────────────────────────
 
-    def get_all_for_user(self, user, filters: dict | None = None, page: int = 1) -> dict:
+    def get_all_for_user(
+        self,
+        user: User,
+        filters: dict | None = None,
+        page: int = 1,
+    ) -> dict:
         """
         Return a page of tickets visible to `user`, applying role-based ACL and
         optional filters (estado, prioridad, servicio_id, fecha_desde, fecha_hasta).
@@ -106,13 +119,7 @@ class TicketRepository(BaseRepository[Ticket]):
         """
         qs = Ticket.objects.select_related("servicio", "cliente", "asignado")
 
-        # Role-based scope
-        role = getattr(user, "role", None)
-        if role == "client":
-            qs = qs.filter(cliente=user)
-        elif role == "worker":
-            qs = qs.filter(asignado=user)
-        # admin → no scope filter (sees all)
+        qs = qs.filter(self._access_policy.visibility_filter(user))
 
         qs = self._apply_filters(qs, filters or {})
 
@@ -142,28 +149,23 @@ class TicketRepository(BaseRepository[Ticket]):
 
     # ── History (timeline of events) ───────────────────────────────────────────
 
-    def get_history(self, ticket_id: int, user) -> Optional[list[TicketEvent]]:
+    def get_history(
+        self,
+        ticket_id: int,
+        user: User,
+    ) -> Optional[list[TicketEvent]]:
         """
         Return the chronological event timeline for a ticket the user may see.
         Returns None if the ticket does not exist or the user lacks access.
         """
         ticket = self.get_by_id(ticket_id)
-        if ticket is None or not self._user_can_see(ticket, user):
+        if ticket is None or not self._access_policy.can_read(ticket, user):
             return None
         return list(
             TicketEvent.objects
             .filter(ticket_id=ticket_id)
             .order_by("created_at")
         )
-
-    @staticmethod
-    def _user_can_see(ticket: Ticket, user) -> bool:
-        role = getattr(user, "role", None)
-        if role == "admin":
-            return True
-        if role == "worker":
-            return ticket.asignado_id == user.id
-        return ticket.cliente_id == user.id
 
     # ── Duplicate detection (used by BusinessRuleValidator, S13) ───────────────
 

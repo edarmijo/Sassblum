@@ -52,6 +52,7 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
   const canChangeStatus = Boolean(
     isStaff
     && ticket
+    && ticket.puedeModificar
     // Nuevo advances through assignment, which also selects the required worker.
     && ticket.estado !== 'Nuevo'
     && stateMachine.nextStates(ticket.estado).length > 0,
@@ -82,7 +83,7 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
       {showAssign && ticket && (
         <AssignModal
           ticketId={ticketId}
-          mode={getAssignmentMode(ticket.estado)}
+          mode={getAssignmentMode(ticket.asignadoNombre)}
           onClose={() => setShowAssign(false)}
           onAssigned={replaceTicket}
         />
@@ -92,6 +93,15 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
         <FocusReveal delay={0.08}>
           <ContactEditForm ticket={ticket} onSubmit={handleContactUpdate} />
         </FocusReveal>
+      )}
+
+      {user?.rol === 'TRABAJADOR' && ticket && !ticket.puedeModificar && (
+        <output
+          className="block rounded-lg border border-brand-cyan/20 bg-brand-cyan/5 px-4 py-3 text-sm text-muted-foreground"
+        >
+          Este ticket está disponible como consulta histórica. Para operarlo, la administradora debe
+          asignártelo mediante el flujo normal.
+        </output>
       )}
 
       {/* H#3 (cliente): Status change with observations for staff */}

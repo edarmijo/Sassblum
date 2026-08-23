@@ -4,6 +4,7 @@ from .login_serializer import LoginSerializer
 from .register_serializer import RegisterSerializer
 from .verify_email_serializer import VerifyEmailSerializer, LogoutSerializer
 from .profile_serializer import ProfileUpdateSerializer
+from .change_password_serializer import ChangePasswordSerializer
 
 __all__ = [
     "ProfileUpdateSerializer",
@@ -13,4 +14,5 @@ __all__ = [
     "RegisterSerializer",
     "VerifyEmailSerializer",
     "LogoutSerializer",
+    "ChangePasswordSerializer",
 ]

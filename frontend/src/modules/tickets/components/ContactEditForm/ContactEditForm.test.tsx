@@ -17,6 +17,7 @@ const ticket: TicketDetail = {
   clienteRuc: '0999999999001',
   clienteEmpresa: 'Empresa de prueba',
   asignadoNombre: null,
+  puedeModificar: true,
   adjuntos: [],
   eventos: [],
   actualizadoEn: '2026-08-10T15:00:00Z',

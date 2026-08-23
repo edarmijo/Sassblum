@@ -64,6 +64,7 @@ export interface TicketDetail extends TicketSummary {
   clienteRuc: string
   clienteEmpresa: string
   asignadoNombre: string | null
+  puedeModificar: boolean
   adjuntos: AttachmentMeta[]
   eventos: TicketEvent[]
   actualizadoEn: string

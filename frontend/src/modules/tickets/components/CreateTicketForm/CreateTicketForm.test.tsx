@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { CreateTicketForm } from './index'
 import { TicketClientContext } from '../../hooks/useTickets'
 import type { ITicketClientActions } from '../../interfaces/ITicketClientActions'
@@ -43,11 +44,15 @@ vi.mock('../../../../core/ui/select', () => ({
 
 // El formulario usa useAuth (autocompleta datos del cliente, H#7); se mockea para
 // no montar el AuthProvider completo (localStorage, ApiClient, SocketClient).
+const authState = vi.hoisted(() => ({ incomplete: false }))
+
 vi.mock('../../../auth/hooks/useAuth', () => ({
   useAuth: () => ({
     user: {
       id: '1', nombre: 'Cliente', apellido: 'Test',
-      email: 'cliente@test.com', ruc: '', rol: 'CLIENTE',
+      email: 'cliente@test.com', tipoIdentificacion: 'RUC',
+      ruc: authState.incomplete ? '' : '0991234567001',
+      empresa: authState.incomplete ? '' : 'Empresa Cliente', rol: 'CLIENTE',
     },
     isAuthenticated: true,
     isLoading: false,
@@ -69,6 +74,7 @@ const mockTicket: TicketDetail = {
   servicioNombre: 'Soporte técnico',
   clienteNombre: 'Cliente Test',
   asignadoNombre: null,
+  puedeModificar: true,
   adjuntos: [],
   eventos: [],
   creadoEn: new Date().toISOString(),
@@ -88,15 +94,21 @@ const SERVICES = [{ id: '1', nombre: 'Soporte técnico' }]
 
 function renderForm(service: ITicketClientActions, onSuccess = vi.fn(), initialServiceId?: string) {
   return render(
-    <TicketClientContext.Provider value={service}>
-      <CreateTicketForm services={SERVICES} initialServiceId={initialServiceId} onSuccess={onSuccess} />
-    </TicketClientContext.Provider>
+    <MemoryRouter>
+      <TicketClientContext.Provider value={service}>
+        <CreateTicketForm services={SERVICES} initialServiceId={initialServiceId} onSuccess={onSuccess} />
+      </TicketClientContext.Provider>
+    </MemoryRouter>
   )
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('CreateTicketForm', () => {
+  beforeEach(() => {
+    authState.incomplete = false
+  })
+
   describe('field rendering', () => {
     it('renders all required fields', () => {
       const service = makeService()
@@ -145,6 +157,19 @@ describe('CreateTicketForm', () => {
       const service = makeService()
       renderForm(service)
       await userEvent.click(screen.getByRole('button', { name: /crear ticket/i }))
+      expect(service.createTicket).not.toHaveBeenCalled()
+    })
+
+    it('blocks an incomplete existing account and links directly to profile', () => {
+      authState.incomplete = true
+      const service = makeService()
+      renderForm(service)
+      expect(screen.getByRole('alert')).toHaveTextContent(/completa tu tipo/i)
+      expect(screen.getByRole('link', { name: /ir a mi perfil/i })).toHaveAttribute(
+        'href',
+        '/perfil',
+      )
+      expect(screen.getByRole('button', { name: /crear ticket/i })).toBeDisabled()
       expect(service.createTicket).not.toHaveBeenCalled()
     })
   })

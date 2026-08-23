@@ -193,6 +193,45 @@ class TestTCA6UserManagement:
         response = authenticated_admin.get('/api/usuarios/')
         assert response.status_code == 200
 
+    def test_admin_can_create_worker_with_corporate_email(self, authenticated_admin):
+        """Given a corporate mailbox, the admin can create its worker account."""
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Técnico',
+            'apellido': 'Corporativo',
+            'email': 'tecnico.nuevo@sassblum.com',
+            'password': TEST_PASSWORD,
+            'role': 'worker',
+        })
+        assert response.status_code == 201
+        assert response.data['email'] == 'tecnico.nuevo@sassblum.com'
+
+    def test_admin_cannot_create_worker_with_external_email(self, authenticated_admin):
+        """Given a personal mailbox, worker creation is rejected without persistence."""
+        from apps.authentication.models import User
+
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Técnico',
+            'apellido': 'Externo',
+            'email': 'tecnico.externo@gmail.com',
+            'password': TEST_PASSWORD,
+            'role': 'worker',
+        })
+        assert response.status_code == 400
+        assert 'email' in response.data
+        assert not User.objects.filter(email='tecnico.externo@gmail.com').exists()
+
+    def test_admin_can_create_client_with_external_email(self, authenticated_admin):
+        """The worker-only domain rule does not change managed client accounts."""
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Cliente',
+            'apellido': 'Externo',
+            'email': 'cliente.nuevo@gmail.com',
+            'password': TEST_PASSWORD,
+            'role': 'client',
+        })
+        assert response.status_code == 201
+        assert response.data['email'] == 'cliente.nuevo@gmail.com'
+
     def test_admin_can_block_user(self, authenticated_admin, client_user):
         """Given an active user, when blocking, status changes."""
         response = authenticated_admin.patch(f'/api/usuarios/{client_user.id}/bloquear')

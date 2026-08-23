@@ -28,6 +28,7 @@ import type {
   RegisterData,
   AuthUser,
   ProfileUpdateData,
+  ChangePasswordData,
 } from '../interfaces/IAuthService'
 import { authService as defaultAuthService } from '../services/AuthService'
 import { apiClient } from '../../../infrastructure/http/ApiClient'
@@ -116,6 +117,16 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
     promise: ReturnType<IAuthService['refreshSession']>
   } | null>(null)
 
+  const clearLocalSession = useCallback(() => {
+    sessionGenerationRef.current++
+    apiClient.setAccessToken(null)
+    accessTokenExpiresAtRef.current = 0
+    resetNotificationsCache()
+    socketClient.disconnect()
+    clearSessionHint()
+    setUser(null)
+  }, [])
+
   // Rehidratación: la cookie httpOnly se canjea por access + usuario.
   useEffect(() => {
     // Purga tokens dejados en disco por versiones anteriores (BUG-06).
@@ -161,15 +172,8 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
 
   // Wire ApiClient's forced-logout (refresh failure) to clear our state.
   useEffect(() => {
-    apiClient.setForcedLogoutHandler(() => {
-      sessionGenerationRef.current++
-      clearSessionHint()
-      resetNotificationsCache()
-      accessTokenExpiresAtRef.current = 0
-      socketClient.disconnect()
-      setUser(null)
-    })
-  }, [])
+    apiClient.setForcedLogoutHandler(clearLocalSession)
+  }, [clearLocalSession])
 
   // Keep real-time authentication in sync when Axios silently rotates a token.
   useEffect(() => {
@@ -265,13 +269,15 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
     })
 
     // Immediately clear all local state to avoid UI lag
-    apiClient.setAccessToken(null)
-    accessTokenExpiresAtRef.current = 0
-    resetNotificationsCache()
-    socketClient.disconnect()
-    clearSessionHint()
-    setUser(null)
-  }, [service])
+    clearLocalSession()
+  }, [clearLocalSession, service])
+
+  const changePassword = useCallback(async (data: ChangePasswordData) => {
+    const result = await service.changePassword(data)
+    // El backend ya revocó todos los JWT y borró la cookie httpOnly.
+    clearLocalSession()
+    return result
+  }, [clearLocalSession, service])
 
   const updateProfile = useCallback(async (data: ProfileUpdateData) => {
     const updated = await service.updateProfile(data)
@@ -288,9 +294,19 @@ export function AuthProvider({ children, service = defaultAuthService }: Readonl
       login,
       register,
       logout,
+      changePassword,
       updateProfile,
     }),
-    [user, isLoading, isBootstrapping, login, register, logout, updateProfile],
+    [
+      user,
+      isLoading,
+      isBootstrapping,
+      login,
+      register,
+      logout,
+      changePassword,
+      updateProfile,
+    ],
   )
 
   return (

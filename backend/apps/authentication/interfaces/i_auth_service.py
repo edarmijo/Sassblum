@@ -18,7 +18,10 @@ Sprint coverage:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 
 # ─── Data transfer objects (input / output shapes) ───────────────────────────
@@ -38,6 +41,9 @@ class UserData(TypedDict):
     email: str
     nombre: str
     apellido: str
+    tipo_identificacion: str
+    ruc: str
+    empresa: str
     rol: str     # 'CLIENTE' | 'TRABAJADOR' | 'ADMINISTRADOR'
     estado: str  # 'ACTIVO' | 'BLOQUEADO' | 'PENDIENTE'
     email_verificado: bool
@@ -56,7 +62,8 @@ class IAuthService(ABC):
     @abstractmethod
     def update_profile(self, user, data: dict) -> dict:
         """
-        Update the user's OWN editable fields (nombre/apellido/ruc/empresa).
+        Update the user's OWN editable fields
+        (nombre/apellido/tipo_identificacion/ruc/empresa).
         Email and rol are excluded by design (identity / admin-only).
         """
 
@@ -88,13 +95,14 @@ class IAuthService(ABC):
 
         Args:
             data: validated dict from RegisterSerializer
-                  (nombre, apellido, email, password)
+                  (nombre, apellido, email, tipo_identificacion, ruc, empresa, password)
 
         Returns:
             {'message': str}
 
         Raises:
             EmailAlreadyExists      — duplicate email
+            RegistrationValidationError — missing or invalid required account data
             PasswordPolicyViolation — weak password caught post-serializer
         """
         ...
@@ -138,6 +146,16 @@ class IAuthService(ABC):
             TokenExpired            — token older than 1 h
             PasswordPolicyViolation — new password does not meet the policy
         """
+        ...
+
+    @abstractmethod
+    def change_password(
+        self,
+        user: User,
+        current_password: str,
+        new_password: str,
+    ) -> dict:
+        """Change the authenticated user's password and revoke every session."""
         ...
 
     @abstractmethod

@@ -8,8 +8,8 @@ Each test follows Given / When / Then format.
 """
 
 import pytest
-from rest_framework.test import APIClient
 from apps.authentication.models import User
+from apps.authentication.services.token_service import TokenService
 
 from helpers import NEW_USER_PASSWORD, TEST_PASSWORD, WRONG_PASSWORD
 
@@ -30,6 +30,9 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Nuevo',
             'apellido': 'Cliente',
+            'tipo_identificacion': 'RUC',
+            'ruc': '0991234567001',
+            'empresa': 'Empresa Nueva',
         })
         assert response.status_code == 201
         user = User.objects.get(email='nuevo@sassblum.com')
@@ -43,8 +46,44 @@ class TestTCC1Registration:
             'confirm_password': NEW_USER_PASSWORD,
             'nombre': 'Dup',
             'apellido': 'User',
+            'tipo_identificacion': 'RUC',
+            'ruc': '0991234567001',
+            'empresa': 'Empresa Duplicada',
         })
         assert response.status_code == 409
+
+    def test_register_with_cedula_persists_selected_type(self, api_client):
+        response = api_client.post('/api/auth/register', {
+            'email': 'cedula@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Cédula',
+            'tipo_identificacion': 'Cedula',
+            'ruc': '0912345678',
+            'empresa': 'Empresa Cédula',
+        })
+        assert response.status_code == 201
+        user = User.objects.get(email='cedula@sassblum.com')
+        assert user.tipo_identificacion == User.TipoIdentificacion.CEDULA
+        assert user.ruc == '0912345678'
+
+    @pytest.mark.parametrize('invalid_identification', [
+        '099123456700', '09912345670012', '099123-567001',
+        '099123 567001', '099123456700A', ' 0991234567001',
+    ])
+    def test_register_rejects_invalid_ruc(self, api_client, invalid_identification):
+        response = api_client.post('/api/auth/register', {
+            'email': f'invalid-{abs(hash(invalid_identification))}@sassblum.com',
+            'password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+            'nombre': 'Cliente',
+            'apellido': 'Inválido',
+            'tipo_identificacion': 'RUC',
+            'ruc': invalid_identification,
+            'empresa': 'Empresa',
+        })
+        assert response.status_code == 400
 
 
 # ── TC-C2: Email Verification & Recovery ──────────────────────────────────────
@@ -68,6 +107,40 @@ class TestTCC2EmailVerification:
             'email': 'unknown@example.com',
         })
         assert response.status_code == 200
+
+    def test_migrated_account_reset_allows_login(self, api_client, db):
+        """Given a migrated account, reset verifies and activates it for login."""
+        user = User.objects.create_user(
+            email='migrated@sassblum.com',
+            password=None,
+            first_name='Cliente',
+            last_name='Migrado',
+            tipo_identificacion=User.TipoIdentificacion.RUC,
+            ruc='0991234567001',
+            empresa='Empresa Migrada',
+            role=User.Role.CLIENT,
+            estado=User.Estado.PENDING,
+            email_verificado=False,
+        )
+        token = TokenService().generate_reset_token(user)
+
+        reset = api_client.post('/api/auth/reset-password', {
+            'token': token,
+            'new_password': NEW_USER_PASSWORD,
+            'confirm_password': NEW_USER_PASSWORD,
+        })
+        assert reset.status_code == 200
+
+        user.refresh_from_db()
+        assert user.estado == User.Estado.ACTIVE
+        assert user.email_verificado is True
+
+        login = api_client.post('/api/auth/login', {
+            'email': user.email,
+            'password': NEW_USER_PASSWORD,
+        })
+        assert login.status_code == 200
+        assert 'access' in login.data['tokens']
 
 
 # ── TC-C3: Login ──────────────────────────────────────────────────────────────
@@ -131,6 +204,22 @@ class TestTCC4TicketCreation:
         })
         assert response.status_code == 201
         assert response.data['estado'] == 'Nuevo'
+
+    def test_existing_incomplete_account_is_directed_to_profile(
+        self, api_client, client_user, catalog_service
+    ):
+        client_user.ruc = ''
+        client_user.empresa = ''
+        client_user.save(update_fields=['ruc', 'empresa'])
+        api_client.force_authenticate(user=client_user)
+        response = api_client.post('/api/tickets/', {
+            'asunto': 'Problema con servidor',
+            'descripcion': 'El servidor no responde desde ayer por la tarde',
+            'servicio_id': catalog_service.id,
+            'prioridad': 'Alta',
+        })
+        assert response.status_code == 400
+        assert 'perfil' in response.data['detail'].lower()
 
     def test_create_ticket_with_empty_subject_rejected(self, authenticated_client):
         """Given empty subject, when creating ticket, validation fails."""

@@ -17,13 +17,20 @@ este cambio (Vercel y Render no despliegan a la vez). Retirar cuando el frontend
 en producción ya use el subprotocolo.
 """
 
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 #: Nombre del subprotocolo que precede al token en Sec-WebSocket-Protocol.
 JWT_SUBPROTOCOL = "sassblum.jwt"
 
 
-def _extract_token(scope) -> str | None:
+def _extract_token(scope: Mapping[str, Any]) -> str | None:
     """Token del subprotocolo (preferido) o de la query string (deprecado)."""
     subprotocols = scope.get("subprotocols") or []
     if JWT_SUBPROTOCOL in subprotocols:
@@ -38,13 +45,13 @@ def _extract_token(scope) -> str | None:
     return tokens[0] if tokens else None
 
 
-def negotiated_subprotocol(scope) -> str | None:
+def negotiated_subprotocol(scope: Mapping[str, Any]) -> str | None:
     """Subprotocolo a confirmar en accept(); None si el cliente no ofreció uno."""
     subprotocols = scope.get("subprotocols") or []
     return JWT_SUBPROTOCOL if JWT_SUBPROTOCOL in subprotocols else None
 
 
-async def resolve_user(scope):
+async def resolve_user(scope: Mapping[str, Any]) -> User | None:
     """
     Valida el JWT del handshake y devuelve el User, o None si no autentica.
     Usa AccessToken de simplejwt (verifica firma y expiración).
@@ -56,11 +63,15 @@ async def resolve_user(scope):
         return None
 
     @database_sync_to_async
-    def _resolve(raw):
+    def _resolve(raw: str) -> User | None:
         try:
+            from rest_framework_simplejwt.authentication import (  # noqa: PLC0415
+                JWTAuthentication,
+            )
             from rest_framework_simplejwt.tokens import AccessToken  # noqa: PLC0415
-            from apps.authentication.models import User  # noqa: PLC0415
-            return User.objects.filter(id=AccessToken(raw)["user_id"]).first()
+            # Reutiliza la autenticación oficial para aplicar también
+            # CHECK_REVOKE_TOKEN después de un cambio de contraseña.
+            return JWTAuthentication().get_user(AccessToken(raw))
         except Exception:  # noqa: BLE001
             return None
 

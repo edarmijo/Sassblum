@@ -14,6 +14,7 @@ SOLID: DIP · SRP · LSP · ISP · OCP
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from django.db import transaction
 
@@ -21,8 +22,11 @@ from apps.tickets.interfaces import (
     ITicketClientActions,
     ITicketWorkerActions,
     ITicketAdminActions,
+    ITicketAccessPolicy,
+    IStorageService,
 )
 from apps.tickets.models import Ticket, TicketEvent
+from apps.tickets.policies import TicketAccessPolicy
 from apps.tickets.repositories import TicketRepository
 from apps.tickets.state_machine import TicketStateMachine
 from apps.tickets.utils import event_author_name
@@ -33,6 +37,9 @@ from core.exceptions.domain_exceptions import (
     InvalidTransitionError,
     CommentRequiredError,
 )
+
+if TYPE_CHECKING:
+    from apps.authentication.models import User
 
 TICKETNOTFOUND = "Ticket no encontrado."
 
@@ -45,8 +52,16 @@ class TicketValidationError(Exception):
 
 class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActions):
 
-    def __init__(self, repository=None, storage=None) -> None:
-        self._repo: TicketRepository = repository or TicketRepository()
+    def __init__(
+        self,
+        repository: TicketRepository | None = None,
+        storage: IStorageService | None = None,
+        access_policy: ITicketAccessPolicy | None = None,
+    ) -> None:
+        self._access_policy = access_policy or TicketAccessPolicy()
+        self._repo: TicketRepository = repository or TicketRepository(
+            self._access_policy
+        )
         self._storage = storage or StorageService()
         self._machine = TicketStateMachine()
         self._chain = TicketValidatorChain(self._repo)
@@ -61,6 +76,9 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "descripcion": data.get("descripcion", ""),
             "adjuntos": data.get("adjuntos", []),
             "cliente_id": user.id,
+            "tipo_identificacion": user.tipo_identificacion,
+            "ruc": user.ruc,
+            "empresa": user.empresa,
             "servicio_id": data.get("servicio_id"),
         }
         result = self._chain.run(validation_payload)
@@ -95,7 +113,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             tipo_evento=TicketEvent.TipoEvento.CREACION,
             comentario="Ticket creado.",
         )
-        return self._detail(ticket)
+        return self._detail(ticket, user)
 
     def generate_ticket_number(self, year: int) -> str:
         """Generate the next ticket number atomically (prevents race conditions).
@@ -117,17 +135,17 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
         result = self._repo.get_all_for_user(user, filters or {})
         return [self._summary(t) for t in result["items"]]
 
-    def get_ticket_detail(self, ticket_id: int, user) -> dict:
+    def get_ticket_detail(self, ticket_id: int, user: User) -> dict:
         ticket = self._repo.get_by_id(ticket_id)
-        if ticket is None or not self._can_see(ticket, user):
+        if ticket is None or not self._access_policy.can_read(ticket, user):
             raise TicketNotFound(TICKETNOTFOUND)
-        return self._detail(ticket)
+        return self._detail(ticket, user)
 
     # ── ITicketWorkerActions ───────────────────────────────────────────────────
 
     @transaction.atomic
     def update_status(
-        self, ticket_id: int, new_status: str, comment: str, user
+        self, ticket_id: int, new_status: str, comment: str, user: User
     ) -> dict:
         ticket = self._require(ticket_id, user)
         if ticket.estado == Ticket.Estado.NUEVO and new_status == Ticket.Estado.EN_PROCESO:
@@ -144,10 +162,10 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             tipo_evento=TicketEvent.TipoEvento.CAMBIO_ESTADO,
             estado_anterior=anterior, estado_nuevo=new_status, comentario=comment,
         )
-        return self._detail(self._repo.get_by_id(ticket_id))
+        return self._detail(self._repo.get_by_id(ticket_id), user)
 
     @transaction.atomic
-    def add_comment(self, ticket_id: int, comment: str, user) -> dict:
+    def add_comment(self, ticket_id: int, comment: str, user: User) -> dict:
         if not comment or not comment.strip():
             raise CommentRequiredError("El comentario no puede estar vacío.")
         ticket = self._require(ticket_id, user)
@@ -163,7 +181,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
     # ── ITicketAdminActions ────────────────────────────────────────────────────
 
     @transaction.atomic
-    def assign_ticket(self, ticket_id: int, worker_id: int, user) -> dict:
+    def assign_ticket(self, ticket_id: int, worker_id: int, user: User) -> dict:
         from apps.authentication.models import User  # noqa: PLC0415
         ticket = self._repo.get_by_id_for_update(ticket_id)
         if ticket is None:
@@ -173,7 +191,9 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
                 "asignado",
                 "El ticket ya tiene un trabajador asignado; use la reasignación.",
             )
-        if ticket.estado != Ticket.Estado.NUEVO:
+        is_initial_ticket = ticket.estado == Ticket.Estado.NUEVO
+        is_unassigned_legacy = ticket.legacy_codigo is not None
+        if not is_initial_ticket and not is_unassigned_legacy:
             raise InvalidTransitionError(ticket.estado, Ticket.Estado.EN_PROCESO)
         worker = User.objects.filter(id=worker_id, role=User.Role.WORKER,
                                      estado=User.Estado.ACTIVE).first()
@@ -181,20 +201,26 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             raise TicketValidationError("asignado", "Trabajador no válido o inactivo.")
         # The Observer reads ticket.asignado_id as soon as the event is created.
         # Keep this instance synchronized so the worker is not omitted.
-        ticket = self._repo.update(
-            ticket_id,
-            {"asignado": worker, "estado": Ticket.Estado.EN_PROCESO},
-        )
+        updates = {"asignado": worker}
+        if is_initial_ticket:
+            updates["estado"] = Ticket.Estado.EN_PROCESO
+        ticket = self._repo.update(ticket_id, updates)
         TicketEvent.objects.create(
             ticket=ticket, autor=user, autor_nombre=event_author_name(user),
             tipo_evento=TicketEvent.TipoEvento.ASIGNACION,
-            estado_anterior=Ticket.Estado.NUEVO, estado_nuevo=Ticket.Estado.EN_PROCESO,
+            estado_anterior=(Ticket.Estado.NUEVO if is_initial_ticket else ""),
+            estado_nuevo=(Ticket.Estado.EN_PROCESO if is_initial_ticket else ""),
             comentario=f"Asignado a {worker.email}.",
         )
-        return self._detail(ticket)
+        return self._detail(ticket, user)
 
     @transaction.atomic
-    def reassign_ticket(self, ticket_id: int, new_worker_id: int, user) -> dict:
+    def reassign_ticket(
+        self,
+        ticket_id: int,
+        new_worker_id: int,
+        user: User,
+    ) -> dict:
         from apps.authentication.models import User  # noqa: PLC0415
         ticket = self._repo.get_by_id_for_update(ticket_id)
         if ticket is None:
@@ -222,10 +248,10 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             asignado_anterior=previous_worker,
             comentario=f"Reasignado de {previous_worker.email} a {worker.email}.",
         )
-        return self._detail(ticket)
+        return self._detail(ticket, user)
 
     @transaction.atomic
-    def update_contact(self, ticket_id: int, data: dict, user) -> dict:
+    def update_contact(self, ticket_id: int, data: dict, user: User) -> dict:
         """Correct the ticket snapshot while preserving account identity and history."""
         ticket = self._repo.get_by_id_for_update(ticket_id)
         if ticket is None:
@@ -264,7 +290,7 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             tipo_evento=TicketEvent.TipoEvento.CONTACTO_ACTUALIZADO,
             comentario="Contacto corregido por administración: " + "; ".join(changes) + ".",
         )
-        return self._detail(ticket)
+        return self._detail(ticket, user)
 
     def get_all_tickets(self, filters: dict | None = None) -> list:
         tickets = self._repo.get_all(filters or {})
@@ -272,20 +298,11 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
 
     # ── Helpers ────────────────────────────────────────────────────────────────
 
-    def _require(self, ticket_id: int, user) -> Ticket:
+    def _require(self, ticket_id: int, user: User) -> Ticket:
         ticket = self._repo.get_by_id(ticket_id)
-        if ticket is None or not self._can_see(ticket, user):
+        if ticket is None or not self._access_policy.can_modify(ticket, user):
             raise TicketNotFound(TICKETNOTFOUND)
         return ticket
-
-    @staticmethod
-    def _can_see(ticket: Ticket, user) -> bool:
-        role = getattr(user, "role", None)
-        if role == "admin":
-            return True
-        if role == "worker":
-            return ticket.asignado_id == user.id
-        return ticket.cliente_id == user.id
 
     @staticmethod
     def _summary(t: Ticket) -> dict:
@@ -309,10 +326,9 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "creado_en": event.created_at.isoformat(),
         }
 
-    @classmethod
-    def _detail(cls, t: Ticket) -> dict:
+    def _detail(self, t: Ticket, user: User) -> dict:
         return {
-            **cls._summary(t),
+            **self._summary(t),
             "descripcion": t.descripcion,
             "cliente_nombre": t.contacto_nombre_efectivo,
             "cliente_email": t.contacto_email_efectivo,
@@ -321,13 +337,14 @@ class TicketService(ITicketClientActions, ITicketWorkerActions, ITicketAdminActi
             "asignado_nombre": (
                 f"{t.asignado.first_name} {t.asignado.last_name}".strip() or t.asignado.email
             ) if t.asignado_id else None,
+            "puede_modificar": self._access_policy.can_modify(t, user),
             "adjuntos": [
                 {"id": a.id, "nombre_archivo": a.nombre_archivo, "url": a.url,
                  "tamaño_bytes": a.tamaño_bytes, "mime_type": a.mime_type}
                 for a in t.adjuntos.all()
             ],
             "eventos": [
-                cls._event_summary(e)
+                self._event_summary(e)
                 for e in t.eventos.all().order_by("created_at")
             ],
             "actualizado_en": t.updated_at.isoformat(),

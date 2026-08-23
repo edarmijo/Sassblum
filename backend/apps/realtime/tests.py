@@ -9,13 +9,24 @@ La función resolve_user (async + BD) queda cubierta por integración manual
 (smoke test en DevTools → Network → WS después del despliegue).
 """
 
-import pytest
+from unittest.mock import AsyncMock, patch
 
+import pytest
+from asgiref.sync import async_to_sync
+
+from apps.authentication.models import User
+from apps.authentication.services import AuthService
+from apps.authentication.signals import password_sessions_revoked
 from apps.realtime.auth import (
     JWT_SUBPROTOCOL,
     _extract_token,
     negotiated_subprotocol,
+    resolve_user,
 )
+from apps.realtime.consumers.notification_consumer import NotificationConsumer
+from apps.realtime.consumers.ticket_consumer import TicketConsumer
+from apps.realtime.events.session_events import session_group
+from core.testing import random_credential
 
 
 # ── _extract_token ─────────────────────────────────────────────────────────────
@@ -74,3 +85,49 @@ class TestNegotiatedSubprotocol:
 
     def test_returns_none_when_empty(self):
         assert negotiated_subprotocol(self._scope()) is None
+
+
+class TestPasswordSessionRevocation:
+
+    @pytest.mark.django_db(transaction=True)
+    def test_websocket_handshake_rejects_access_after_password_change(self) -> None:
+        user = User.objects.create_user(
+            email="ws-revoke@example.com",
+            password=random_credential(),
+            role=User.Role.CLIENT,
+            estado=User.Estado.ACTIVE,
+            email_verificado=True,
+        )
+        access = AuthService().generate_tokens(user)["access"]
+        scope = {
+            "subprotocols": [JWT_SUBPROTOCOL, access],
+            "query_string": b"",
+        }
+
+        assert async_to_sync(resolve_user)(scope).pk == user.pk
+        user.set_password(random_credential())
+        user.save(update_fields=["password"])
+        assert async_to_sync(resolve_user)(scope) is None
+
+    def test_auth_signal_is_observed_by_realtime(self) -> None:
+        with patch(
+            "apps.realtime.events.session_events.broadcast_session_revoked"
+        ) as broadcast:
+            password_sessions_revoked.send(sender=AuthService, user_id=17)
+
+        broadcast.assert_called_once_with(17)
+
+    @pytest.mark.parametrize("consumer_class", [NotificationConsumer, TicketConsumer])
+    def test_live_consumers_close_on_session_revocation(
+        self,
+        consumer_class: type[NotificationConsumer] | type[TicketConsumer],
+    ) -> None:
+        consumer = consumer_class()
+        consumer.close = AsyncMock()
+
+        async_to_sync(consumer.session_revoked)({"type": "session.revoked"})
+
+        consumer.close.assert_awaited_once_with(code=4401)
+
+    def test_session_group_is_stable_per_user(self) -> None:
+        assert session_group(17) == "session_user_17"

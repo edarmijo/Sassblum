@@ -33,6 +33,7 @@ from apps.authentication.services.auth_service import (
     EmailNotVerified,
     EmailAlreadyExists,
     PasswordPolicyViolation,
+    RegistrationValidationError,
     InvalidVerificationToken,
 )
 
@@ -47,7 +48,7 @@ class RegisterView(APIView):
             result = get_auth_service().register(serializer.validated_data)
         except EmailAlreadyExists as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
-        except PasswordPolicyViolation as exc:
+        except (PasswordPolicyViolation, RegistrationValidationError) as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(result, status=status.HTTP_201_CREATED)
 
