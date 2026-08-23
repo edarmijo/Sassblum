@@ -1,10 +1,12 @@
 """Regression tests for the historical client contact stored on each ticket."""
 
+from unittest.mock import patch
+
 import pytest
 
 from apps.authentication.models import User
 from apps.catalog.models import Service
-from apps.tickets.models import Ticket
+from apps.tickets.models import Ticket, TicketEvent
 from apps.tickets.services.ticket_service import TicketService
 from core.testing import random_credential
 
@@ -122,3 +124,38 @@ def test_known_empty_snapshot_does_not_fall_back_to_profile(
     assert ticket.contacto_email_efectivo == ""
     assert ticket.contacto_ruc_efectivo == ""
     assert ticket.contacto_empresa_efectiva == ""
+
+
+@pytest.mark.django_db
+def test_future_event_payload_uses_corrected_ticket_contact(
+    service: Service,
+    cliente: User,
+) -> None:
+    created = create_ticket(service, cliente)
+    ticket = Ticket.objects.get(pk=created["id"])
+    ticket.contacto_nombre = "Contacto Corregido"
+    ticket.contacto_email = "corregido@example.com"
+    ticket.contacto_ruc = "0111111111001"
+    ticket.contacto_empresa = "Empresa Corregida"
+    ticket.save(update_fields=[
+        "contacto_nombre",
+        "contacto_email",
+        "contacto_ruc",
+        "contacto_empresa",
+    ])
+
+    with patch("apps.notifications.services.get_notification_service") as get_service:
+        TicketEvent.objects.create(
+            ticket=ticket,
+            autor=cliente,
+            tipo_evento=TicketEvent.TipoEvento.COMENTARIO,
+            comentario="Evento posterior a la corrección del contacto.",
+        )
+
+    payload = get_service.return_value.dispatch.call_args.args[0]
+    assert payload["cliente_email"] == "corregido@example.com"
+    assert payload["cliente_nombre"] == "Contacto Corregido"
+    assert payload["cliente_ruc"] == "0111111111001"
+    assert payload["cliente_empresa"] == "Empresa Corregida"
+    assert payload["cliente_id"] == cliente.id
+    assert payload["asignado_id"] is None
