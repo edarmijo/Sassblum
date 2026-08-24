@@ -39,6 +39,10 @@ dominio hasta que SassBlum acepte formalmente la nueva aplicación.
 Las cuentas operativas de la aplicación son la administradora Vicky y los trabajadores PJ y VJ.
 Las claves iniciales se entregan por separado y deben rotarse tras la aceptación.
 
+Para un trabajador nuevo, la administradora crea primero el buzón en cPanel y después registra la
+cuenta con el mismo correo. Esa única alta deja el buzón manual activo; no existe una tercera
+confirmación inicial en la aplicación. Las contraseñas del buzón y de la aplicación son diferentes.
+
 `info@sassblum.com`, `soporte@sassblum.com` y `notificaciones@sassblum.com` son buzones
 corporativos; no son usuarios de la aplicación. `notificaciones@` es el remitente fijo del sistema.
 

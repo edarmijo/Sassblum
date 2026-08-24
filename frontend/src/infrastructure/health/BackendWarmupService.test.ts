@@ -31,7 +31,7 @@ describe('BackendWarmupService', () => {
       expect.objectContaining({
         method: 'GET',
         cache: 'no-store',
-        credentials: 'omit',
+        credentials: 'same-origin',
       }),
     )
   })

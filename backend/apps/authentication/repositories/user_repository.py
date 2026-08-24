@@ -118,7 +118,7 @@ class UserRepository(BaseRepository[User]):
     @staticmethod
     def record_mailbox_event(
         user: User,
-        actor: User,
+        actor: User | None,
         action: str,
     ) -> UserMailboxEvent:
         return UserMailboxEvent.objects.create(

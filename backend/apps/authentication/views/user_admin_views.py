@@ -62,7 +62,10 @@ class UserListCreateView(APIView):
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            created = get_user_admin_service().create_user(serializer.validated_data)
+            created = get_user_admin_service().create_user(
+                serializer.validated_data,
+                request.user,
+            )
         except DomainException as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
         return _user_response(created, status.HTTP_201_CREATED)

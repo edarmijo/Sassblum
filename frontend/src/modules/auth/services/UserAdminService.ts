@@ -78,12 +78,6 @@ class UserAdminService implements IUserAdminActions {
     )
   }
 
-  async confirmManualMailbox(id: string, email: string): Promise<AdminUser> {
-    return mapUser(
-      await apiClient.post<BeUser>(`/usuarios/${id}/buzon/confirmar-manual`, { email }),
-    )
-  }
-
   async rotateOccupant(
     id: string,
     data: RotateOccupantData,

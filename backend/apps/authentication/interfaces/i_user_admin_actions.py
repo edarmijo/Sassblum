@@ -26,7 +26,7 @@ class IUserAdminActions(ABC):
         ...
 
     @abstractmethod
-    def create_user(self, data: dict) -> dict:
+    def create_user(self, data: dict, actor: User | None = None) -> dict:
         """Create a user with a given role (worker/admin). Returns the created UserData."""
         ...
 

@@ -69,7 +69,7 @@ class UserAdminService(IUserAdminActions):
         users = self._repo.get_all(filters or {})
         return [self._data(u) for u in users]
 
-    def create_user(self, data: dict) -> dict:
+    def create_user(self, data: dict, actor: User | None = None) -> dict:
         # Defensa en profundidad: el serializer ya restringe los roles, pero el
         # servicio garantiza por sí mismo que JAMÁS se cree un admin por esta vía
         # (regla de negocio: administrador único, solo vía createsuperuser).
@@ -88,22 +88,38 @@ class UserAdminService(IUserAdminActions):
                 if self._mailbox_provider is not None
                 else User.BuzonGestion.MANUAL
             )
-        user = self._repo.create({
-            "email": data["email"],
-            "first_name": data.get("nombre", ""),
-            "last_name": data.get("apellido", ""),
-            "password": data["password"],
-            "role": role,
-            "estado": User.Estado.ACTIVE,
-            "email_verificado": True,  # admin-created accounts are pre-verified
-            "buzon_estado": (
-                User.BuzonEstado.PENDING
-                if role == User.Role.WORKER
-                else User.BuzonEstado.NOT_APPLICABLE
-            ),
-            "buzon_gestion": mailbox_management,
-        })
+        is_manual_worker = (
+            role == User.Role.WORKER
+            and mailbox_management == User.BuzonGestion.MANUAL
+        )
+        mailbox_state = User.BuzonEstado.NOT_APPLICABLE
+        if role == User.Role.WORKER:
+            mailbox_state = (
+                User.BuzonEstado.CREATED
+                if is_manual_worker
+                else User.BuzonEstado.PENDING
+            )
+        with transaction.atomic():
+            user = self._repo.create({
+                "email": data["email"],
+                "first_name": data.get("nombre", ""),
+                "last_name": data.get("apellido", ""),
+                "password": data["password"],
+                "role": role,
+                "estado": User.Estado.ACTIVE,
+                "email_verificado": True,  # admin-created accounts are pre-verified
+                "buzon_estado": mailbox_state,
+                "buzon_gestion": mailbox_management,
+            })
+            if is_manual_worker:
+                self._repo.record_mailbox_event(
+                    user,
+                    actor,
+                    UserMailboxEvent.Action.MANUAL_CONFIRMED,
+                )
         if role != User.Role.WORKER:
+            return self._data(user)
+        if is_manual_worker:
             return self._data(user)
         return self._ensure_mailbox(user)
 
