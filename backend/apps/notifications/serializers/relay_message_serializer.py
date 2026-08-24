@@ -98,7 +98,7 @@ class RelayMessageSerializer:
         normalized = [cls._normalize_single_address(value) for value in (addresses or [])]
         if required and not normalized:
             raise EmailRelayPayloadError("El correo requiere al menos un destinatario.")
-        if len(set(address.casefold() for address in normalized)) != len(normalized):
+        if len({address.casefold() for address in normalized}) != len(normalized):
             raise EmailRelayPayloadError("El correo contiene destinatarios duplicados.")
         return normalized
 

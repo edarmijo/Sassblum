@@ -63,7 +63,7 @@ class CpanelRelayBackend(BaseEmailBackend):
             except Exception as exc:  # Django backend contract requires broad handling.
                 if not self.fail_silently:
                     raise
-                logger.error(
+                logger.exception(
                     "Email relay delivery failed silently: message_index=%s error_type=%s",
                     index,
                     type(exc).__name__,

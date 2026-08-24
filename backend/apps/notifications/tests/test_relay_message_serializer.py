@@ -51,34 +51,39 @@ def test_serialize_preserves_supported_email_fields() -> None:
 def test_serialize_rejects_unsafe_message_fields(field: str, value: object) -> None:
     message = build_message()
     setattr(message, field, value)
+    serializer = RelayMessageSerializer(SENDER)
 
     with pytest.raises(EmailRelayPayloadError):
-        RelayMessageSerializer(SENDER).serialize(message)
+        serializer.serialize(message)
 
 
 def test_serialize_rejects_duplicate_recipients() -> None:
     message = build_message()
     message.to = ["cliente@example.com", "CLIENTE@example.com"]
+    serializer = RelayMessageSerializer(SENDER)
 
     with pytest.raises(EmailRelayPayloadError, match="duplicados"):
-        RelayMessageSerializer(SENDER).serialize(message)
+        serializer.serialize(message)
 
 
 def test_serialize_rejects_attachments_and_arbitrary_headers() -> None:
     message = build_message()
     message.attach("archivo.txt", "contenido", "text/plain")
+    serializer = RelayMessageSerializer(SENDER)
     with pytest.raises(EmailRelayPayloadError, match="adjuntos"):
-        RelayMessageSerializer(SENDER).serialize(message)
+        serializer.serialize(message)
 
     message = build_message()
     message.extra_headers = {"X-Untrusted": "value"}
+    serializer = RelayMessageSerializer(SENDER)
     with pytest.raises(EmailRelayPayloadError, match="cabeceras"):
-        RelayMessageSerializer(SENDER).serialize(message)
+        serializer.serialize(message)
 
 
 def test_serialize_rejects_payload_over_configured_size() -> None:
     message = build_message()
     message.body = "x" * 1024
+    serializer = RelayMessageSerializer(SENDER, max_payload_bytes=128)
 
     with pytest.raises(EmailRelayPayloadError, match="tamaño"):
-        RelayMessageSerializer(SENDER, max_payload_bytes=128).serialize(message)
+        serializer.serialize(message)

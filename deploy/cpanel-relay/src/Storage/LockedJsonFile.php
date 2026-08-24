@@ -9,6 +9,8 @@ use SassBlum\Relay\Exception\RelayException;
 
 final class LockedJsonFile
 {
+    private const INVALID_STATE_MESSAGE = 'Relay runtime state is invalid.';
+
     /** @var string */
     private $path;
 
@@ -46,7 +48,7 @@ final class LockedJsonFile
             @chmod($this->path, 0600);
             return $result;
         } catch (JsonException $exception) {
-            throw new RelayException('Relay runtime state is invalid.', 0, $exception);
+            throw new RelayException(self::INVALID_STATE_MESSAGE, 0, $exception);
         } finally {
             flock($handle, LOCK_UN);
             fclose($handle);
@@ -62,10 +64,10 @@ final class LockedJsonFile
         try {
             $decoded = json_decode($raw, true, 16, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new RelayException('Relay runtime state is invalid.', 0, $exception);
+            throw new RelayException(self::INVALID_STATE_MESSAGE, 0, $exception);
         }
         if (!is_array($decoded)) {
-            throw new RelayException('Relay runtime state is invalid.');
+            throw new RelayException(self::INVALID_STATE_MESSAGE);
         }
         return $decoded;
     }

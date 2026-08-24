@@ -62,6 +62,7 @@ def test_invalid_production_configuration_fails(
     valid_smtp_configuration, changes, expected
 ):
     configuration = replace(valid_smtp_configuration, **changes)
+    validator = EmailConfigurationValidator()
 
     with pytest.raises(ImproperlyConfigured, match=expected):
-        EmailConfigurationValidator().validate(configuration)
+        validator.validate(configuration)

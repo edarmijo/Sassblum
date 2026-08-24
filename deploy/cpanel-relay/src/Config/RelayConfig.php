@@ -47,10 +47,10 @@ final class RelayConfig
     public function senderEmail(): string { return $this->string('sender_email'); }
     public function senderName(): string { return $this->string('sender_name'); }
     public function runtimeDir(): string { return $this->string('runtime_dir'); }
-    public function smtpHost(): string { return $this->nestedString('smtp', 'host'); }
+    public function smtpHost(): string { return $this->string('host', 'smtp'); }
     public function smtpPort(): int { return $this->nestedPositiveInt('smtp', 'port'); }
-    public function smtpUsername(): string { return $this->nestedString('smtp', 'username'); }
-    public function smtpPassword(): string { return $this->nestedString('smtp', 'password'); }
+    public function smtpUsername(): string { return $this->string('username', 'smtp'); }
+    public function smtpPassword(): string { return $this->string('password', 'smtp'); }
     public function smtpTimeout(): int { return $this->nestedPositiveInt('smtp', 'timeout_seconds'); }
     public function perMinute(): int { return $this->nestedPositiveInt('limits', 'per_minute'); }
     public function perHour(): int { return $this->nestedPositiveInt('limits', 'per_hour'); }
@@ -90,18 +90,9 @@ final class RelayConfig
         }
     }
 
-    private function string(string $key): string
+    private function string(string $key, ?string $section = null): string
     {
-        $value = $this->values[$key] ?? null;
-        if (!is_string($value) || trim($value) === '') {
-            throw new RelayException('Relay configuration is incomplete.');
-        }
-        return $value;
-    }
-
-    private function nestedString(string $section, string $key): string
-    {
-        $values = $this->section($section);
+        $values = $section === null ? $this->values : $this->section($section);
         $value = $values[$key] ?? null;
         if (!is_string($value) || trim($value) === '') {
             throw new RelayException('Relay configuration is incomplete.');

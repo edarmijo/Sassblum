@@ -33,9 +33,9 @@ export function CreateTicketPage({ onCreated }: Readonly<CreateTicketPageProps>)
         <p className="text-sm text-muted-foreground mt-0.5">Describe tu solicitud de soporte.</p>
       </header>
       {hasInvalidRequestedService && (
-        <p role="status" className="mb-4 rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+        <output className="mb-4 block rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
           El servicio solicitado ya no está disponible. Selecciona otro para continuar.
-        </p>
+        </output>
       )}
       <CreateTicketForm
         services={services.map((s) => ({ id: s.id, nombre: s.nombre }))}

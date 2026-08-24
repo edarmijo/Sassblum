@@ -25,8 +25,8 @@ export function ExportButton({ onExport, onCopy, onPrint }: Readonly<ExportButto
     setError(null)
     try {
       await operation()
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No se pudo completar la acción del reporte.')
+    } catch (error_) {
+      setError(error_ instanceof Error ? error_.message : 'No se pudo completar la acción del reporte.')
     } finally {
       setBusy(null)
     }

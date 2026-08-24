@@ -26,6 +26,9 @@ class CpanelRelayConfigurationValidator:
     """Validate relay settings without changing the common email validator."""
 
     BACKEND = "apps.notifications.backends.cpanel_relay_backend.CpanelRelayBackend"
+    INVALID_CONFIGURATION_MESSAGE = (
+        "La configuración del relay cPanel es incompleta o inválida."
+    )
 
     def validate(self, configuration: CpanelRelayConfiguration) -> None:
         """Raise ``ImproperlyConfigured`` before the first delivery attempt."""
@@ -34,16 +37,12 @@ class CpanelRelayConfigurationValidator:
         try:
             validate_email(configuration.from_email)
         except ValidationError as exc:
-            raise ImproperlyConfigured(
-                "La configuración del relay cPanel es incompleta o inválida."
-            ) from exc
+            raise ImproperlyConfigured(self.INVALID_CONFIGURATION_MESSAGE) from exc
         parsed = urlsplit(configuration.relay_url)
         try:
             port = parsed.port
         except ValueError as exc:
-            raise ImproperlyConfigured(
-                "La configuración del relay cPanel es incompleta o inválida."
-            ) from exc
+            raise ImproperlyConfigured(self.INVALID_CONFIGURATION_MESSAGE) from exc
         allowed_host = configuration.allowed_host.strip().lower()
         if (
             parsed.scheme != "https"
@@ -62,6 +61,4 @@ class CpanelRelayConfigurationValidator:
             or configuration.timeout_seconds > 60
             or configuration.max_payload_bytes <= 0
         ):
-            raise ImproperlyConfigured(
-                "La configuración del relay cPanel es incompleta o inválida."
-            )
+            raise ImproperlyConfigured(self.INVALID_CONFIGURATION_MESSAGE)

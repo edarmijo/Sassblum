@@ -22,25 +22,35 @@ final class IdempotencyStore
     public function claim(string $messageId, int $now): bool
     {
         return (bool) $this->state->mutate(function (array $state) use ($messageId, $now): array {
-            $active = [];
-            foreach ($state as $id => $entry) {
-                if (!is_array($entry) || !isset($entry['time'], $entry['status']) || !is_int($entry['time'])) {
-                    continue;
-                }
-                $status = $entry['status'];
-                $minimumTime = $status === 'processing'
-                    ? $now - min(self::PROCESSING_TTL_SECONDS, $this->ttlSeconds)
-                    : $now - $this->ttlSeconds;
-                if (($status === 'processing' || $status === 'delivered') && $entry['time'] > $minimumTime) {
-                    $active[(string) $id] = $entry;
-                }
-            }
+            $active = $this->activeEntries($state, $now);
             if (isset($active[$messageId])) {
                 return [$active, false];
             }
             $active[$messageId] = ['time' => $now, 'status' => 'processing'];
             return [$active, true];
         });
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     * @return array<string, array<string, mixed>>
+     */
+    private function activeEntries(array $state, int $now): array
+    {
+        $active = [];
+        foreach ($state as $id => $entry) {
+            if (!is_array($entry) || !isset($entry['time'], $entry['status']) || !is_int($entry['time'])) {
+                continue;
+            }
+            $status = $entry['status'];
+            $minimumTime = $status === 'processing'
+                ? $now - min(self::PROCESSING_TTL_SECONDS, $this->ttlSeconds)
+                : $now - $this->ttlSeconds;
+            if (($status === 'processing' || $status === 'delivered') && $entry['time'] > $minimumTime) {
+                $active[(string) $id] = $entry;
+            }
+        }
+        return $active;
     }
 
     public function markDelivered(string $messageId, int $now): void

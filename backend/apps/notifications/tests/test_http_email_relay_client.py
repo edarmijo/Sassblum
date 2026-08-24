@@ -102,9 +102,10 @@ def test_deliver_rejects_http_error_without_exposing_response_body() -> None:
         5,
         session_factory=MagicMock(return_value=session),
     )
+    payload = build_payload()
 
     with pytest.raises(EmailRelayDeliveryError, match="HTTP 429"):
-        client.deliver(build_payload())
+        client.deliver(payload)
 
 
 def test_deliver_rejects_invalid_confirmation() -> None:
@@ -117,9 +118,10 @@ def test_deliver_rejects_invalid_confirmation() -> None:
         5,
         session_factory=MagicMock(return_value=session),
     )
+    payload = build_payload()
 
     with pytest.raises(EmailRelayDeliveryError, match="identificador"):
-        client.deliver(build_payload())
+        client.deliver(payload)
 
 
 def test_deliver_wraps_network_errors() -> None:
@@ -132,6 +134,7 @@ def test_deliver_wraps_network_errors() -> None:
         5,
         session_factory=MagicMock(return_value=session),
     )
+    payload = build_payload()
 
     with pytest.raises(EmailRelayDeliveryError, match="contactar"):
-        client.deliver(build_payload())
+        client.deliver(payload)

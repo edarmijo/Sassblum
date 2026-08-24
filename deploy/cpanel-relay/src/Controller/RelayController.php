@@ -49,20 +49,15 @@ final class RelayController
         string $rawBody,
         int $now
     ): JsonResponse {
-        if (strtoupper($method) !== 'POST') {
-            return new JsonResponse(405, ['status' => 'error'], ['Allow' => 'POST']);
-        }
-        if (strtolower(trim(explode(';', $contentType, 2)[0])) !== 'application/json') {
-            return new JsonResponse(415, ['status' => 'error']);
-        }
-        if (!$this->authenticator->isAuthorized($providedSecret)) {
-            return new JsonResponse(401, ['status' => 'error']);
-        }
-        if ($rawBody === '' || strlen($rawBody) > $this->maxPayloadBytes) {
-            return new JsonResponse(413, ['status' => 'error']);
-        }
-        if (!$this->rateLimiter->consume($now)) {
-            return new JsonResponse(429, ['status' => 'error'], ['Retry-After' => '60']);
+        $perimeterRejection = $this->perimeterRejection(
+            $method,
+            $contentType,
+            $providedSecret,
+            $rawBody,
+            $now
+        );
+        if ($perimeterRejection !== null) {
+            return $perimeterRejection;
         }
 
         try {
@@ -71,6 +66,35 @@ final class RelayController
             return new JsonResponse(422, ['status' => 'error']);
         }
 
+        return $this->deliverValidated($message, $now);
+    }
+
+    private function perimeterRejection(
+        string $method,
+        string $contentType,
+        string $providedSecret,
+        string $rawBody,
+        int $now
+    ): ?JsonResponse {
+        $rejection = null;
+        if (strtoupper($method) !== 'POST') {
+            $rejection = new JsonResponse(405, ['status' => 'error'], ['Allow' => 'POST']);
+        } elseif (strtolower(trim(explode(';', $contentType, 2)[0])) !== 'application/json') {
+            $rejection = new JsonResponse(415, ['status' => 'error']);
+        } elseif (!$this->authenticator->isAuthorized($providedSecret)) {
+            $rejection = new JsonResponse(401, ['status' => 'error']);
+        } elseif ($rawBody === '' || strlen($rawBody) > $this->maxPayloadBytes) {
+            $rejection = new JsonResponse(413, ['status' => 'error']);
+        } elseif (!$this->rateLimiter->consume($now)) {
+            $rejection = new JsonResponse(429, ['status' => 'error'], ['Retry-After' => '60']);
+        }
+        return $rejection;
+    }
+
+    private function deliverValidated(
+        \SassBlum\Relay\Domain\RelayMessage $message,
+        int $now
+    ): JsonResponse {
         if (!$this->idempotency->claim($message->messageId(), $now)) {
             return new JsonResponse(200, [
                 'status' => 'duplicate',
@@ -78,6 +102,13 @@ final class RelayController
             ]);
         }
 
+        return $this->sendClaimedMessage($message, $now);
+    }
+
+    private function sendClaimedMessage(
+        \SassBlum\Relay\Domain\RelayMessage $message,
+        int $now
+    ): JsonResponse {
         try {
             $providerCode = $this->mailer->send($message);
         } catch (Throwable $exception) {

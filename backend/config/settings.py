@@ -315,8 +315,9 @@ ANYMAIL = {
     "BREVO_API_KEY": config('BREVO_API_KEY', default=''),
 }
 
+_DEFAULT_NOTIFICATION_EMAIL = 'notificaciones@sassblum.com'
 DEFAULT_FROM_EMAIL = config(
-    'DEFAULT_FROM_EMAIL', default='notificaciones@sassblum.com'
+    'DEFAULT_FROM_EMAIL', default=_DEFAULT_NOTIFICATION_EMAIL
 ).strip()
 
 # B4 — identidad y contenido comunes a cualquier transporte (SMTP, Brevo o relay).
@@ -325,14 +326,14 @@ DEFAULT_FROM_EMAIL = config(
 EMAIL_REPLY_TO = [
     email.strip()
     for email in config(
-        'EMAIL_REPLY_TO', default='notificaciones@sassblum.com'
+        'EMAIL_REPLY_TO', default=_DEFAULT_NOTIFICATION_EMAIL
     ).split(',')
     if email.strip()
 ]
 EMAIL_CC = [
     email.strip()
     for email in config(
-        'EMAIL_CC', default='notificaciones@sassblum.com'
+        'EMAIL_CC', default=_DEFAULT_NOTIFICATION_EMAIL
     ).split(',')
     if email.strip()
 ]

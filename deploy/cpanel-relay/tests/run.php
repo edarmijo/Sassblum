@@ -17,6 +17,9 @@ use SassBlum\Relay\Security\SecretAuthenticator;
 use SassBlum\Relay\Storage\LockedJsonFile;
 use SassBlum\Relay\Validation\PayloadValidator;
 
+const JSON_CONTENT_TYPE = 'application/json';
+const TEST_RECIPIENT = 'cliente@example.test';
+
 final class FakeMailer implements RelayMailerInterface
 {
     /** @var bool */ private $fail;
@@ -33,7 +36,7 @@ final class FakeMailer implements RelayMailerInterface
         $this->calls++;
         $this->lastMessage = $message;
         if ($this->fail) {
-            throw new RuntimeException('Synthetic SMTP failure containing no production data.');
+            throw new RelayException('Synthetic SMTP failure containing no production data.');
         }
         return 'fake-accepted';
     }
@@ -43,14 +46,14 @@ final class FakeMailer implements RelayMailerInterface
 function assertSameValue($expected, $actual, string $message): void
 {
     if ($actual !== $expected) {
-        throw new RuntimeException($message . ': expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
+        throw new AssertionError($message . ': expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
     }
 }
 
 function assertTrueValue(bool $condition, string $message): void
 {
     if (!$condition) {
-        throw new RuntimeException($message);
+        throw new AssertionError($message);
     }
 }
 
@@ -62,7 +65,7 @@ function assertPayloadRejected(callable $callback, string $message): void
     } catch (PayloadValidationException $exception) {
         return;
     }
-    throw new RuntimeException($message);
+    throw new AssertionError($message);
 }
 
 /** @param callable(): void $callback */
@@ -73,7 +76,7 @@ function assertRelayRejected(callable $callback, string $message): void
     } catch (RelayException $exception) {
         return;
     }
-    throw new RuntimeException($message);
+    throw new AssertionError($message);
 }
 
 /** @return array<string, mixed> */
@@ -84,7 +87,7 @@ function validPayload(): array
         'text_body' => 'Observación/Solución: impresión corregida.',
         'reply_to' => ['soporte@example.test'],
         'cc' => ['auditoria@example.test'],
-        'to' => ['cliente@example.test'],
+        'to' => [TEST_RECIPIENT],
         'subject' => 'Ticket actualizado · solución aplicada',
         'message_id' => '123e4567-e89b-42d3-a456-426614174000',
         'version' => 1,
@@ -147,7 +150,7 @@ $tests['example configuration cannot be deployed unchanged'] = function (): void
 };
 $tests['valid private configuration loads'] = function () use (&$runtimeDir): void {
     if (!is_dir($runtimeDir) && !mkdir($runtimeDir, 0700, true) && !is_dir($runtimeDir)) {
-        throw new RuntimeException('Test directory could not be created.');
+        throw new AssertionError('Test directory could not be created.');
     }
     $path = $runtimeDir . '/valid-config.php';
     $values = [
@@ -179,7 +182,7 @@ $tests['valid private configuration loads'] = function () use (&$runtimeDir): vo
 $tests['validator accepts unordered exact contract'] = function (): void {
     $message = (new PayloadValidator(262144))->validate(encodePayload(validPayload()));
     assertSameValue('Ticket actualizado · solución aplicada', $message->subject(), 'UTF-8 subject must be preserved.');
-    assertSameValue(['cliente@example.test'], $message->to(), 'Recipient must be preserved.');
+    assertSameValue([TEST_RECIPIENT], $message->to(), 'Recipient must be preserved.');
     assertSameValue(['auditoria@example.test'], $message->cc(), 'CC must be preserved.');
     assertSameValue(['soporte@example.test'], $message->replyTo(), 'Reply-To must be preserved.');
     assertSameValue('Observación/Solución: impresión corregida.', $message->textBody(), 'Text must preserve UTF-8.');
@@ -216,7 +219,7 @@ $tests['controller sends once and returns duplicate confirmation'] = function ()
     list($controller, $mailer) = controllerFor($runtimeDir . '/sent');
     $body = encodePayload(validPayload());
     $first = $controller->handle('POST', 'application/json; charset=utf-8', str_repeat('s', 32), $body, 1000);
-    $second = $controller->handle('POST', 'application/json', str_repeat('s', 32), $body, 1001);
+    $second = $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), $body, 1001);
     assertSameValue(200, $first->statusCode(), 'First request should pass.');
     assertSameValue('sent', $first->payload()['status'], 'First request must be sent.');
     assertSameValue('duplicate', $second->payload()['status'], 'Second request must be duplicate.');
@@ -230,11 +233,11 @@ $tests['controller sends once and returns duplicate confirmation'] = function ()
 $tests['controller rejects invalid perimeter requests'] = function () use (&$runtimeDir): void {
     list($controller, $mailer) = controllerFor($runtimeDir . '/perimeter');
     $body = encodePayload(validPayload());
-    assertSameValue(405, $controller->handle('GET', 'application/json', str_repeat('s', 32), $body, 1000)->statusCode(), 'GET must fail.');
+    assertSameValue(405, $controller->handle('GET', JSON_CONTENT_TYPE, str_repeat('s', 32), $body, 1000)->statusCode(), 'GET must fail.');
     assertSameValue(415, $controller->handle('POST', 'text/plain', str_repeat('s', 32), $body, 1000)->statusCode(), 'Wrong content type must fail.');
-    assertSameValue(401, $controller->handle('POST', 'application/json', 'wrong', $body, 1000)->statusCode(), 'Wrong secret must fail.');
-    assertSameValue(413, $controller->handle('POST', 'application/json', str_repeat('s', 32), '', 1000)->statusCode(), 'Empty body must fail.');
-    assertSameValue(422, $controller->handle('POST', 'application/json', str_repeat('s', 32), '{}', 1000)->statusCode(), 'Invalid payload must fail.');
+    assertSameValue(401, $controller->handle('POST', JSON_CONTENT_TYPE, 'wrong', $body, 1000)->statusCode(), 'Wrong secret must fail.');
+    assertSameValue(413, $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), '', 1000)->statusCode(), 'Empty body must fail.');
+    assertSameValue(422, $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), '{}', 1000)->statusCode(), 'Invalid payload must fail.');
     assertSameValue(0, $mailer->calls, 'Rejected requests must not call SMTP.');
 };
 $tests['controller applies authenticated rate limit'] = function () use (&$runtimeDir): void {
@@ -242,8 +245,8 @@ $tests['controller applies authenticated rate limit'] = function () use (&$runti
     $firstPayload = validPayload();
     $secondPayload = validPayload();
     $secondPayload['message_id'] = '123e4567-e89b-42d3-b456-426614174001';
-    $first = $controller->handle('POST', 'application/json', str_repeat('s', 32), encodePayload($firstPayload), 1000);
-    $second = $controller->handle('POST', 'application/json', str_repeat('s', 32), encodePayload($secondPayload), 1001);
+    $first = $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), encodePayload($firstPayload), 1000);
+    $second = $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), encodePayload($secondPayload), 1001);
     assertSameValue(200, $first->statusCode(), 'First request should pass.');
     assertSameValue(429, $second->statusCode(), 'Second request should be rate limited.');
     assertSameValue('60', $second->headers()['Retry-After'], 'Rate limit must expose retry delay.');
@@ -252,8 +255,8 @@ $tests['controller applies authenticated rate limit'] = function () use (&$runti
 $tests['controller releases idempotency after SMTP failure'] = function () use (&$runtimeDir): void {
     list($controller, $mailer) = controllerFor($runtimeDir . '/failure', true);
     $body = encodePayload(validPayload());
-    $first = $controller->handle('POST', 'application/json', str_repeat('s', 32), $body, 1000);
-    $second = $controller->handle('POST', 'application/json', str_repeat('s', 32), $body, 1001);
+    $first = $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), $body, 1000);
+    $second = $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), $body, 1001);
     assertSameValue(502, $first->statusCode(), 'SMTP failure must surface as gateway failure.');
     assertSameValue(502, $second->statusCode(), 'Failed claim must be retryable.');
     assertSameValue(2, $mailer->calls, 'SMTP should be retried after failure.');
@@ -262,10 +265,10 @@ $tests['audit log excludes message content and addresses'] = function () use (&$
     $directory = $runtimeDir . '/audit';
     list($controller) = controllerFor($directory);
     $payload = validPayload();
-    $controller->handle('POST', 'application/json', str_repeat('s', 32), encodePayload($payload), 1000);
+    $controller->handle('POST', JSON_CONTENT_TYPE, str_repeat('s', 32), encodePayload($payload), 1000);
     $log = file_get_contents($directory . '/relay.log');
     assertTrueValue(is_string($log), 'Audit log must exist.');
-    assertTrueValue(strpos($log, 'cliente@example.test') === false, 'Recipient must not be logged.');
+    assertTrueValue(strpos($log, TEST_RECIPIENT) === false, 'Recipient must not be logged.');
     assertTrueValue(strpos($log, 'Ticket actualizado') === false, 'Subject must not be logged.');
     assertTrueValue(strpos($log, 'impresión corregida') === false, 'Body must not be logged.');
     assertTrueValue(strpos($log, str_repeat('s', 32)) === false, 'Secret must not be logged.');

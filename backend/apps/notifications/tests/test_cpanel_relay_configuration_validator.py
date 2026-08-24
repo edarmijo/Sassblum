@@ -57,6 +57,7 @@ def test_invalid_selected_relay_configuration_fails_early(
     valid_relay_configuration, changes
 ):
     configuration = replace(valid_relay_configuration, **changes)
+    validator = CpanelRelayConfigurationValidator()
 
     with pytest.raises(ImproperlyConfigured, match="relay cPanel"):
-        CpanelRelayConfigurationValidator().validate(configuration)
+        validator.validate(configuration)
