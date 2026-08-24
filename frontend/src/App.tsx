@@ -17,6 +17,7 @@ import { PageTransition } from './core/ui/PageTransition'
 import { SmoothLink as Link } from './core/ui/SmoothLink'
 import { BackLink } from './core/ui/BackLink'
 import { dashboardRoute } from './core/utils/dashboardRoute'
+import { RouteMetadata } from './core/seo/RouteMetadata'
 
 // Concrete services (injected here only)
 import { authService } from './modules/auth/services/AuthService'
@@ -309,6 +310,7 @@ export default function App() {
     <>
       {showIntro ? <PageLoader onComplete={finishIntro} /> : null}
       <BrowserRouter>
+      <RouteMetadata />
       {/* One persistent visual layer for public, auth and every authenticated role. */}
       <DeferredVisualEffects />
       <ScrollToTop />
