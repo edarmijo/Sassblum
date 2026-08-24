@@ -144,6 +144,14 @@ export function Footer() {
                       </span>
                     </a>
                   </li>
+                  <li className="min-w-0">
+                    <a href="tel:+593995286319" className={navigationLinkClassName}>
+                      <Phone aria-hidden="true" className="size-4 shrink-0" />
+                      <span className="min-w-0 [overflow-wrap:anywhere]">
+                        +593 99 528 6319
+                      </span>
+                    </a>
+                  </li>
                   {socialLinks.map(({ label, href, iconPath }) => (
                     <li key={label} className="min-w-0">
                       <a

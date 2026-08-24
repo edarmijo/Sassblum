@@ -40,6 +40,10 @@ describe('Footer', () => {
       'href',
       'tel:+593969990990',
     )
+    expect(screen.getByRole('link', { name: /593 99 528 6319/i })).toHaveAttribute(
+      'href',
+      'tel:+593995286319',
+    )
     expect(screen.getByText('Guayaquil - Ecuador')).toBeInTheDocument()
   })
 

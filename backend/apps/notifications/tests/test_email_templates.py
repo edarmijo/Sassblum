@@ -62,6 +62,20 @@ def test_creation_email_renders_only_configured_optional_channels():
     assert "WhatsApp: +593 99 000 0000" in rendered
 
 
+def test_creation_email_renders_confirmed_phone_without_whatsapp_or_anydesk():
+    rendered = render_to_string(
+        "email/ticket_created.html",
+        _ticket_context(
+            support_phone="+593 96 999 0990",
+        ),
+    )
+
+    assert "Teléfono: +593 96 999 0990" in rendered
+    assert "+593 99 528 6319" not in rendered
+    assert "WhatsApp:" not in rendered
+    assert "AnyDesk" not in rendered
+
+
 @pytest.mark.parametrize(
     ("state", "expected"),
     [

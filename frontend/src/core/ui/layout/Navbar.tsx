@@ -133,6 +133,7 @@ function MobileMenu({ mobileOpen, closeMobile, items, isActive, user, logout, na
             <a href="mailto:info@sassblum.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>info@sassblum.com</a>
             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>Guayaquil, Ecuador</span>
             <a href="tel:+593969990990" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>+593 96 999 0990</a>
+            <a href="tel:+593995286319" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '0.875rem', transition: `color 200ms ${EASE_OUT}` }} onMouseEnter={(e) => { e.currentTarget.style.color = '#00c4e0' }} onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>+593 99 528 6319</a>
 
             {user && (
               <button
