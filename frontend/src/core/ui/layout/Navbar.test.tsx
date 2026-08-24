@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Navbar } from './Navbar'
@@ -46,9 +46,19 @@ describe('Navbar brand', () => {
     const brand = screen.getByRole('link', { name: 'Sassblum, ir al inicio' })
     expect(brand).toHaveAttribute('href', '/')
     expect(brand).toHaveTextContent('SASSBLUM')
-    expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveStyle({
+    const menuButton = screen.getByRole('button', { name: 'Abrir menú' })
+    expect(menuButton).toHaveStyle({
       width: '44px',
       height: '44px',
     })
+    fireEvent.click(menuButton)
+    expect(screen.getByRole('link', { name: '+593 96 999 0990' })).toHaveAttribute(
+      'href',
+      'tel:+593969990990',
+    )
+    expect(screen.getByRole('link', { name: '+593 99 528 6319' })).toHaveAttribute(
+      'href',
+      'tel:+593995286319',
+    )
   })
 })
