@@ -33,7 +33,10 @@ const PUBLIC_PAGES: Readonly<Record<string, PublicPageMetadata>> = {
 
 function normalizedPath(pathname: string): string {
   if (pathname === '/') return pathname
-  return pathname.replace(/\/+$/, '')
+
+  let end = pathname.length
+  while (end > 1 && pathname[end - 1] === '/') end -= 1
+  return pathname.slice(0, end)
 }
 
 function upsertMeta(selector: string, attributes: Readonly<Record<string, string>>): HTMLMetaElement {
