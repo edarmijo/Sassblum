@@ -41,5 +41,8 @@ reportarse por separado y no probarse contra producción sin autorización escri
 
 ## Versiones soportadas
 
-Hasta que exista una release estable, solo la rama `main` desplegada recibe correcciones. Esta
-política debe actualizarse al crear el primer tag de entrega.
+La versión soportada es la referencia inmutable indicada en `docs/ENTREGA_CLIENTE.md`. Hasta que
+se autoricen el commit documental, el cutover y la fusión final, el runtime validado es
+`a97bb2a773aff5b708d16cba46bf73244f7064e8` y `main` permanece sin cambios. Las correcciones se
+preparan en ramas `erick-lote-*`, pasan CI y revisión, y se integran mediante PR; no se corrige
+producción desde un workspace sin una referencia Git trazable.
