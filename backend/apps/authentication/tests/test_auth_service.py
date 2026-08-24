@@ -74,6 +74,11 @@ class TestAuthenticate:
         active_user.refresh_from_db()
         assert active_user.intentos_fallidos == 0
 
+    def test_existing_incomplete_client_can_still_login(self, active_user):
+        result = AuthService().authenticate("user@example.com", TEST_PASSWORD)
+        assert result["user"]["ruc"] == ""
+        assert result["user"]["empresa"] == ""
+
 
 @pytest.mark.django_db
 class TestRegister:
@@ -81,12 +86,17 @@ class TestRegister:
         result = AuthService().register({
             "nombre": "Ana", "apellido": "Pérez",
             "email": "new@example.com", "password": TEST_PASSWORD,
+            "tipo_identificacion": User.TipoIdentificacion.RUC,
+            "ruc": "0991234567001", "empresa": "Empresa Nueva",
         })
         assert "message" in result
         user = User.objects.get(email="new@example.com")
         assert user.role == User.Role.CLIENT
         assert user.estado == User.Estado.PENDING
         assert user.email_verificado is False
+        assert user.tipo_identificacion == User.TipoIdentificacion.RUC
+        assert user.ruc == "0991234567001"
+        assert user.empresa == "Empresa Nueva"
 
     def test_duplicate_email_rejected(self, active_user):
         svc = AuthService()
@@ -94,6 +104,7 @@ class TestRegister:
             svc.register({
                 "nombre": "X", "apellido": "Y",
                 "email": "user@example.com", "password": TEST_PASSWORD,
+                "ruc": "0991234567001", "empresa": "Empresa",
             })
 
     def test_weak_password_rejected(self, db):
@@ -102,6 +113,7 @@ class TestRegister:
             svc.register({
                 "nombre": "X", "apellido": "Y",
                 "email": "weak@example.com", "password": TEST_PASSWORD[:5],
+                "ruc": "0991234567001", "empresa": "Empresa",
             })
 
 

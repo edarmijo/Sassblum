@@ -29,6 +29,7 @@ from django.test.utils import override_settings
 from apps.authentication.models import User
 from apps.catalog.models import Service
 from apps.tickets.models import Ticket, TicketEvent
+from apps.tickets.utils import event_author_name
 
 TAG_DOMOTICA = "Domótica"
 MSG_CREATED = "Ticket creado por el cliente."
@@ -254,6 +255,7 @@ class Command(BaseCommand):
                     TicketEvent.objects.create(
                         ticket=ticket,
                         autor=autor,
+                        autor_nombre=event_author_name(autor),
                         tipo_evento=tipo,
                         estado_anterior=ant,
                         estado_nuevo=nue,

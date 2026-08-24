@@ -5,21 +5,33 @@ Run: pytest apps/authentication/tests/test_password_reset.py -v
 These use @pytest.mark.django_db and run in your environment (Supabase / local PG).
 """
 
-from core.testing import random_credential
+from collections.abc import Iterator
 from datetime import timedelta
 
 import pytest
+from django.core.cache import cache
 from django.utils import timezone
+from rest_framework.test import APIClient
 
+from apps.authentication.cookies import REFRESH_COOKIE_NAME
 from apps.authentication.models import User, PasswordResetToken
 from apps.authentication.services.token_service import (
     TokenService,
     TokenExpired,
     InvalidToken,
 )
+from core.testing import random_credential
 
 # Generada por corrida (core.testing): sin credenciales hardcodeadas.
 TEST_PASSWORD = random_credential()
+
+
+@pytest.fixture(autouse=True)
+def clear_throttle_cache() -> Iterator[None]:
+    """Aísla los contadores globales de DRF entre casos de recuperación."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
@@ -74,3 +86,190 @@ class TestTokenService:
         token = svc.generate_reset_token(user)
         svc.consume_token(token)
         assert PasswordResetToken.objects.get(token=token).usado is True
+
+
+@pytest.mark.django_db
+class TestResetPasswordEndpoint:
+    def test_confirmation_mismatch_is_a_cross_field_error(self, user: User) -> None:
+        token = TokenService().generate_reset_token(user)
+
+        response = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": random_credential(),
+                "confirm_password": random_credential(),
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.data["non_field_errors"] == ["Las contraseñas no coinciden."]
+        user.refresh_from_db()
+        assert user.check_password(TEST_PASSWORD)
+        assert PasswordResetToken.objects.get(token=token).usado is False
+
+    @pytest.mark.parametrize("weak_password", ["1" * 8, "a" * 8, "A1" * 3])
+    def test_reset_uses_the_same_password_policy_as_registration(
+        self,
+        user: User,
+        weak_password: str,
+    ) -> None:
+        token = TokenService().generate_reset_token(user)
+
+        response = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": weak_password,
+                "confirm_password": weak_password,
+            },
+        )
+
+        assert response.status_code == 400
+        user.refresh_from_db()
+        assert user.check_password(TEST_PASSWORD)
+        assert PasswordResetToken.objects.get(token=token).usado is False
+
+    def test_reset_revokes_existing_access_and_refresh_sessions(
+        self,
+        user: User,
+    ) -> None:
+        user.estado = User.Estado.ACTIVE
+        user.email_verificado = True
+        user.save(update_fields=["estado", "email_verificado"])
+        session = APIClient()
+        login = session.post(
+            "/api/auth/login",
+            {"email": user.email, "password": TEST_PASSWORD},
+        )
+        old_access = login.data["tokens"]["access"]
+        old_refresh = session.cookies[REFRESH_COOKIE_NAME].value
+        token = TokenService().generate_reset_token(user)
+        new_password = random_credential()
+
+        reset = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+
+        assert reset.status_code == 200
+        assert reset.cookies[REFRESH_COOKIE_NAME].value == ""
+        access_client = APIClient()
+        access_client.credentials(HTTP_AUTHORIZATION=f"Bearer {old_access}")
+        assert access_client.get("/api/auth/perfil").status_code == 401
+        refresh_client = APIClient()
+        refresh_client.cookies[REFRESH_COOKIE_NAME] = old_refresh
+        assert refresh_client.post("/api/auth/token/refresh", {}).status_code == 401
+
+    def test_pending_account_reset_activates_verifies_and_allows_login(self):
+        user = User.objects.create_user(
+            email="migrated@example.com",
+            password=None,
+            role=User.Role.CLIENT,
+            estado=User.Estado.PENDING,
+            email_verificado=False,
+        )
+        assert user.has_usable_password() is False
+        token = TokenService().generate_reset_token(user)
+        new_password = random_credential()
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.email_verificado is True
+        assert user.estado == User.Estado.ACTIVE
+        assert user.check_password(new_password)
+
+        login = client.post(
+            "/api/auth/login",
+            {"email": user.email, "password": new_password},
+        )
+        assert login.status_code == 200
+        assert "access" in login.data["tokens"]
+
+        reused = client.post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+        assert reused.status_code == 400
+
+    def test_reset_does_not_remove_administrative_block(self, user):
+        user.estado = User.Estado.BLOCKED
+        user.email_verificado = False
+        user.save(update_fields=["estado", "email_verificado"])
+        token = TokenService().generate_reset_token(user)
+        new_password = random_credential()
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.email_verificado is True
+        assert user.estado == User.Estado.BLOCKED
+        assert user.check_password(new_password)
+        login = client.post(
+            "/api/auth/login",
+            {"email": user.email, "password": new_password},
+        )
+        assert login.status_code == 423
+
+    def test_expired_token_does_not_change_account(self, user):
+        token = TokenService().generate_reset_token(user)
+        reset_token = PasswordResetToken.objects.get(token=token)
+        reset_token.expira_en = timezone.now() - timedelta(minutes=1)
+        reset_token.save(update_fields=["expira_en"])
+        new_password = random_credential()
+
+        response = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": token,
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+
+        assert response.status_code == 410
+        user.refresh_from_db()
+        reset_token.refresh_from_db()
+        assert user.email_verificado is False
+        assert user.estado == User.Estado.PENDING
+        assert user.check_password(TEST_PASSWORD)
+        assert reset_token.usado is False
+
+    def test_unknown_token_returns_bad_request(self):
+        new_password = random_credential()
+        response = APIClient().post(
+            "/api/auth/reset-password",
+            {
+                "token": "00000000-0000-0000-0000-000000000000",
+                "new_password": new_password,
+                "confirm_password": new_password,
+            },
+        )
+        assert response.status_code == 400

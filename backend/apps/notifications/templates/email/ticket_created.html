@@ -5,9 +5,7 @@
 {% block titulo %}Ticket de servicio creado{% endblock %}
 
 {% block contenido %}
-  {# LN-3 — paridad con el legado, con texto según el destinatario: #}
-  {# · cliente → confirmación de SU consulta   · admin → aviso de ticket entrante #}
-  {% if recipient.email == cliente_email %}
+  {% if is_ticket_client %}
     <p>Estimado(a) <b>{{ recipient_nombre }}</b>:</p>
     <p>Hemos recibido su consulta y ya está registrada en nuestro sistema:</p>
   {% else %}
@@ -23,7 +21,7 @@
     <p style="margin:0;white-space:pre-line;">{{ ticket_descripcion }}</p>
   </div>
 
-  {% if recipient.email == cliente_email %}
+  {% if is_ticket_client %}
     <p style="font-size:13px;">Se le ha asignado el ticket de servicio <b>{{ ticket_numero }}</b>. Nuestro equipo lo atenderá a la brevedad y recibirá actualizaciones a medida que avance.</p>
     <p style="font-size:13px;margin-bottom:4px;">Los datos de contacto que nos proporcionó son:</p>
   {% else %}
@@ -44,6 +42,26 @@
       <td style="padding:6px 0;font-size:13px;color:#1d1c1a;border-top:0.5px solid #e7e5de;">{{ cliente_empresa|default:"—" }}</td>
     </tr>
   </table>
+
+  {% if is_ticket_client %}
+    <p style="font-size:13px;font-weight:600;margin-bottom:6px;">Siguientes pasos</p>
+    <ol style="font-size:13px;margin-top:0;padding-left:20px;">
+      <li>Conserve el número <b>{{ ticket_numero }}</b> para dar seguimiento a su solicitud.</li>
+      <li>Responda a este correo si necesita agregar contexto o detalles.</li>
+      <li>Adjunte capturas de pantalla que ayuden a identificar el inconveniente.</li>
+      {% if request_anydesk %}
+        <li>Si solicita soporte remoto, incluya su código de AnyDesk.</li>
+      {% endif %}
+    </ol>
+    {% if support_phone or support_whatsapp or support_email %}
+      <p style="font-size:13px;margin-bottom:4px;">Canales de soporte:</p>
+      <ul style="font-size:13px;margin-top:0;padding-left:20px;">
+        {% if support_email %}<li>Correo: {{ support_email }}</li>{% endif %}
+        {% if support_phone %}<li>Teléfono: {{ support_phone }}</li>{% endif %}
+        {% if support_whatsapp %}<li>WhatsApp: {{ support_whatsapp }}</li>{% endif %}
+      </ul>
+    {% endif %}
+  {% endif %}
 
   <p style="font-size:13px;color:#6f6e68;margin-top:16px;">
     Soporte al usuario<br />

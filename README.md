@@ -16,8 +16,9 @@ flujo trazable para clientes, trabajadores y administradores.
 [Manual de entrega al cliente](docs/client-manual-latex/README.md) ·
 [Despliegue](docs/DEPLOYMENT.md)
 
-> Estado de entrega: aplicación desplegada y suites locales verificadas el 15 de agosto de 2026.
-> Los resultados son una línea base reproducible, no una garantía de disponibilidad futura.
+> Estado de entrega: integración `a97bb2a773aff5b708d16cba46bf73244f7064e8` desplegada y
+> validada en producción el 23 de agosto de 2026. El cambio de `sassblum.com` y la fusión a
+> `main` permanecen sujetos a las autorizaciones finales y a la aceptación de SassBlum.
 
 ## Qué resuelve
 
@@ -38,7 +39,7 @@ flowchart LR
     V -->|"WebSocket /ws"| C["Django Channels"]
     A --> P[("Supabase PostgreSQL")]
     A --> S["Supabase Storage"]
-    A --> E["Proveedor de correo"]
+    A --> E["Relay HTTPS privado\nSMTP cPanel"]
     C --> R["Redis o canal en memoria"]
     C --> P
 ```
@@ -151,8 +152,9 @@ npm run build
 npm run test
 ```
 
-Línea base local del 15-08-2026: **190** pruebas backend, **51** de aceptación y **104** frontend
-aprobadas; build y linters sin errores después de las correcciones de este cierre. Consulta el
+Línea base de cierre de la integración del 23-08-2026: **391** pruebas backend, **63** de
+aceptación y **184** frontend aprobadas; checks de Django, tipos, build y linters sin errores.
+La evidencia corresponde al runtime `a97bb2a773aff5b708d16cba46bf73244f7064e8`. Consulta el
 [plan de pruebas](docs/TESTING.md) para alcance, riesgos y criterios de salida.
 
 ## Documentación
@@ -162,6 +164,7 @@ aprobadas; build y linters sin errores después de las correcciones de este cier
 | Cliente y usuarios | [Guía de usuario](docs/USER_GUIDE.md) |
 | Desarrollo | [Arquitectura](docs/ARCHITECTURE.md) y [contribución](CONTRIBUTING.md) |
 | Operaciones | [Despliegue, respaldo y rollback](docs/DEPLOYMENT.md) |
+| Entrega | [Checklist de entrega al cliente](docs/ENTREGA_CLIENTE.md) |
 | Calidad | [Plan de pruebas](docs/TESTING.md) |
 | Cliente y responsables operativos | [Manual integral de entrega](docs/client-manual-latex/README.md) |
 | Seguridad | [Política de seguridad](SECURITY.md) |

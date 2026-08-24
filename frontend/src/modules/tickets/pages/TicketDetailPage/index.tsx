@@ -7,11 +7,13 @@ import { Button } from '../../../../core/ui/button'
 import { TicketDetail } from '../../components/TicketDetail'
 import { StatusChangeForm } from '../../components/StatusChangeForm'
 import { AssignModal } from '../../components/AssignModal'
+import { ContactEditForm } from '../../components/ContactEditForm'
 import { getAssignmentMode } from '../../components/AssignModal/assignmentOperation'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import { ticketService } from '../../services/TicketService'
+import { ticketAdminService } from '../../services/TicketAdminService'
 import { useTicketDetail } from '../../hooks/useTickets'
-import type { TicketEstado } from '../../interfaces/ITicketService'
+import type { TicketContactUpdate, TicketEstado } from '../../interfaces/ITicketService'
 import { TicketStateMachine } from '../../state_machine'
 
 interface TicketDetailPageProps {
@@ -43,9 +45,14 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
     replaceTicket(await ticketService.updateStatus(ticketId, newStatus, comment))
   }
 
+  const handleContactUpdate = async (contact: TicketContactUpdate) => {
+    replaceTicket(await ticketAdminService.updateContact(ticketId, contact))
+  }
+
   const canChangeStatus = Boolean(
     isStaff
     && ticket
+    && ticket.puedeModificar
     // Nuevo advances through assignment, which also selects the required worker.
     && ticket.estado !== 'Nuevo'
     && stateMachine.nextStates(ticket.estado).length > 0,
@@ -76,10 +83,25 @@ export function TicketDetailPage({ ticketId }: Readonly<TicketDetailPageProps>) 
       {showAssign && ticket && (
         <AssignModal
           ticketId={ticketId}
-          mode={getAssignmentMode(ticket.estado)}
+          mode={getAssignmentMode(ticket.asignadoNombre)}
           onClose={() => setShowAssign(false)}
           onAssigned={replaceTicket}
         />
+      )}
+
+      {isAdmin && ticket && (
+        <FocusReveal delay={0.08}>
+          <ContactEditForm ticket={ticket} onSubmit={handleContactUpdate} />
+        </FocusReveal>
+      )}
+
+      {user?.rol === 'TRABAJADOR' && ticket && !ticket.puedeModificar && (
+        <output
+          className="block rounded-lg border border-brand-cyan/20 bg-brand-cyan/5 px-4 py-3 text-sm text-muted-foreground"
+        >
+          Este ticket está disponible como consulta histórica. Para operarlo, la administradora debe
+          asignártelo mediante el flujo normal.
+        </output>
       )}
 
       {/* H#3 (cliente): Status change with observations for staff */}

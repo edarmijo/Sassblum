@@ -5,10 +5,20 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 """
 
 # IMPORTS
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
+import re
+
 from decouple import config
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+
+from apps.notifications.validators import (
+    CpanelRelayConfiguration,
+    CpanelRelayConfigurationValidator,
+    EmailConfiguration,
+    EmailConfigurationValidator,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,6 +27,56 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('DJANGO_SECRET_KEY')
 DEBUG = config('DJANGO_DEBUG', cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+
+# Identidad corporativa de las cuentas operativas. La ausencia de la variable
+# conserva un valor seguro para SassBlum; declararla vacía o con un dominio
+# inválido detiene el arranque en lugar de desactivar silenciosamente la regla.
+WORKER_EMAIL_DOMAIN = config(
+    'WORKER_EMAIL_DOMAIN', default='sassblum.com'
+).strip().lower()
+_DOMAIN_PATTERN = re.compile(
+    r'^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$',
+    re.IGNORECASE,
+)
+if not WORKER_EMAIL_DOMAIN or not _DOMAIN_PATTERN.fullmatch(WORKER_EMAIL_DOMAIN):
+    raise ImproperlyConfigured(
+        'WORKER_EMAIL_DOMAIN debe contener un dominio corporativo válido y no vacío.'
+    )
+
+# B15 — proveedor de buzones corporativos. Desactivado por defecto: habilitarlo
+# exige configuración completa y nunca admite degradación silenciosa de TLS.
+CPANEL_MAILBOX_ENABLED = config(
+    'CPANEL_MAILBOX_ENABLED', default=False, cast=bool
+)
+CPANEL_HOST = config('CPANEL_HOST', default='').strip().lower()
+CPANEL_USERNAME = config('CPANEL_USERNAME', default='').strip()
+CPANEL_API_TOKEN = config('CPANEL_API_TOKEN', default='')
+CPANEL_MAILBOX_QUOTA_MB = config(
+    'CPANEL_MAILBOX_QUOTA_MB', default=0, cast=int
+)
+CPANEL_TIMEOUT_SECONDS = config('CPANEL_TIMEOUT_SECONDS', default=10, cast=int)
+
+if CPANEL_MAILBOX_ENABLED:
+    cpanel_host_pattern = re.compile(
+        r'^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+'
+        r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'
+    )
+    if not cpanel_host_pattern.fullmatch(CPANEL_HOST):
+        raise ImproperlyConfigured(
+            'CPANEL_HOST debe ser un hostname completo sin protocolo, ruta ni puerto.'
+        )
+    if not CPANEL_USERNAME or not CPANEL_API_TOKEN:
+        raise ImproperlyConfigured(
+            'CPANEL_USERNAME y CPANEL_API_TOKEN son obligatorios al habilitar buzones.'
+        )
+    if CPANEL_MAILBOX_QUOTA_MB <= 0:
+        raise ImproperlyConfigured(
+            'CPANEL_MAILBOX_QUOTA_MB debe ser mayor que cero.'
+        )
+    if CPANEL_TIMEOUT_SECONDS <= 0:
+        raise ImproperlyConfigured(
+            'CPANEL_TIMEOUT_SECONDS debe ser mayor que cero.'
+        )
 
 
 # APLICACIONES
@@ -169,6 +229,8 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
+    # Revoca access y refresh JWT cuando cambia el hash de contraseña.
+    'CHECK_REVOKE_TOKEN': True,
 }
 
 
@@ -253,11 +315,68 @@ ANYMAIL = {
     "BREVO_API_KEY": config('BREVO_API_KEY', default=''),
 }
 
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@sassblum.com')
+_DEFAULT_NOTIFICATION_EMAIL = 'notificaciones@sassblum.com'
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL', default=_DEFAULT_NOTIFICATION_EMAIL
+).strip()
 
-# LN-3/LN-4 (paridad sistema legado): copia de cada email de notificación al equipo.
-# Vacío = sin CC. Ej: EMAIL_CC=notificaciones@sassblum.com
-EMAIL_CC = [e.strip() for e in config('EMAIL_CC', default='').split(',') if e.strip()]
+# B4 — identidad y contenido comunes a cualquier transporte (SMTP, Brevo o relay).
+# El CC replica al legado sólo en la copia dirigida al contacto del ticket; nunca
+# recibe enlaces de autenticación ni copias adicionales destinadas al personal.
+EMAIL_REPLY_TO = [
+    email.strip()
+    for email in config(
+        'EMAIL_REPLY_TO', default=_DEFAULT_NOTIFICATION_EMAIL
+    ).split(',')
+    if email.strip()
+]
+EMAIL_CC = [
+    email.strip()
+    for email in config(
+        'EMAIL_CC', default=_DEFAULT_NOTIFICATION_EMAIL
+    ).split(',')
+    if email.strip()
+]
+EMAIL_SUPPORT_PHONE = config('EMAIL_SUPPORT_PHONE', default='').strip()
+EMAIL_SUPPORT_WHATSAPP = config('EMAIL_SUPPORT_WHATSAPP', default='').strip()
+EMAIL_REQUEST_ANYDESK = config('EMAIL_REQUEST_ANYDESK', default=False, cast=bool)
+
+# B14 — transporte HTTPS hacia el relay cPanel. Estas variables no activan el
+# relay por sí solas: sólo se usan cuando EMAIL_BACKEND selecciona su clase.
+CPANEL_RELAY_URL = config('CPANEL_RELAY_URL', default='').strip()
+CPANEL_RELAY_ALLOWED_HOST = config(
+    'CPANEL_RELAY_ALLOWED_HOST', default=''
+).strip().lower()
+CPANEL_RELAY_SECRET = config('CPANEL_RELAY_SECRET', default='')
+CPANEL_RELAY_TIMEOUT_SECONDS = config(
+    'CPANEL_RELAY_TIMEOUT_SECONDS', default=10, cast=float
+)
+CPANEL_RELAY_MAX_PAYLOAD_BYTES = config(
+    'CPANEL_RELAY_MAX_PAYLOAD_BYTES', default=262_144, cast=int
+)
+
+EmailConfigurationValidator().validate(EmailConfiguration(
+    debug=DEBUG,
+    backend=EMAIL_BACKEND.strip(),
+    from_email=DEFAULT_FROM_EMAIL,
+    reply_to=tuple(EMAIL_REPLY_TO),
+    cc=tuple(EMAIL_CC),
+    host=EMAIL_HOST.strip(),
+    username=EMAIL_HOST_USER.strip(),
+    password=EMAIL_HOST_PASSWORD,
+    use_tls=EMAIL_USE_TLS,
+    use_ssl=EMAIL_USE_SSL,
+    brevo_api_key=str(ANYMAIL.get('BREVO_API_KEY', '')).strip(),
+))
+CpanelRelayConfigurationValidator().validate(CpanelRelayConfiguration(
+    backend=EMAIL_BACKEND.strip(),
+    from_email=DEFAULT_FROM_EMAIL,
+    relay_url=CPANEL_RELAY_URL,
+    allowed_host=CPANEL_RELAY_ALLOWED_HOST,
+    secret=CPANEL_RELAY_SECRET,
+    timeout_seconds=CPANEL_RELAY_TIMEOUT_SECONDS,
+    max_payload_bytes=CPANEL_RELAY_MAX_PAYLOAD_BYTES,
+))
 
 # URL del frontend (para construir los enlaces de verificación / reseteo en los emails).
 # El fallback depende de DEBUG a propósito: si la variable falta en el entorno de

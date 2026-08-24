@@ -24,7 +24,7 @@ function buildFilters(filters?: ReportFilters): Record<string, string> {
   return out
 }
 
-class ReportsService implements IReportsService {
+export class ReportsService implements IReportsService {
   async getDashboard(filters?: ReportFilters): Promise<ReportSummary> {
     const params = new URLSearchParams(buildFilters(filters))
     const data = await apiClient.get<{
@@ -44,19 +44,66 @@ class ReportsService implements IReportsService {
   }
 
   async exportReport(formato: ReportFormat, filters?: ReportFilters): Promise<void> {
-    const blob = await apiClient.post<Blob>(
-      '/reportes/exportar',
-      { formato, ...buildFilters(filters) },
-      { responseType: 'blob' },
-    )
+    const blob = await this.requestReport(formato, filters)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `reporte_tickets.${formato === 'excel' ? 'xlsx' : formato}`
+    a.download = `reporte_tickets.${this.extensionFor(formato)}`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
+  }
+
+  async copyReport(filters?: ReportFilters): Promise<void> {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error('El navegador no permite copiar el reporte al portapapeles.')
+    }
+    const blob = await this.requestReport('csv', filters)
+    const csv = (await blob.text()).replace(/^\uFEFF/, '')
+    await navigator.clipboard.writeText(csv)
+  }
+
+  async printReport(filters?: ReportFilters): Promise<void> {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      throw new Error('Habilita las ventanas emergentes para imprimir el reporte.')
+    }
+    printWindow.opener = null
+    printWindow.document.title = 'Preparando reporte para imprimir…'
+
+    try {
+      const blob = await this.requestReport('pdf', filters)
+      const url = URL.createObjectURL(blob)
+      let cleaned = false
+      const cleanup = () => {
+        if (cleaned) return
+        cleaned = true
+        URL.revokeObjectURL(url)
+      }
+      printWindow.addEventListener('afterprint', cleanup, { once: true })
+      printWindow.addEventListener('pagehide', cleanup, { once: true })
+      printWindow.addEventListener('load', () => {
+        printWindow.focus()
+        printWindow.print()
+      }, { once: true })
+      printWindow.location.replace(url)
+    } catch (error) {
+      printWindow.close()
+      throw error
+    }
+  }
+
+  private async requestReport(formato: ReportFormat, filters?: ReportFilters): Promise<Blob> {
+    return apiClient.post<Blob>(
+      '/reportes/exportar',
+      { formato, ...buildFilters(filters) },
+      { responseType: 'blob' },
+    )
+  }
+
+  private extensionFor(formato: ReportFormat): string {
+    return formato === 'excel' ? 'xlsx' : formato
   }
 }
 

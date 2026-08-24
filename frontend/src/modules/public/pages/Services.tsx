@@ -1,8 +1,10 @@
 import { createElement, useState } from 'react'
-import { Headphones, Wifi, Printer, Server, Camera, Home as HomeIcon, Wrench, ArrowRight } from 'lucide-react'
+import { Headphones, Wifi, Printer, Server, Camera, Home as HomeIcon, Wrench, ArrowRight, Search } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../core/ui/card'
 import { Button } from '../../../core/ui/button'
 import { Skeleton } from '../../../core/ui/skeleton'
+import { Input } from '../../../core/ui/input'
+import { Label } from '../../../core/ui/label'
 import { ImageWithFallback } from '../../../core/ui/ImageWithFallback'
 import { GlowCard } from '../../../core/ui/GlowCard'
 import {
@@ -47,11 +49,34 @@ function CategoryIcon({ categoria, className }: { categoria: string; className?:
 }
 
 export function Services() {
-  const { services, isLoading, error } = useCatalog()
+  const { services, isLoading, error, setFilters } = useCatalog()
   const { user } = useAuth()
   const [selected, setSelected] = useState<(typeof services)[number] | null>(null)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
 
-  const ctaTo = user ? '/mis-tickets' : '/login'
+  const ticketTarget = (serviceId?: string) => {
+    const params = new URLSearchParams({ tab: 'create' })
+    if (serviceId) params.set('servicio', serviceId)
+    return `/mis-tickets?${params.toString()}`
+  }
+  const accessTarget = (serviceId?: string) => {
+    const target = ticketTarget(serviceId)
+    return user ? target : `/login?next=${encodeURIComponent(target)}`
+  }
+  const ctaTo = accessTarget()
+  const hasFilters = search.trim() !== '' || category.trim() !== ''
+  const updateFilters = (next: { search?: string; category?: string }) => {
+    const nextSearch = next.search ?? search
+    const nextCategory = next.category ?? category
+    setSearch(nextSearch)
+    setCategory(nextCategory)
+    setFilters({
+      busqueda: nextSearch.trim() || undefined,
+      categoria: nextCategory.trim() || undefined,
+    })
+  }
+  const clearFilters = () => updateFilters({ search: '', category: '' })
   const selectedGallery = selected
     ? selected.imagenes
         .slice()
@@ -68,7 +93,18 @@ export function Services() {
     )
   } else if (services.length === 0) {
     catalogFallback = (
-      <p className="text-center" style={{ color: '#7aa3b8' }}>Aún no hay servicios publicados en el catálogo.</p>
+      <div className="flex flex-col items-center gap-4 py-8 text-center" role="status" aria-live="polite">
+        <p style={{ color: '#9bbdce' }}>
+          {hasFilters
+            ? 'No encontramos servicios con esa búsqueda o categoría.'
+            : 'Aún no hay servicios publicados en el catálogo.'}
+        </p>
+        {hasFilters && (
+          <Button type="button" variant="outline" onClick={clearFilters}>
+            Limpiar filtros
+          </Button>
+        )}
+      </div>
     )
   }
 
@@ -86,6 +122,36 @@ export function Services() {
       <div className="relative z-10 py-20" style={{ background: 'rgba(255,255,255,0.03)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {error && <p className="text-center text-red-400 mb-8">{error}</p>}
+
+          <section
+            aria-label="Buscar y filtrar servicios"
+            className="mb-6 grid gap-3 rounded-xl border border-brand-cyan/15 bg-[#081624]/85 p-4 sm:grid-cols-2"
+          >
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="service-search">Buscar servicio</Label>
+              <div className="relative">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9bbdce]" />
+                <Input
+                  id="service-search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => updateFilters({ search: event.target.value })}
+                  className="h-11 pl-10"
+                  placeholder="Nombre o descripción"
+                />
+              </div>
+            </div>
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="service-category">Categoría</Label>
+              <Input
+                id="service-category"
+                value={category}
+                onChange={(event) => updateFilters({ category: event.target.value })}
+                className="h-11"
+                placeholder="Ej.: soporte, redes, CCTV"
+              />
+            </div>
+          </section>
 
           {catalogFallback ?? (
             <RevealGroup className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -153,7 +219,7 @@ export function Services() {
               {user ? 'Crea un ticket y nuestro equipo te contactará pronto' : 'Regístrate para crear un ticket y nuestro equipo te contactará pronto'}
             </p>
             <Button asChild size="lg" className="bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
-              <Link to={ctaTo}>{user ? 'Crear ticket' : 'Registrarse ahora'}</Link>
+              <Link to={ctaTo}>{user ? 'Crear ticket' : 'Inicia sesión o regístrate'}</Link>
             </Button>
           </Reveal>
         </div>
@@ -161,7 +227,7 @@ export function Services() {
 
       {/* Modal de detalle del servicio */}
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null) }}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl p-0 gap-0" style={{ background: 'rgba(8,22,36,0.97)', border: '1px solid rgba(0,196,224,0.2)' }}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl p-0 gap-0 [&>button]:right-2 [&>button]:top-2 [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center [&>button]:bg-[#081624]/90 [&>button]:opacity-100" style={{ background: 'rgba(8,22,36,0.97)', border: '1px solid rgba(0,196,224,0.2)' }}>
           {selected && (
             <>
               {selected.imagenUrl ? (
@@ -204,7 +270,7 @@ export function Services() {
                 </DialogDescription>
                 <DialogFooter className="mt-6">
                   <Button asChild size="lg" className="w-full sm:w-auto bg-brand-cyan hover:bg-brand-cyan-dark text-brand-navy font-semibold">
-                    <Link to={ctaTo}>{user ? 'Solicitar servicio' : 'Inicia sesión para solicitar'}</Link>
+                    <Link to={accessTarget(selected.id)}>{user ? 'Solicitar servicio' : 'Inicia sesión para solicitar'}</Link>
                   </Button>
                 </DialogFooter>
               </div>

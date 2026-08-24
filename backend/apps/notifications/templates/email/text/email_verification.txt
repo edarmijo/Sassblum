@@ -1,0 +1,13 @@
+{% extends "email/text/base_email.txt" %}
+
+{% block titulo %}Confirma tu cuenta{% endblock %}
+
+{% block contenido %}
+Hola{% if recipient_nombre %} {{ recipient_nombre }}{% endif %},
+
+Gracias por registrarte en SassBlum. Confirma tu correo para activar tu cuenta y empezar a usar la plataforma.
+
+Confirmar cuenta: {{ verify_url }}
+
+Este enlace caduca en {{ expira_en|default:"24 horas" }} y solo puede usarse una vez. Si no creaste esta cuenta, puedes ignorar este correo.
+{% endblock %}

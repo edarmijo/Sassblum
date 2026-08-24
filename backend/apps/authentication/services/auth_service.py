@@ -18,11 +18,18 @@ import logging
 import threading
 
 from django.core import signing
+from django.db import transaction
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.authentication.interfaces import IAuthService
 from apps.authentication.models import User
 from apps.authentication.repositories import UserRepository
+from apps.authentication.services.password_policy import (
+    PasswordPolicy,
+    PasswordPolicyViolation,
+)
+from apps.authentication.signals import password_sessions_revoked
 from apps.authentication.validators import RegistrationValidatorChain
 
 logger = logging.getLogger(__name__)
@@ -50,8 +57,8 @@ class EmailAlreadyExists(Exception):
     """Duplicate email on registration."""
 
 
-class PasswordPolicyViolation(Exception):
-    """Password failed the validator chain."""
+class RegistrationValidationError(Exception):
+    """Required registration data failed the validator chain."""
 
 
 class InvalidVerificationToken(Exception):
@@ -62,13 +69,26 @@ class InvalidRefreshToken(Exception):
     """Refresh token expired, malformed, or already blacklisted."""
 
 
+class CurrentPasswordIncorrect(Exception):
+    """The current password did not re-authenticate the session owner."""
+
+
+class PasswordUnchanged(Exception):
+    """The proposed password is identical to the current password."""
+
+
 # ── Service ────────────────────────────────────────────────────────────────────
 
 class AuthService(IAuthService):
 
-    def __init__(self, user_repository: UserRepository | None = None) -> None:
+    def __init__(
+        self,
+        user_repository: UserRepository | None = None,
+        password_policy: PasswordPolicy | None = None,
+    ) -> None:
         self._repo = user_repository or UserRepository()
         self._reg_chain = RegistrationValidatorChain()
+        self._password_policy = password_policy or PasswordPolicy()
 
     # ── HU-01: login ───────────────────────────────────────────────────────────
 
@@ -102,7 +122,12 @@ class AuthService(IAuthService):
     def register(self, data: dict) -> dict:
         result = self._reg_chain.run(data)
         if not result.is_valid:
-            raise PasswordPolicyViolation("; ".join(result.errors))
+            error_type = (
+                PasswordPolicyViolation
+                if result.field_name == "password"
+                else RegistrationValidationError
+            )
+            raise error_type("; ".join(result.errors))
 
         if self._repo.email_exists(data["email"]):
             raise EmailAlreadyExists("Ya existe una cuenta con ese correo.")
@@ -111,8 +136,11 @@ class AuthService(IAuthService):
             "email": data["email"],
             "first_name": data.get("nombre", ""),
             "last_name": data.get("apellido", ""),
+            "tipo_identificacion": data.get(
+                "tipo_identificacion", User.TipoIdentificacion.RUC
+            ),
             "ruc": data.get("ruc", ""),
-            "empresa": data.get("empresa", ""),
+            "empresa": data.get("empresa", "").strip(),
             "password": data["password"],
             "role": User.Role.CLIENT,
             "estado": User.Estado.PENDING,
@@ -147,11 +175,48 @@ class AuthService(IAuthService):
         from apps.authentication.services.token_service import TokenService  # noqa: PLC0415
         svc = TokenService()
         user = svc.validate_reset_token(token)
-        user.set_password(new_password)
-        user.save(update_fields=["password"])
-        svc.consume_token(token)
-        svc.invalidate_sessions(user)
-        return {"message": "Contraseña actualizada."}
+        self._password_policy.validate(new_password)
+
+        with transaction.atomic():
+            user.set_password(new_password)
+            user.email_verificado = True
+            update_fields = ["password", "email_verificado"]
+            if user.estado == User.Estado.PENDING:
+                user.estado = User.Estado.ACTIVE
+                update_fields.append("estado")
+            user.save(update_fields=update_fields)
+
+            svc.consume_token(token)
+            svc.invalidate_sessions(user)
+
+        password_sessions_revoked.send(sender=AuthService, user_id=user.pk)
+        return {"message": "Contraseña actualizada. Inicia sesión nuevamente."}
+
+    # ── B11: cambio con sesión abierta ────────────────────────────────────────
+
+    def change_password(
+        self,
+        user: User,
+        current_password: str,
+        new_password: str,
+    ) -> dict:
+        """Reautentica, cambia el hash y revoca sesiones en todos los dispositivos."""
+        if not user.check_password(current_password):
+            raise CurrentPasswordIncorrect("La contraseña actual es incorrecta.")
+        if user.check_password(new_password):
+            raise PasswordUnchanged("La nueva contraseña debe ser diferente de la actual.")
+
+        self._password_policy.validate(new_password)
+
+        from apps.authentication.services.token_service import TokenService  # noqa: PLC0415
+
+        with transaction.atomic():
+            user.set_password(new_password)
+            user.save(update_fields=["password"])
+            TokenService().invalidate_sessions(user)
+
+        password_sessions_revoked.send(sender=AuthService, user_id=user.pk)
+        return {"message": "Contraseña actualizada. Inicia sesión nuevamente."}
 
     # ── verify email ───────────────────────────────────────────────────────────
 
@@ -183,8 +248,13 @@ class AuthService(IAuthService):
         Actualiza SOLO los campos editables del propio usuario.
         Email y rol quedan fuera por diseño (identidad / decisión de admin).
         """
-        editable = {"nombre": "first_name", "apellido": "last_name",
-                    "ruc": "ruc", "empresa": "empresa"}
+        editable = {
+            "nombre": "first_name",
+            "apellido": "last_name",
+            "tipo_identificacion": "tipo_identificacion",
+            "ruc": "ruc",
+            "empresa": "empresa",
+        }
         changed: list[str] = []
         for field, model_field in editable.items():
             if field in data:
@@ -213,19 +283,18 @@ class AuthService(IAuthService):
         from rest_framework_simplejwt.serializers import (  # noqa: PLC0415
             TokenRefreshSerializer,
         )
-        from rest_framework_simplejwt.settings import api_settings  # noqa: PLC0415
-        from rest_framework_simplejwt.tokens import AccessToken  # noqa: PLC0415
-
-        serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
         try:
+            # CHECK_REVOKE_TOKEN también debe aplicarse al refresh personalizado.
+            # Así los tokens previos al despliegue (sin claim) se rechazan y la
+            # vista borra su cookie en vez de rotarlos hacia un access inservible.
+            user = JWTAuthentication().get_user(RefreshToken(refresh_token))
+            serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
             serializer.is_valid(raise_exception=True)
         except Exception as exc:  # noqa: BLE001 — cualquier fallo = token inservible
             raise InvalidRefreshToken("Sesión expirada. Inicia sesión de nuevo.") from exc
 
         data = dict(serializer.validated_data)
-        user_id = AccessToken(data["access"])[api_settings.USER_ID_CLAIM]
-        user = self._repo.get_by_id(user_id)
-        if user is None or user.estado == User.Estado.BLOCKED:
+        if user.estado == User.Estado.BLOCKED:
             raise InvalidRefreshToken("Cuenta no disponible.")
 
         return {
@@ -244,6 +313,7 @@ class AuthService(IAuthService):
             "email": user.email,
             "nombre": user.first_name,
             "apellido": user.last_name,
+            "tipo_identificacion": user.tipo_identificacion,
             "ruc": user.ruc,
             "empresa": user.empresa,
             "rol": user.role,

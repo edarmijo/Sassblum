@@ -29,7 +29,7 @@ export function FileUpload({ files, onChange, maxSizeMb = 5 }: Readonly<FileUplo
         onChange={handleChange}
         className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
-      <p className="text-[11px] text-gray-400 mt-1">Máx. {maxSizeMb} MB por archivo.</p>
+      <p className="text-xs text-muted-foreground mt-1">Máx. {maxSizeMb} MB por archivo.</p>
       {files.length > 0 && (
         <ul className="mt-2 space-y-1">
           {files.map((file, i) => (

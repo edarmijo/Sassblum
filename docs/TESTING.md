@@ -52,6 +52,41 @@ npm run test:coverage:critical
 
 ## Resultado de cierre local
 
+### Línea base de cierre de la integración — 2026-08-23
+
+| Ejecución | Resultado | Entorno / evidencia |
+|---|---:|---|
+| Django system check | 0 issues | integración `a97bb2a`, Django 6 |
+| Backend | 391 passed | suite completa aislada |
+| Aceptación API | 63 passed | flujos de Cliente, Trabajador, Admin y seguridad |
+| Frontend | 184 passed | Vitest |
+| Flake8 | sin errores | backend |
+| ESLint | sin errores | `npm run lint` |
+| TypeScript | sin errores | `npm run typecheck` |
+| Build | completado | `npm run build` |
+
+Runtime de referencia:
+`a97bb2a773aff5b708d16cba46bf73244f7064e8`. Las suites se ejecutaron antes del cierre de B8;
+los checks de la cabeza de la PR #23 (`6c9c3d4`) aprobaron backend, frontend, relay de correo,
+SonarCloud y Vercel.
+
+### Smoke controlado de producción — 2026-08-23
+
+| Área | Resultado |
+|---|---|
+| Render `/health/` | HTTP 200, base disponible |
+| Vercel raíz y ruta profunda | HTTP 200 |
+| Autenticación por rol | admin y dos trabajadores canónicos con login 200 |
+| Ciclo de ticket | creación, asignación, estado y comentario comprobados |
+| Correo | identidad `sassblum.com`, TLS y recepción externa comprobados |
+| Reportes | PDF y Excel comprobados |
+| Contenido público | 41 de 41 activos referenciados accesibles |
+| Limpieza | retorno a 86 usuarios, 459 tickets, 407 eventos y 0 notificaciones |
+
+Las credenciales de entrega no forman parte de esta evidencia y se mantienen fuera de Git.
+
+### Cierre histórico — 2026-08-15
+
 | Ejecución | Resultado | Fecha | Entorno |
 |---|---:|---|---|
 | Django system check | 0 issues | 2026-08-15 | Windows, Python 3.14.6 |
@@ -104,10 +139,11 @@ siendo obligatoria.
 5. Evidencia fechada y trazada a SHA/tag.
 6. Aceptación del cliente registrada por el canal acordado.
 
-## Evidencia que todavía debe obtener el equipo
+## Evidencia pendiente de la entrega final
 
 - Evolución SonarCloud: baseline, fin de Sprint 3 y fin de Sprint 4.
-- Capturas o enlaces de CI con fecha y SHA.
-- Prueba de entrega real de correo y WebSocket en producción.
+- CI del futuro commit documental de entrega, con fecha y SHA.
+- Evidencia explícita de WebSocket en producción si la aceptación contractual la exige.
 - Tendencia de cobertura por SHA y decisión explícita sobre el futuro umbral bloqueante.
-- Formulario de aceptación firmado y comunicaciones sanitizadas.
+- Aceptación de Vicky Pinto y comunicaciones sanitizadas.
+- Evidencia posterior al cambio de dominio y comparación con el baseline heredado.

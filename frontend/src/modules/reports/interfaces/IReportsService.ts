@@ -11,7 +11,7 @@ export interface ReportSummary {
   porPrioridad: Record<string, number>
 }
 
-export type ReportFormat = 'pdf' | 'excel'
+export type ReportFormat = 'csv' | 'excel' | 'pdf'
 
 export interface ReportFilters {
   estado?: string
@@ -26,4 +26,6 @@ export interface ReportFilters {
 export interface IReportsService {
   getDashboard(filters?: ReportFilters): Promise<ReportSummary>
   exportReport(formato: ReportFormat, filters?: ReportFilters): Promise<void>
+  copyReport(filters?: ReportFilters): Promise<void>
+  printReport(filters?: ReportFilters): Promise<void>
 }

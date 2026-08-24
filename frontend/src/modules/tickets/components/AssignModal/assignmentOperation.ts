@@ -1,13 +1,13 @@
 import type { ITicketAdminActions } from '../../interfaces/ITicketAdminActions'
-import type { TicketDetail, TicketEstado } from '../../interfaces/ITicketService'
+import type { TicketDetail } from '../../interfaces/ITicketService'
 
 export type AssignmentMode = 'assign' | 'reassign'
 
 type AssignmentService = Pick<ITicketAdminActions, 'assignTicket' | 'reassignTicket'>
 
-/** Nuevo is the only state that represents an initial assignment. */
-export function getAssignmentMode(estado: TicketEstado): AssignmentMode {
-  return estado === 'Nuevo' ? 'assign' : 'reassign'
+/** Assignment depends on whether a worker exists, not on the ticket state. */
+export function getAssignmentMode(assignedWorkerName: string | null): AssignmentMode {
+  return assignedWorkerName === null ? 'assign' : 'reassign'
 }
 
 /** Dispatch assignment without coupling the modal to endpoint details. */

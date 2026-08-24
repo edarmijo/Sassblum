@@ -207,6 +207,7 @@ class NotificationService(INotificationService):
             "tipo":            tipo,
             "ticket_numero":   event.get("ticket_numero", ""),
             "ticket_asunto":   event.get("ticket_asunto", ""),
+            "cliente_id":      event.get("cliente_id"),
             # LN-3 (paridad legado): datos para el email de creación
             "ticket_descripcion": event.get("ticket_descripcion", ""),
             "cliente_email":   event.get("cliente_email", ""),

@@ -60,8 +60,39 @@ class TestDispatchPreferenceGating:
         assert built == []
 
 
+def test_build_context_preserves_client_id_for_email_addressing():
+    event = {
+        "tipo_evento": "creacion",
+        "cliente_id": 42,
+        "cliente_email": "contacto@example.com",
+    }
+
+    context = NotificationService(MagicMock())._build_context(event, make_user(42))
+
+    assert context["cliente_id"] == 42
+    assert context["cliente_email"] == "contacto@example.com"
+
+
 class TestResolveRecipients:
     """_resolve_recipients selects and deduplicates users by event type."""
+
+    def test_contact_audit_event_has_no_automatic_recipients(self):
+        from apps.notifications.services import notification_service as mod
+
+        fake_user_model = MagicMock()
+        fake_user_model.Role.ADMIN = "admin"
+        fake_user_model.Estado.ACTIVE = "activo"
+
+        patched = {"apps.authentication.models": MagicMock(User=fake_user_model)}
+        with patch.dict("sys.modules", patched):
+            recipients = mod._resolve_recipients({
+                "tipo_evento": "contacto_actualizado",
+                "cliente_id": 5,
+                "asignado_id": 7,
+                "autor_id": 9,
+            })
+
+        assert recipients == []
 
     def test_comment_includes_client_worker_and_active_admin(self):
         from apps.notifications.services import notification_service as mod

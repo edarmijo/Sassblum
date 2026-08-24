@@ -20,7 +20,9 @@ class PasswordValidator(BaseValidator):
                 errors=[f"La contraseña debe tener al menos {self.MIN_LENGTH} caracteres."],
                 field_name="password",
             )
-        if not any(c.isalpha() for c in password) or not any(c.isdigit() for c in password):
+        has_letter = any(character.isalpha() for character in password)
+        has_ascii_digit = any(character in "0123456789" for character in password)
+        if not has_letter or not has_ascii_digit:
             return ValidationResult(
                 is_valid=False,
                 errors=["La contraseña debe incluir al menos una letra y un número."],

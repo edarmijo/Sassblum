@@ -15,6 +15,8 @@ import type {
   UserRole,
   UserStatus,
   ProfileUpdateData,
+  IdentificationType,
+  ChangePasswordData,
 } from '../interfaces/IAuthService'
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -33,6 +35,7 @@ interface BackendUser {
   email: string
   nombre: string
   apellido: string
+  tipo_identificacion?: IdentificationType
   ruc?: string
   empresa?: string
   rol: string
@@ -46,6 +49,7 @@ function mapUser(u: BackendUser): AuthUser {
     email: u.email,
     nombre: u.nombre,
     apellido: u.apellido,
+    tipoIdentificacion: u.tipo_identificacion ?? 'RUC',
     ruc: u.ruc ?? '',
     empresa: u.empresa ?? '',
     rol: ROLE_MAP[u.rol] ?? 'CLIENTE',
@@ -72,8 +76,9 @@ class AuthService implements IAuthService {
       nombre: data.nombre,
       apellido: data.apellido,
       email: data.email,
-      ruc: data.ruc ?? '',
-      empresa: data.empresa ?? '',
+      tipo_identificacion: data.tipoIdentificacion,
+      ruc: data.ruc,
+      empresa: data.empresa,
       password: data.password,
       confirm_password: data.confirmPassword,
     })
@@ -92,6 +97,14 @@ class AuthService implements IAuthService {
       token,
       new_password: newPassword,
       confirm_password: confirmPassword,
+    })
+  }
+
+  async changePassword(data: ChangePasswordData) {
+    return apiClient.post<{ message: string }>('/auth/cambiar-password', {
+      current_password: data.currentPassword,
+      new_password: data.newPassword,
+      confirm_password: data.confirmPassword,
     })
   }
 

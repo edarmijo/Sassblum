@@ -5,7 +5,10 @@ Source: Template FIEC — SassBlum Ticket Management System
 Role: Administrator · Account: admin@sassblum.com
 """
 
+from io import BytesIO
+
 import pytest
+from openpyxl import load_workbook
 
 from helpers import TEST_PASSWORD
 
@@ -117,21 +120,35 @@ class TestTCA4Reports:
 
 
 # ── TC-A5: Export ─────────────────────────────────────────────────────────────
-# Given a report, when exporting, then a PDF / Excel file downloads correctly.
+# Given a report, when exporting, then CSV / PDF / Excel files download correctly.
 
 @pytest.mark.django_db
 class TestTCA5Export:
-    """TC-A5: HU-18 — Data export (PDF, Excel)."""
+    """TC-A5: HU-18 — Data export (CSV, PDF, Excel)."""
 
-    def test_export_csv_is_rejected(self, authenticated_admin):
-        """Given CSV was retired, when requesting it, the API rejects it."""
+    def test_export_csv(self, authenticated_admin):
+        """Given legacy parity, when requesting CSV, the file is returned."""
         response = authenticated_admin.post('/api/reportes/exportar', {
             'formato': 'csv',
         })
-        assert response.status_code == 400
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'text/csv; charset=utf-8'
+        assert 'reporte_tickets.csv' in response['Content-Disposition']
 
-    def test_export_excel(self, authenticated_admin):
-        """Given report data, when exporting Excel, file is returned."""
+    def test_export_excel_has_legacy_columns_and_snapshot(
+        self,
+        authenticated_admin,
+        new_ticket,
+    ):
+        """Given report data, Excel preserves the legacy columns and snapshot."""
+        new_ticket.contacto_nombre = 'Contacto Histórico'
+        new_ticket.contacto_empresa = 'Empresa Histórica'
+        new_ticket.contacto_ruc = '0992338547001'
+        new_ticket.save(update_fields=[
+            'contacto_nombre',
+            'contacto_empresa',
+            'contacto_ruc',
+        ])
         response = authenticated_admin.post('/api/reportes/exportar', {
             'formato': 'excel',
         })
@@ -140,6 +157,18 @@ class TestTCA5Export:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         assert 'reporte_tickets.xlsx' in response['Content-Disposition']
+        workbook = load_workbook(BytesIO(response.content))
+        sheet = workbook.active
+        assert [cell.value for cell in sheet[1]] == [
+            'numero', 'creado_en', 'usuario', 'empresa', 'ruc',
+            'asunto', 'estado', 'prioridad', 'servicio', 'asignado',
+        ]
+        assert sheet['A2'].value == new_ticket.numero
+        assert sheet['C2'].value == 'Contacto Histórico'
+        assert sheet['D2'].value == 'Empresa Histórica'
+        assert sheet['E2'].value == '0992338547001'
+        assert sheet.freeze_panes == 'A2'
+        assert sheet.auto_filter.ref == 'A1:J2'
 
     def test_export_pdf(self, authenticated_admin):
         """Given report data, when exporting PDF, file is returned."""
@@ -163,6 +192,45 @@ class TestTCA6UserManagement:
         """Given an admin, when viewing users, list is returned."""
         response = authenticated_admin.get('/api/usuarios/')
         assert response.status_code == 200
+
+    def test_admin_can_create_worker_with_corporate_email(self, authenticated_admin):
+        """Given a corporate mailbox, the admin can create its worker account."""
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Técnico',
+            'apellido': 'Corporativo',
+            'email': 'tecnico.nuevo@sassblum.com',
+            'password': TEST_PASSWORD,
+            'role': 'worker',
+        })
+        assert response.status_code == 201
+        assert response.data['email'] == 'tecnico.nuevo@sassblum.com'
+
+    def test_admin_cannot_create_worker_with_external_email(self, authenticated_admin):
+        """Given a personal mailbox, worker creation is rejected without persistence."""
+        from apps.authentication.models import User
+
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Técnico',
+            'apellido': 'Externo',
+            'email': 'tecnico.externo@gmail.com',
+            'password': TEST_PASSWORD,
+            'role': 'worker',
+        })
+        assert response.status_code == 400
+        assert 'email' in response.data
+        assert not User.objects.filter(email='tecnico.externo@gmail.com').exists()
+
+    def test_admin_can_create_client_with_external_email(self, authenticated_admin):
+        """The worker-only domain rule does not change managed client accounts."""
+        response = authenticated_admin.post('/api/usuarios/', {
+            'nombre': 'Cliente',
+            'apellido': 'Externo',
+            'email': 'cliente.nuevo@gmail.com',
+            'password': TEST_PASSWORD,
+            'role': 'client',
+        })
+        assert response.status_code == 201
+        assert response.data['email'] == 'cliente.nuevo@gmail.com'
 
     def test_admin_can_block_user(self, authenticated_admin, client_user):
         """Given an active user, when blocking, status changes."""

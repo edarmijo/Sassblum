@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AuthUser, IAuthService } from '../interfaces/IAuthService'
 import { AuthProvider } from './AuthProvider'
@@ -34,6 +35,7 @@ const user: AuthUser = {
   email: 'cliente@sassblum.test',
   nombre: 'Vicky',
   apellido: 'Pinto',
+  tipoIdentificacion: 'RUC',
   ruc: '',
   empresa: 'SassBlum',
   rol: 'CLIENTE',
@@ -46,7 +48,10 @@ const restoredSession = {
   tokens: { accessToken: 'access-token' },
 }
 
-function createService(refreshSession: IAuthService['refreshSession']): IAuthService {
+function createService(
+  refreshSession: IAuthService['refreshSession'],
+  overrides: Partial<IAuthService> = {},
+): IAuthService {
   const unavailable = async (): Promise<never> => {
     throw new Error('Operation not used by this test')
   }
@@ -57,10 +62,31 @@ function createService(refreshSession: IAuthService['refreshSession']): IAuthSer
     logout: unavailable,
     forgotPassword: unavailable,
     resetPassword: unavailable,
+    changePassword: unavailable,
     verifyEmail: unavailable,
     updateProfile: unavailable,
     refreshSession,
+    ...overrides,
   }
+}
+
+function ChangePasswordProbe() {
+  const { user: currentUser, changePassword } = useAuth()
+  return (
+    <div>
+      <span>{currentUser?.email ?? 'guest'}</span>
+      <button
+        type="button"
+        onClick={() => void changePassword({
+          currentPassword: 'current',
+          newPassword: 'new-password',
+          confirmPassword: 'new-password',
+        })}
+      >
+        change
+      </button>
+    </div>
+  )
 }
 
 function deferred<T>() {
@@ -178,5 +204,27 @@ describe('AuthProvider session bootstrap', () => {
 
     await waitFor(() => expect(screen.getByText(user.email)).toBeInTheDocument())
     expect(refreshSession).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears every local session channel after a successful password change', async () => {
+    localStorage.setItem(SESSION_HINT_KEY, '1')
+    const refreshSession = vi.fn(async () => restoredSession)
+    const changePassword = vi.fn(async () => ({ message: 'Contraseña actualizada.' }))
+    const clicker = userEvent.setup()
+
+    render(
+      <AuthProvider service={createService(refreshSession, { changePassword })}>
+        <ChangePasswordProbe />
+      </AuthProvider>,
+    )
+
+    expect(await screen.findByText(user.email)).toBeInTheDocument()
+    await clicker.click(screen.getByRole('button', { name: 'change' }))
+
+    expect(await screen.findByText('guest')).toBeInTheDocument()
+    expect(changePassword).toHaveBeenCalledOnce()
+    expect(apiClientMocks.setAccessToken).toHaveBeenLastCalledWith(null)
+    expect(socketClientMocks.disconnect).toHaveBeenCalled()
+    expect(localStorage.getItem(SESSION_HINT_KEY)).toBeNull()
   })
 })

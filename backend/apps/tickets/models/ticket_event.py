@@ -31,6 +31,7 @@ class TicketEvent(models.Model):
         COMENTARIO    = "comentario",    "Comentario"
         ASIGNACION    = "asignacion",    "Asignación"
         REASIGNACION  = "reasignacion",  "Reasignación"
+        CONTACTO_ACTUALIZADO = "contacto_actualizado", "Contacto actualizado"
 
     # ── Relations ─────────────────────────────────────────────────────────────
     ticket = models.ForeignKey(
@@ -47,6 +48,14 @@ class TicketEvent(models.Model):
         related_name="ticket_events",
         verbose_name="autor",
         help_text="Null = evento del sistema (p. ej. migración de datos legados).",
+    )
+    autor_nombre = models.CharField(
+        max_length=301,
+        blank=True,
+        default="",
+        editable=False,
+        verbose_name="nombre histórico del autor",
+        help_text="Copia inmutable del nombre visible cuando se registró el evento.",
     )
     asignado_anterior = models.ForeignKey(
         "authentication.User",

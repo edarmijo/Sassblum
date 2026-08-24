@@ -146,7 +146,7 @@ export function Home() {
         className="min-h-screen flex flex-col items-stretch justify-center relative overflow-hidden z-10 lg:flex-row lg:items-center lg:justify-start"
         style={{ padding: '8rem clamp(1.5rem,4vw,4rem) 4rem' }}
       >
-        <div className="w-full max-w-200 relative z-10 text-left lg:w-[55%]">
+        <div className="home-hero-copy w-full max-w-200 relative z-10 text-left lg:w-[55%]">
           {/* badge */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="visible"
@@ -187,7 +187,7 @@ export function Home() {
           {/* subtitle */}
           <motion.p
             variants={fadeUp} initial="hidden" animate="visible" transition={{ delay: 0.4 }}
-            className="max-w-120 mb-12" style={{ fontSize: 'clamp(1rem,1.8vw,1.15rem)', color: '#7aa3b8', lineHeight: 1.8 }}
+            className="max-w-120 mb-12" style={{ fontSize: 'clamp(1rem,1.8vw,1.15rem)', color: 'var(--muted-foreground)', lineHeight: 1.8 }}
           >
             Soluciones informáticas de vanguardia para empresas e industrias.<br />
             Servidores, cableado, CCTV, domótica y más.

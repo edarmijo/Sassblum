@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { User } from 'lucide-react'
 import { useCreateTicket } from '../../hooks/useTickets'
 import { useAuth } from '../../../auth/hooks/useAuth'
+import { hasCompleteIdentification } from '../../../auth/validators/IdentificationValidator'
 import { TicketValidatorChain } from '../../validators/TicketValidatorChain'
 import type { TicketPrioridad } from '../../interfaces/ITicketService'
 import { Button } from '../../../../core/ui/button'
@@ -13,6 +14,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../../../../core/ui/select'
 import { Alert, AlertDescription } from '../../../../core/ui/alert'
+import { SmoothLink } from '../../../../core/ui/SmoothLink'
+import { apiError } from '../../../../infrastructure/http/apiError'
 
 interface ServiceOption {
   id: string
@@ -21,6 +24,8 @@ interface ServiceOption {
 
 interface CreateTicketFormProps {
   services: ServiceOption[]
+  /** Servicio válido elegido previamente desde el catálogo público. */
+  initialServiceId?: string
   /** Recibe el id (para navegar) y el número visible del ticket (paridad LN-1: "Se le asignó el ticket #N"). */
   onSuccess?: (ticketId: string, numero: string) => void
 }
@@ -41,14 +46,14 @@ const PRIORIDADES: TicketPrioridad[] = ['Baja', 'Media', 'Alta', 'Critica']
  * DIP: submits via useTicketsList (ITicketClientActions) — never calls TicketService directly.
  * OCP: new field → add to state + JSX; validation chain handles it automatically.
  */
-export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketFormProps>) {
+export function CreateTicketForm({ services, initialServiceId, onSuccess }: Readonly<CreateTicketFormProps>) {
   const createTicket = useCreateTicket()
   const { user } = useAuth()
   const validatorChain = useRef(new TicketValidatorChain())
 
   const [asunto, setAsunto] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [servicioId, setServicioId] = useState('')
+  const [servicioId, setServicioId] = useState(initialServiceId ?? '')
   const [prioridad, setPrioridad] = useState<TicketPrioridad>('Media')
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -59,8 +64,16 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
     email: user.email,
     ruc: user.ruc ?? '',
   } : null
+  const hasCompleteProfile = Boolean(
+    user?.empresa.trim()
+      && hasCompleteIdentification({
+        tipoIdentificacion: user.tipoIdentificacion,
+        ruc: user.ruc,
+      }),
+  )
 
   const validate = (): boolean => {
+    if (!hasCompleteProfile) return false
     const result = validatorChain.current.run({
       asunto,
       descripcion,
@@ -95,9 +108,9 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
       setServicioId('')
       setPrioridad('Media')
       setErrors({})
-    } catch (err) {
+    } catch (err: unknown) {
       setErrors({
-        general: err instanceof Error ? err.message : 'Error al crear el ticket.',
+        general: apiError(err, 'Error al crear el ticket.'),
       })
     } finally {
       setIsSubmitting(false)
@@ -118,6 +131,18 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
           </div>
           <span className="ml-auto text-[10px] uppercase tracking-wide text-brand-cyan bg-brand-cyan/10 rounded-full px-2 py-0.5">Autocompletado</span>
         </div>
+      )}
+
+      {!hasCompleteProfile && (
+        <Alert variant="destructive" role="alert">
+          <AlertDescription>
+            Completa tu tipo y número de identificación y tu empresa antes de crear un ticket.{' '}
+            <SmoothLink to="/perfil" className="font-semibold underline">
+              Ir a mi perfil
+            </SmoothLink>
+            .
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Asunto */}
@@ -231,7 +256,7 @@ export function CreateTicketForm({ services, onSuccess }: Readonly<CreateTicketF
       )}
 
       {/* Submit */}
-      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting} className="w-full">
+      <Button type="submit" variant="brand" size="lg" disabled={isSubmitting || !hasCompleteProfile} className="w-full">
         {isSubmitting ? 'Creando ticket…' : 'Crear ticket'}
       </Button>
     </form>

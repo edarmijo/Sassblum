@@ -22,11 +22,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.authentication.models import User
+from apps.authentication.cookies import clear_refresh_cookie
 from apps.authentication.serializers import (
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
 )
-from apps.authentication.services import TokenService
+from apps.authentication.services import TokenService, get_auth_service
+from apps.authentication.services.password_policy import PasswordPolicyViolation
 from apps.authentication.services.token_service import InvalidToken, TokenExpired
 
 logger = logging.getLogger(__name__)
@@ -107,21 +109,16 @@ class ResetPasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        service = TokenService()
         try:
-            user = service.validate_reset_token(data["token"])
+            result = get_auth_service().reset_password(
+                data["token"],
+                data["new_password"],
+            )
         except InvalidToken as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except TokenExpired as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_410_GONE)
+        except PasswordPolicyViolation as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        user.set_password(data["new_password"])
-        user.save(update_fields=["password"])
-
-        service.consume_token(data["token"])
-        service.invalidate_sessions(user)
-
-        return Response(
-            {"message": "Contraseña actualizada. Inicia sesión nuevamente."},
-            status=status.HTTP_200_OK,
-        )
+        return clear_refresh_cookie(Response(result, status=status.HTTP_200_OK))

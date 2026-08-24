@@ -104,6 +104,48 @@ def test_admin_delete_service_returns_204_and_404() -> None:
     assert missing.status_code == 404
 
 
+def test_public_catalog_reflects_the_complete_admin_lifecycle() -> None:
+    admin = _admin_client()
+    public = APIClient(REMOTE_ADDR="192.0.2.10")
+
+    created = admin.post(
+        "/api/servicios/admin/",
+        {
+            "nombre": "Servicio visible",
+            "descripcion": "Descripción inicial",
+            "categoria": "Infraestructura",
+            "imagen_url": "https://cdn.example/service.png",
+        },
+        format="json",
+    )
+    assert created.status_code == 201
+    service_id = created.data["id"]
+
+    visible = public.get("/api/servicios/")
+    assert visible["Cache-Control"] == "public, no-cache, must-revalidate"
+    assert [item["nombre"] for item in visible.data["items"]] == ["Servicio visible"]
+
+    edited = admin.patch(
+        f"/api/servicios/admin/{service_id}/",
+        {"nombre": "Servicio actualizado"},
+        format="json",
+    )
+    assert edited.status_code == 200
+    assert public.get("/api/servicios/").data["items"][0]["nombre"] == "Servicio actualizado"
+
+    hidden = admin.patch(f"/api/servicios/admin/{service_id}/?action=toggle", format="json")
+    assert hidden.status_code == 200
+    assert public.get("/api/servicios/").data["items"] == []
+
+    shown = admin.patch(f"/api/servicios/admin/{service_id}/?action=toggle", format="json")
+    assert shown.status_code == 200
+    assert public.get("/api/servicios/").data["items"][0]["id"] == service_id
+
+    deleted = admin.delete(f"/api/servicios/admin/{service_id}/")
+    assert deleted.status_code == 204
+    assert public.get("/api/servicios/").data["items"] == []
+
+
 def test_delete_service_with_tickets_is_rejected_without_deleting_media() -> None:
     service = Service.objects.create(
         nombre="Servicio con historial",

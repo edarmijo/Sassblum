@@ -50,6 +50,7 @@ class TestProfileEndpoint:
         assert response.status_code == 200
         assert response.data['email'] == user.email
         assert response.data['empresa'] == 'ACME'
+        assert response.data['tipo_identificacion'] == User.TipoIdentificacion.RUC
 
     def test_patch_updates_editable_fields(self):
         user = make_client_user()
@@ -63,6 +64,31 @@ class TestProfileEndpoint:
         assert user.last_name == 'Pinto'
         assert user.empresa == 'CONTAIMP'
         assert user.ruc == '0919000000001'
+
+    def test_patch_can_select_cedula_and_updates_length_contract(self):
+        user = make_client_user()
+        response = auth_client(user).patch(PERFIL_URL, {
+            'tipo_identificacion': User.TipoIdentificacion.CEDULA,
+            'ruc': '0912345678',
+        })
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.tipo_identificacion == User.TipoIdentificacion.CEDULA
+        assert user.ruc == '0912345678'
+
+    @pytest.mark.parametrize('invalid_value', [
+        '091234567', '09123456789', '09123-4567', '09123 4567', '09123456A8',
+    ])
+    def test_patch_rejects_invalid_cedula_without_changing_profile(self, invalid_value):
+        user = make_client_user()
+        response = auth_client(user).patch(PERFIL_URL, {
+            'tipo_identificacion': User.TipoIdentificacion.CEDULA,
+            'ruc': invalid_value,
+        })
+        assert response.status_code == 400
+        user.refresh_from_db()
+        assert user.tipo_identificacion == User.TipoIdentificacion.RUC
+        assert user.ruc == '0912345678001'
 
     def test_patch_partial_update_keeps_other_fields(self):
         user = make_client_user()
@@ -85,3 +111,19 @@ class TestProfileEndpoint:
     def test_patch_empty_body_returns_400(self):
         user = make_client_user()
         assert auth_client(user).patch(PERFIL_URL, {}).status_code == 400
+
+    def test_worker_profile_does_not_inherit_client_identification_requirement(self):
+        worker = make_client_user(
+            email='worker@test.com',
+            role=User.Role.WORKER,
+            ruc='',
+            empresa='',
+        )
+        response = auth_client(worker).patch(PERFIL_URL, {
+            'nombre': 'Técnico',
+            'ruc': '',
+            'empresa': '',
+        })
+        assert response.status_code == 200
+        worker.refresh_from_db()
+        assert worker.first_name == 'Técnico'

@@ -5,7 +5,12 @@
 
 import { apiClient } from '../../../infrastructure/http/ApiClient'
 import type { ITicketAdminActions } from '../interfaces/ITicketAdminActions'
-import type { TicketSummary, TicketDetail, TicketFilterOptions } from '../interfaces/ITicketService'
+import type {
+  TicketSummary,
+  TicketContactUpdate,
+  TicketDetail,
+  TicketFilterOptions,
+} from '../interfaces/ITicketService'
 import {
   mapTicketDetail,
   mapTicketSummary,
@@ -26,6 +31,11 @@ class TicketAdminService implements ITicketAdminActions {
     const data = await apiClient.patch<BackendTicketDetail>(`/tickets/${id}/reasignar`, {
       worker_id: Number(newWorkerId),
     })
+    return mapTicketDetail(data)
+  }
+
+  async updateContact(id: string, contact: TicketContactUpdate): Promise<TicketDetail> {
+    const data = await apiClient.patch<BackendTicketDetail>(`/tickets/${id}/contacto`, contact)
     return mapTicketDetail(data)
   }
 
