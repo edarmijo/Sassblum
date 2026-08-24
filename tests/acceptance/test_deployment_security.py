@@ -30,27 +30,30 @@ def test_backend_dependencies_use_patched_versions_and_verified_hashes() -> None
 
 
 def test_vercel_applies_required_security_headers_globally() -> None:
-    config = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
-    global_rule = next(rule for rule in config["headers"] if rule["source"] == "/(.*)")
-    headers = {item["key"]: item["value"] for item in global_rule["headers"]}
+    for config_path in (ROOT / "vercel.json", ROOT / "frontend" / "vercel.json"):
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        global_rule = next(
+            rule for rule in config["headers"] if rule["source"] == "/(.*)"
+        )
+        headers = {item["key"]: item["value"] for item in global_rule["headers"]}
 
-    assert headers["X-Frame-Options"] == "DENY"
-    assert headers["X-Content-Type-Options"] == "nosniff"
-    assert headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
-    assert headers["Cross-Origin-Opener-Policy"] == "same-origin"
-    assert headers["X-Permitted-Cross-Domain-Policies"] == "none"
-    assert headers["Permissions-Policy"] == (
-        "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-    )
+        assert headers["X-Frame-Options"] == "DENY"
+        assert headers["X-Content-Type-Options"] == "nosniff"
+        assert headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert headers["Cross-Origin-Opener-Policy"] == "same-origin"
+        assert headers["X-Permitted-Cross-Domain-Policies"] == "none"
+        assert headers["Permissions-Policy"] == (
+            "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        )
 
-    content_security_policy = headers["Content-Security-Policy"]
-    for directive in (
-        "default-src 'self'",
-        "base-uri 'self'",
-        "object-src 'none'",
-        "frame-ancestors 'none'",
-        "form-action 'self'",
-        "connect-src 'self' https://sassblum.onrender.com wss://sassblum.onrender.com",
-        "upgrade-insecure-requests",
-    ):
-        assert directive in content_security_policy
+        content_security_policy = headers["Content-Security-Policy"]
+        for directive in (
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "connect-src 'self' https://sassblum.onrender.com wss://sassblum.onrender.com",
+            "upgrade-insecure-requests",
+        ):
+            assert directive in content_security_policy
