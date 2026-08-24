@@ -28,7 +28,7 @@ interface OneTimeCredentials {
 function mailboxLabel(user: AdminUser): string {
   if (user.buzonEstado === 'no_aplica') return 'No aplica'
   if (user.buzonEstado === 'pendiente' && user.buzonGestion === 'manual') {
-    return 'Pendiente · confirmar cPanel'
+    return 'Pendiente · gestión manual'
   }
   if (user.buzonEstado === 'pendiente') return 'Pendiente · UAPI'
   return user.buzonGestion === 'manual' ? 'Activo · gestión manual' : 'Activo · UAPI'
@@ -50,11 +50,6 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
   const [mailboxBusyId, setMailboxBusyId] = useState<string | null>(null)
   const [mailboxError, setMailboxError] = useState<string | null>(null)
   const [operationNotice, setOperationNotice] = useState<string | null>(null)
-  const [mailboxHelpOpen, setMailboxHelpOpen] = useState(false)
-  const [confirmingMailboxUser, setConfirmingMailboxUser] = useState<AdminUser | null>(null)
-  const [manualMailboxEmail, setManualMailboxEmail] = useState('')
-  const [manualMailboxBusy, setManualMailboxBusy] = useState(false)
-  const [manualMailboxError, setManualMailboxError] = useState<string | null>(null)
   const [rotatingUser, setRotatingUser] = useState<AdminUser | null>(null)
   const [rotationForm, setRotationForm] = useState<RotateOccupantData>({
     nombre: '',
@@ -96,14 +91,8 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
         appPassword: created.appPassword,
         buzonPassword: created.buzonPassword,
       })
-    } else if (
-      created.rol === 'worker'
-      && created.buzonEstado === 'pendiente'
-      && created.buzonGestion === 'manual'
-    ) {
-      setOperationNotice(
-        'La cuenta de la aplicación fue creada. Confirma el buzón después de crearlo en cPanel.',
-      )
+    } else if (created.rol === 'worker' && created.buzonGestion === 'manual') {
+      setOperationNotice('Trabajador registrado con buzón manual activo.')
     } else if (created.rol === 'worker' && created.buzonEstado === 'pendiente') {
       setOperationNotice(
         'La cuenta de la aplicación fue creada. El buzón quedó pendiente y puede reintentarse.',
@@ -161,51 +150,6 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
       ))
     } finally {
       setMailboxBusyId(null)
-    }
-  }
-
-  const startManualMailboxConfirmation = (u: AdminUser) => {
-    setConfirmingMailboxUser(u)
-    setManualMailboxEmail('')
-    setManualMailboxError(null)
-  }
-
-  const cancelManualMailboxConfirmation = () => {
-    if (manualMailboxBusy) return
-    setConfirmingMailboxUser(null)
-    setManualMailboxEmail('')
-    setManualMailboxError(null)
-  }
-
-  const confirmManualMailbox = async () => {
-    if (!confirmingMailboxUser || manualMailboxBusy) return
-    if (manualMailboxEmail.trim().toLowerCase() !== confirmingMailboxUser.email.toLowerCase()) {
-      setManualMailboxError('Escribe exactamente el correo del buzón creado en cPanel.')
-      return
-    }
-    setManualMailboxBusy(true)
-    setManualMailboxError(null)
-    setOperationNotice(null)
-    try {
-      const updated = await userActions.confirmManualMailbox(
-        confirmingMailboxUser.id,
-        manualMailboxEmail.trim(),
-      )
-      setUsers((current) => current.map((item) => (
-        item.id === updated.id ? updated : item
-      )))
-      setConfirmingMailboxUser(null)
-      setManualMailboxEmail('')
-      setOperationNotice(
-        'Buzón confirmado como activo con gestión manual. No se almacenó su contraseña.',
-      )
-    } catch (err: unknown) {
-      setManualMailboxError(apiError(
-        err,
-        'No se pudo confirmar el buzón manual.',
-      ))
-    } finally {
-      setManualMailboxBusy(false)
     }
   }
 
@@ -326,43 +270,12 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header>
         <div>
           <h2 className="text-xl font-bold text-foreground">Gestión de usuarios</h2>
           <p className="text-sm text-[#7aa3b8] mt-0.5">Crea trabajadores y clientes para gestionar su acceso.</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          aria-expanded={mailboxHelpOpen}
-          aria-controls="manual-mailbox-help"
-          onClick={() => setMailboxHelpOpen((open) => !open)}
-        >
-          {mailboxHelpOpen ? 'Ocultar procedimiento' : '¿Cómo gestionar el buzón?'}
-        </Button>
       </header>
-
-      {mailboxHelpOpen && (
-        <aside
-          id="manual-mailbox-help"
-          aria-labelledby="manual-mailbox-help-title"
-          className="rounded-xl border border-brand-cyan/25 bg-brand-navy/80 p-4 text-sm text-foreground"
-        >
-          <h3 id="manual-mailbox-help-title" className="font-semibold text-brand-cyan">
-            Procedimiento temporal mientras cPanel habilita la automatización
-          </h3>
-          <ol className="mt-3 grid gap-2 pl-5 text-[#b8ced9] list-decimal sm:grid-cols-2 sm:gap-x-8">
-            <li>Crea primero el buzón del trabajador directamente en cPanel.</li>
-            <li>Crea después el trabajador aquí usando exactamente el mismo correo.</li>
-            <li>Confirma el buzón desde la fila del trabajador escribiendo nuevamente el correo.</li>
-            <li>Entrega por separado la contraseña del buzón y la contraseña de la aplicación.</li>
-          </ol>
-          <p className="mt-3 text-xs text-amber-200">
-            Nunca reutilices la misma contraseña. Para cambiar de ocupante, rota primero la contraseña
-            del buzón en cPanel y confirma esa acción aquí.
-          </p>
-        </aside>
-      )}
 
       <form onSubmit={create} className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: 'rgba(8,22,36,0.94)', border: '1px solid rgba(0,196,224,0.14)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
         <Input placeholder="Nombre" required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
@@ -627,23 +540,6 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
                           {mailboxBusyId === u.id ? 'Reintentando…' : 'Reintentar buzón'}
                         </button>
                       )}
-                      {u.rol === 'worker'
-                        && u.buzonEstado === 'pendiente'
-                        && u.buzonGestion === 'manual'
-                        && (
-                        <button
-                          type="button"
-                          disabled={
-                            manualMailboxBusy
-                            || rotatingUser !== null
-                            || oneTimeCredentials !== null
-                          }
-                          onClick={() => startManualMailboxConfirmation(u)}
-                          className="text-xs text-brand-cyan-dark font-medium hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Confirmar buzón de cPanel
-                        </button>
-                      )}
                       <button
                         type="button"
                         disabled={editingUser !== null || rotatingUser !== null}
@@ -663,61 +559,6 @@ export function AdminUserPage({ service }: Readonly<AdminUserPageProps>) {
 
       {mailboxError && (
         <p role="alert" className="text-sm text-destructive">{mailboxError}</p>
-      )}
-
-      {confirmingMailboxUser && (
-        <section
-          aria-labelledby="manual-mailbox-confirm-title"
-          className="rounded-xl border border-brand-cyan/25 bg-brand-navy/80 p-4 space-y-3"
-        >
-          <div>
-            <h3 id="manual-mailbox-confirm-title" className="font-semibold text-foreground">
-              Confirmar buzón creado en cPanel
-            </h3>
-            <p className="mt-1 text-sm text-[#9db9c7]">
-              Esta acción no consulta ni guarda la contraseña. Confirma únicamente que ya creaste
-              el buzón <strong className="text-foreground">{confirmingMailboxUser.email}</strong>.
-            </p>
-          </div>
-          <div className="max-w-xl space-y-1.5">
-            <Label htmlFor="manual-mailbox-email">Escribe el correo exacto</Label>
-            <Input
-              id="manual-mailbox-email"
-              type="email"
-              autoComplete="off"
-              value={manualMailboxEmail}
-              aria-invalid={Boolean(manualMailboxError)}
-              aria-describedby={manualMailboxError ? 'manual-mailbox-error' : undefined}
-              onChange={(event) => {
-                setManualMailboxEmail(event.target.value)
-                setManualMailboxError(null)
-              }}
-            />
-          </div>
-          {manualMailboxError && (
-            <p id="manual-mailbox-error" role="alert" className="text-sm text-destructive">
-              {manualMailboxError}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="brand"
-              disabled={manualMailboxBusy}
-              onClick={() => void confirmManualMailbox()}
-            >
-              {manualMailboxBusy ? 'Confirmando…' : 'Confirmar buzón manual'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={manualMailboxBusy}
-              onClick={cancelManualMailboxConfirmation}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </section>
       )}
 
       {rotatingUser && (

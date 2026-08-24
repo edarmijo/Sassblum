@@ -79,7 +79,7 @@ export class BackendWarmupService {
       const response = await this.fetcher(healthUrl(), {
         method: 'GET',
         cache: 'no-store',
-        credentials: 'omit',
+        credentials: 'same-origin',
         signal: controller.signal,
       })
       if (!response.ok) {

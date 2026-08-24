@@ -53,6 +53,33 @@ describe('UserAdminService B15', () => {
     vi.clearAllMocks()
   })
 
+  it('maps a manual mailbox created in the same worker request', async () => {
+    apiClientMock.post.mockResolvedValue({
+      id: 17,
+      email: 'trabajador@sassblum.com',
+      nombre: 'Ana',
+      apellido: 'Técnica',
+      rol: 'worker',
+      estado: 'activo',
+      email_verificado: true,
+      buzon_estado: 'creado',
+      buzon_gestion: 'manual',
+    })
+
+    const result = await userAdminService.createUser({
+      nombre: 'Ana',
+      apellido: 'Técnica',
+      email: 'trabajador@sassblum.com',
+      password: 'ClaveSegura123',
+      role: 'worker',
+    })
+
+    expect(result).toMatchObject({
+      buzonEstado: 'creado',
+      buzonGestion: 'manual',
+    })
+  })
+
   it('retries a pending mailbox through its explicit route', async () => {
     apiClientMock.post.mockResolvedValue({
       id: 17,
@@ -75,34 +102,6 @@ describe('UserAdminService B15', () => {
     expect(result).toMatchObject({
       buzonEstado: 'creado',
       buzonPassword: 'ephemeral-value',
-    })
-  })
-
-  it('confirms a manually created mailbox without sending a password', async () => {
-    apiClientMock.post.mockResolvedValue({
-      id: 17,
-      email: 'trabajador@sassblum.com',
-      nombre: 'Ana',
-      apellido: 'Técnica',
-      rol: 'worker',
-      estado: 'activo',
-      email_verificado: true,
-      buzon_estado: 'creado',
-      buzon_gestion: 'manual',
-    })
-
-    const result = await userAdminService.confirmManualMailbox(
-      '17',
-      'trabajador@sassblum.com',
-    )
-
-    expect(apiClientMock.post).toHaveBeenCalledWith(
-      '/usuarios/17/buzon/confirmar-manual',
-      { email: 'trabajador@sassblum.com' },
-    )
-    expect(result).toMatchObject({
-      buzonEstado: 'creado',
-      buzonGestion: 'manual',
     })
   })
 

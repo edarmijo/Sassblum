@@ -53,7 +53,6 @@ export interface IUserAdminActions {
   blockUser(id: string): Promise<AdminUser>
   unblockUser(id: string): Promise<AdminUser>
   retryMailbox(id: string): Promise<AdminUserOperationResult>
-  confirmManualMailbox(id: string, email: string): Promise<AdminUser>
   rotateOccupant(
     id: string,
     data: RotateOccupantData,

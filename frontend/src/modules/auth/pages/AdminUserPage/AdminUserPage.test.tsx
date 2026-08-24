@@ -31,7 +31,7 @@ function adminUser(data: CreateUserData): AdminUser {
     rol: data.role,
     estado: 'activo',
     emailVerificado: true,
-    buzonEstado: data.role === 'worker' ? 'pendiente' : 'no_aplica',
+    buzonEstado: data.role === 'worker' ? 'creado' : 'no_aplica',
     buzonGestion: data.role === 'worker' ? 'manual' : 'no_aplica',
   }
 }
@@ -46,7 +46,6 @@ function serviceWithCreate(
     blockUser: vi.fn(async () => { throw new Error('No usado') }),
     unblockUser: vi.fn(async () => { throw new Error('No usado') }),
     retryMailbox: vi.fn(async () => { throw new Error('No usado') }),
-    confirmManualMailbox: vi.fn(async () => { throw new Error('No usado') }),
     rotateOccupant: vi.fn(async () => { throw new Error('No usado') }),
     rotateOccupantManually: vi.fn(async () => { throw new Error('No usado') }),
   }
@@ -99,6 +98,14 @@ describe('AdminUserPage B10', () => {
     }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
+
+  it('reports the manual mailbox as active after the same worker request', async () => {
+    render(<AdminUserPage service={serviceWithCreate(vi.fn(async (data) => adminUser(data)))} />)
+
+    await completeForm('tecnico@sassblum.com')
+
+    expect(await screen.findByText('Trabajador registrado con buzón manual activo.')).toBeInTheDocument()
+  })
 })
 
 describe('AdminUserPage B13b', () => {
@@ -124,7 +131,6 @@ describe('AdminUserPage B13b', () => {
       blockUser: vi.fn(async () => { throw new Error('No usado') }),
       unblockUser: vi.fn(async () => { throw new Error('No usado') }),
       retryMailbox: vi.fn(async () => { throw new Error('No usado') }),
-      confirmManualMailbox: vi.fn(async () => { throw new Error('No usado') }),
       rotateOccupant: vi.fn(async () => { throw new Error('No usado') }),
       rotateOccupantManually: vi.fn(async () => { throw new Error('No usado') }),
     }
@@ -189,52 +195,25 @@ describe('AdminUserPage B15', () => {
       blockUser: vi.fn(async () => { throw new Error('No usado') }),
       unblockUser: vi.fn(async () => { throw new Error('No usado') }),
       retryMailbox: vi.fn(async () => ({ ...pendingWorker })),
-      confirmManualMailbox: vi.fn(async () => ({ ...pendingWorker })),
       rotateOccupant: vi.fn(async () => ({ ...pendingWorker })),
       rotateOccupantManually: vi.fn(async () => ({ ...pendingWorker })),
       ...overrides,
     }
   }
 
-  it('explains the temporary manual procedure through an accessible disclosure', async () => {
-    render(<AdminUserPage service={mailboxService()} />)
-    const user = userEvent.setup()
-    const helpButton = screen.getByRole('button', { name: '¿Cómo gestionar el buzón?' })
-
-    expect(helpButton).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByText(/crea primero el buzón/i)).not.toBeInTheDocument()
-    await user.click(helpButton)
-
-    expect(helpButton).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByText(/crea primero el buzón/i)).toBeInTheDocument()
-    expect(screen.getByText(/nunca reutilices la misma contraseña/i)).toBeInTheDocument()
-  })
-
-  it('confirms an existing cPanel mailbox without requesting its password', async () => {
+  it('shows a manual mailbox as active without a third confirmation', async () => {
     const manualWorker: AdminUser = {
       ...pendingWorker,
+      buzonEstado: 'creado',
       buzonGestion: 'manual',
     }
-    const confirmManualMailbox = vi.fn(async () => ({
-      ...manualWorker,
-      buzonEstado: 'creado' as const,
-    }))
     render(<AdminUserPage service={mailboxService({
       listUsers: vi.fn(async () => [manualWorker]),
-      confirmManualMailbox,
     })} />)
-    const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('button', { name: 'Confirmar buzón de cPanel' }))
-    expect(screen.queryByLabelText(/contraseña del buzón/i)).not.toBeInTheDocument()
-    await user.type(screen.getByLabelText('Escribe el correo exacto'), manualWorker.email)
-    await user.click(screen.getByRole('button', { name: 'Confirmar buzón manual' }))
-
-    await waitFor(() => expect(confirmManualMailbox).toHaveBeenCalledWith(
-      manualWorker.id,
-      manualWorker.email,
-    ))
     expect(await screen.findByText('Activo · gestión manual')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar buzón de cPanel' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '¿Cómo gestionar el buzón?' })).not.toBeInTheDocument()
   })
 
   it('records a manual occupant change only after the cPanel confirmation', async () => {

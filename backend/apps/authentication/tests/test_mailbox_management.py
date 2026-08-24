@@ -110,11 +110,25 @@ def test_worker_creation_survives_provider_outage_as_pending() -> None:
     assert "buzon_password" not in result
 
 
-def test_worker_creation_without_provider_uses_manual_pending_mode() -> None:
-    result = UserAdminService(mailbox_provider=None).create_user(worker_payload())
+def test_worker_creation_without_provider_records_manual_mailbox_in_same_request() -> None:
+    admin = User.objects.create_user(
+        email="admin@sassblum.com",
+        password=random_credential(),
+        role=User.Role.ADMIN,
+    )
 
-    assert result["buzon_estado"] == User.BuzonEstado.PENDING
+    result = UserAdminService(mailbox_provider=None).create_user(
+        worker_payload(),
+        admin,
+    )
+
+    assert result["buzon_estado"] == User.BuzonEstado.CREATED
     assert result["buzon_gestion"] == User.BuzonGestion.MANUAL
+    assert UserMailboxEvent.objects.filter(
+        usuario__email="tecnico1@sassblum.com",
+        actor=admin,
+        action=UserMailboxEvent.Action.MANUAL_CONFIRMED,
+    ).count() == 1
 
 
 def test_manual_mailbox_confirmation_requires_exact_email_and_is_audited() -> None:
