@@ -10,7 +10,8 @@ location and place a sanitized copy or an evaluator-accessible reference here.
 
 | ID | File or controlled URL | Description / decision | Type | Participants | Date and time | Sprint | Related story or requirement | Authorization |
 |---|---|---|---|---|---|---|---|---|
-| `COM-TBD` | Pending | No authorized communication supplied yet | Pending | Pending | Pending | Sprint 3/4 | Pending | Pending |
+| `VID-001` | [znt-bewp-txt (2026-06-24 22:28 GMT-5)](https://drive.google.com/file/d/1-L8-WkWuBHcbI6HFJRFkg7R7mCKihpmj/view?usp=sharing) | Discussion regarding functional improvements, user management, and report integration to optimize the support platform. | Video - MP4 | Erick Danilo Armijos Romero, Vicky Del Carmen Pinto Kean Chong | 2026-06-24 22:28 GMT-05:00 | Sprint 3/4 | User stories, Sprint 3 | Pending confirmation |
+| `VID-002` | [iuo-gzeu-rrz (2026-08-21 20_12 GMT-5).mp4](https://drive.google.com/file/d/1rpTXsSE6jsThWRC2FowUJR5daH_VZB7Y/view?usp=drive_link) | Technical review of web features, interface and reporting feedback, ticket notifications, and final deployment commitments. | Video - MP4 | Erick Danilo Armijos Romero, Vicky Del Carmen Pinto Kean Chong | 2026-08-21 20:12 GMT-05:00 | Sprint 4/4 | User stories, Sprint 4 | Pending confirmation |
 
 ## Required procedure
 
@@ -23,4 +24,4 @@ location and place a sanitized copy or an evaluator-accessible reference here.
 5. Reference the same evidence ID from the report and traceability matrix.
 6. Never replace missing evidence with a retrospective recreation.
 
-The placeholder row must be removed only after authentic evidence has been indexed.
+Do not publish an evidence file until its authorization status has been confirmed.
