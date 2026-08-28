@@ -27,26 +27,29 @@ Cada persona debe usar una cuenta propia con su correo electrónico y contraseñ
 ### 3.1 Registro de Cuenta
 
 **Requisitos importantes:**
-- El **RUC** es un campo **OBLIGATORIO** para registrarse
-- El **nombre de la empresa** debe ser ingresado
-- El correo debe ser del **dominio de la empresa** (no correos personales)
+- La **identificación** (RUC o cédula) es **obligatoria** para registrarse
+- El **nombre de la empresa** es obligatorio
+- La contraseña debe tener al menos **8 caracteres**
 
 **Pasos para registrarse:**
 1. Ir a la página de inicio
 2. Hacer clic en "Registrarse"
 3. Completar todos los campos del formulario:
-   - RUC (obligatorio)
-   - Nombre de la empresa
-   - Correo electrónico (dominio empresarial)
-   - Contraseña
-   - Confirmar contraseña
+   - Nombre y apellido
+   - Tipo de identificación (RUC o Cédula)
+   - Número de identificación (obligatorio)
+   - Nombre de la empresa (obligatorio)
+   - Correo electrónico
+   - Contraseña y confirmación
 4. Hacer clic en "Registrar"
 
 **Verificación:**
-- El sistema validará que el RUC sea correcto
-- Si falta el RUC, se mostrará un mensaje de error
-- El registro solo se completará con todos los datos requeridos
-- Recibirás un correo de confirmación de registro
+- El sistema valida el formato de la identificación según el tipo elegido
+- Si falta la identificación o la empresa, se muestra un mensaje de error
+- Si las contraseñas no coinciden, el registro se rechaza
+- Recibirás un **correo de verificación**: debes abrir su enlace antes de poder
+  iniciar sesión. Hasta entonces el acceso se rechaza con el mensaje
+  "Debes verificar tu correo antes de iniciar sesión"
 
 ---
 
@@ -77,7 +80,7 @@ Cada persona debe usar una cuenta propia con su correo electrónico y contraseñ
    - **Evidencias:** Adjuntar archivos (capturas de pantalla, documentos)
 4. Hacer clic en "Enviar"
 
-**El ticket nace en estado: NUEVO**
+**El ticket nace en estado: Nuevo**
 
 ---
 
@@ -126,7 +129,7 @@ Recibirás correos automáticos cuando:
 |--------|---------------------|
 | **Creación de ticket** | Número de ticket, resumen, pasos a seguir, datos de contacto |
 | **Asignación** | Te notifican que tu ticket ha sido asignado a un trabajador |
-| **Actualización de estado** | Te informan cuando el estado de tu ticket cambia (EnProgreso, Resuelto, Cerrado) |
+| **Actualización de estado** | Te informan cuando el estado de tu ticket cambia (EnProceso, Resuelto, Cerrado) |
 | **Comentario** | Recibes notificación cuando el trabajador agrega un comentario |
 
 ---
@@ -192,8 +195,8 @@ Recibirás correos automáticos cuando:
 
 | Estado | Cuándo Usarlo |
 |--------|---------------|
-| **Nuevo** | Ticket registrado, sin asignación (no lo usa el trabajador) |
-| **EnProgreso** | Cuando comienzas a trabajar en el ticket |
+| **Nuevo** | Ticket registrado, sin asignación. El trabajador no puede cambiarlo: sale de `Nuevo` solo con la primera asignación |
+| **EnProceso** | Trabajo activo. Lo fija la asignación del administrador; el trabajador vuelve a él al retomar un ticket |
 | **EnEspera** | Cuando hay dependencia externa (cliente, proveedor, acceso, insumo) |
 | **Resuelto** | Cuando la solución está aplicada y documentada |
 | **Cerrado** | Cuando el ticket se cierra administrativamente |
@@ -265,7 +268,7 @@ Recibirás correos automáticos cuando:
 5. Seleccionar el trabajador disponible
 6. Confirmar asignación
 
-**La asignación cambia el estado a: ENPROGRESO**
+**La asignación cambia el estado a: EnProceso**
 
 ---
 
@@ -387,8 +390,8 @@ Recibirás correos cuando:
 
 | Estado | Uso Esperado | Quién Puede Cambiarlo |
 |--------|--------------|-----------------------|
-| **Nuevo** | Ticket registrado, todavía sin asignación | Cliente, Sistema |
-| **EnProgreso** | Existe un responsable y trabajo activo | Administrador, Trabajador |
+| **Nuevo** | Ticket registrado, todavía sin asignación | Estado inicial; sale de aquí solo con la primera asignación del administrador |
+| **EnProceso** | Existe un responsable y trabajo activo | Administrador, Trabajador |
 | **EnEspera** | Bloqueado por cliente, proveedor, acceso o insumo identificado | Trabajador |
 | **Resuelto** | Solución aplicada y documentada | Trabajador |
 | **Cerrado** | Cierre administrativo (se puede reabrir si el problema continúa) | Trabajador, Administrador |
