@@ -35,6 +35,52 @@ class TestTCW1WorkerLogin:
         assert response.status_code == 200
 
 
+# ── TC-W7: Complete Worker Flow ──────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestTCW7CompleteWorkerFlow:
+    """TC-W7: Worker login through ticket history update."""
+
+    def test_worker_can_login_update_ticket_comment_and_view_history(
+        self, api_client, worker_user, in_progress_ticket
+    ):
+        """Given an assigned ticket, the worker can complete its workflow."""
+        login = api_client.post('/api/auth/login', {
+            'email': worker_user.email,
+            'password': TEST_PASSWORD,
+        })
+        assert login.status_code == 200
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['tokens']['access']}")
+
+        listing = api_client.get('/api/tickets/')
+        assert listing.status_code == 200
+        assert any(ticket['id'] == in_progress_ticket.id for ticket in listing.data['items'])
+
+        status_update = api_client.patch(f'/api/tickets/{in_progress_ticket.id}/estado', {
+            'estado': 'EnEspera',
+            'comentario': 'Esperando información adicional del cliente',
+        })
+        assert status_update.status_code == 200
+
+        comment = api_client.post(f'/api/tickets/{in_progress_ticket.id}/comentario', {
+            'comentario': 'Se solicitó la información necesaria para continuar.',
+        })
+        assert comment.status_code == 200
+
+        detail = api_client.get(f'/api/tickets/{in_progress_ticket.id}')
+        assert detail.status_code == 200
+        assert detail.data['estado'] == 'EnEspera'
+        assert len(detail.data['eventos']) >= 2
+        assert any(
+            event['comentario'] == 'Esperando información adicional del cliente'
+            for event in detail.data['eventos']
+        )
+        assert any(
+            event['comentario'] == 'Se solicitó la información necesaria para continuar.'
+            for event in detail.data['eventos']
+        )
+
+
 # ── TC-W2: Status Update ─────────────────────────────────────────────────────
 # Given an assigned ticket in "EnProceso", when moving it to "EnEspera" with a
 # non-empty comment, then the transition is accepted (BR-35) and the client is
